@@ -209,42 +209,28 @@ Total: 32GB RAM
 4. Configure MCP connection to BalatroMCP mod
 5. Run initial training pipeline with synthetic data
 
-## Critical Planning Issues
+## Planning Status
 
-**WARNING**: The planning documents contain significant inconsistencies and gaps that must be resolved before implementation:
+All planning documents have been updated to address initial inconsistencies:
 
-### Timeline Conflicts
-- Individual component timelines (3-8 weeks) don't align with 10-week total
-- Headless Balatro has no timeline despite being critical
-- Dependency chains create impossible deadlines (e.g., Ray needs MCP by Week 1, but MCP completes Week 3)
+### Resolved Issues
+✓ **Timeline Alignment**: All components now follow unified 10-week timeline with Week 0 foundation
+✓ **Memory Allocation**: Fixed conflicts, total 32GB properly allocated with Event Bus infrastructure
+✓ **Interface Specification**: Created comprehensive `interface_specification.md` with Protocol Buffers
+✓ **Event Schema**: Defined canonical schemas in interface specification
+✓ **Resource Coordination**: Added Resource Coordinator for GPU/API management
+✓ **Headless Integration**: Updated headless plan with Week 1-2 timeline
 
-### Memory Allocation Problems
-- Redis is double-allocated (Analytics + LangChain)
-- Ray plan assumes GPU VRAM overflow contradicting strict 8GB limit
-- Total allocations exceed available memory when including all components
+### Key Architecture Decisions
+- **Event Bus Pattern**: All components communicate via central Event Bus
+- **Protocol Buffers**: Language-agnostic serialization for all events
+- **Async Patterns**: Claude uses async queue, others use gRPC/REST
+- **Shared Resources**: Redis shared between Claude/Analytics, GPU coordinated
 
-### Missing Interfaces
-- MCP → Memgraph: No data format or protocol specified
-- Ray ↔ Claude: No integration contract defined
-- Analytics → Ray: No historical data query interface
+### Development Approach
+- Single developer or small team per component
+- Parallel development enabled by clean interfaces
+- Progressive integration at Weeks 3, 7, and 10
+- Mock implementations for early testing
 
-### Critical Missing Components
-- **Headless Balatro**: No implementation plan or ownership
-- **Event Schema**: Each component defines different event formats
-- **Error Handling**: No system-wide error propagation strategy
-- **API Rate Limiting**: No unified approach for Claude API limits
-- **GPU Scheduling**: Multiple components expect GPU access without coordination
-
-### Resource Issues
-- Team size implies 24-28 engineers for "single workstation" project
-- No deployment, monitoring, or configuration management strategy
-- Missing data governance and backup procedures
-
-### Recommended Actions
-1. Reconcile all timelines into realistic 10-week plan
-2. Define canonical event schema across all components
-3. Create detailed interface specifications between components
-4. Assign ownership for headless Balatro implementation
-5. Design unified monitoring and error handling strategy
-6. Clarify actual team size and resource allocation
-7. Add deployment and operational procedures
+See `planning/interface_specification.md` for complete technical details and `planning/timeline_reconciliation.md` for unified timeline.
