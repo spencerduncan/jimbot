@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Balatro launcher for Linux
+# Ensures proper environment and paths
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Optional: GPU optimization flags (uncomment if needed)
+# For NVIDIA:
+# export __NV_PRIME_RENDER_OFFLOAD=1
+# export __GLX_VENDOR_LIBRARY_NAME=nvidia
+
+# For AMD:
+# export DRI_PRIME=1
+
+# For Wayland (uncomment if using Wayland)
+# export SDL_VIDEODRIVER=wayland
+
+# Launch Balatro
+cd "$SCRIPT_DIR"
+exec love Balatro.love "$@"
