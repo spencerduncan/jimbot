@@ -234,18 +234,22 @@ function GameStateExtractor:get_game_phase()
     end
     
     -- Check all possible game states
-    if G.STATE == G.STATES.BLIND_SELECT then
+    if G.STATE == G.STATES.MENU then
+        return "MENU"
+    elseif G.STATE == G.STATES.DECK_SELECT then
+        return "DECK_SELECT"
+    elseif G.STATE == G.STATES.STAKE_SELECT then
+        return "STAKE_SELECT"
+    elseif G.STATE == G.STATES.BLIND_SELECT then
         return "BLIND_SELECT"
     elseif G.STATE == G.STATES.SHOP then
         return "SHOP"
     elseif G.STATE == G.STATES.PLAYING then
         return "PLAYING"
-    elseif G.STATE == G.STATES.GAME_OVER then
-        return "GAME_OVER"
-    elseif G.STATE == G.STATES.MENU then
-        return "MENU"
     elseif G.STATE == G.STATES.ROUND_EVAL then
         return "ROUND_EVAL"
+    elseif G.STATE == G.STATES.GAME_OVER then
+        return "GAME_OVER"
     elseif G.STATE == G.STATES.TAROT_PACK then
         return "TAROT_PACK"
     elseif G.STATE == G.STATES.PLANET_PACK then
@@ -259,8 +263,10 @@ function GameStateExtractor:get_game_phase()
     elseif G.STATE == G.STATES.SMODS_BOOSTER_OPENED then
         return "BOOSTER_PACK"
     else
-        -- Log the numeric state for debugging
-        return "UNKNOWN_STATE_" .. tostring(G.STATE)
+        -- Log the numeric state for debugging with additional context
+        local state_info = string.format("UNKNOWN_STATE_%s", tostring(G.STATE))
+        print(string.format("BalatroMCP WARNING: Unknown game state detected: %s", state_info))
+        return state_info
     end
 end
 
