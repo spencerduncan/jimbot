@@ -233,19 +233,50 @@ function GameStateExtractor:get_game_phase()
         return "UNKNOWN"
     end
     
+    -- Ensure G.STATES exists
+    if not G.STATES then
+        print("BalatroMCP: G.STATES not available, state=" .. tostring(G.STATE))
+        return "UNKNOWN_STATE_" .. tostring(G.STATE)
+    end
+    
     -- Check all possible game states
-    if G.STATE == G.STATES.BLIND_SELECT then
-        return "BLIND_SELECT"
-    elseif G.STATE == G.STATES.SHOP then
-        return "SHOP"
+    -- Menu and Navigation States
+    if G.STATE == G.STATES.MENU then
+        return "MENU"
+    elseif G.STATE == G.STATES.SPLASH then
+        return "SPLASH"
+    elseif G.STATE == G.STATES.TUTORIAL then
+        return "TUTORIAL"
+    elseif G.STATE == G.STATES.DEMO_CTA then
+        return "DEMO_CTA"
+    elseif G.STATE == G.STATES.DECK_SELECT then
+        return "DECK_SELECT"
+    
+    -- Playing Phase States
     elseif G.STATE == G.STATES.PLAYING then
         return "PLAYING"
-    elseif G.STATE == G.STATES.GAME_OVER then
-        return "GAME_OVER"
-    elseif G.STATE == G.STATES.MENU then
-        return "MENU"
+    elseif G.STATE == G.STATES.SELECTING_HAND then
+        return "SELECTING_HAND"
+    elseif G.STATE == G.STATES.DRAW_TO_HAND then
+        return "DRAW_TO_HAND"
+    elseif G.STATE == G.STATES.HAND_PLAYED then
+        return "HAND_PLAYED"
+    elseif G.STATE == G.STATES.HAND_EVAL then
+        return "HAND_EVAL"
+    
+    -- Blind and Round States
+    elseif G.STATE == G.STATES.BLIND_SELECT then
+        return "BLIND_SELECT"
+    elseif G.STATE == G.STATES.NEW_ROUND then
+        return "NEW_ROUND"
     elseif G.STATE == G.STATES.ROUND_EVAL then
         return "ROUND_EVAL"
+    
+    -- Shop State
+    elseif G.STATE == G.STATES.SHOP then
+        return "SHOP"
+    
+    -- Pack Opening States
     elseif G.STATE == G.STATES.TAROT_PACK then
         return "TAROT_PACK"
     elseif G.STATE == G.STATES.PLANET_PACK then
@@ -258,8 +289,22 @@ function GameStateExtractor:get_game_phase()
         return "BUFFOON_PACK"
     elseif G.STATE == G.STATES.SMODS_BOOSTER_OPENED then
         return "BOOSTER_PACK"
+    
+    -- Consumable Usage States
+    elseif G.STATE == G.STATES.PLAY_TAROT then
+        return "PLAY_TAROT"
+    
+    -- Game End States
+    elseif G.STATE == G.STATES.GAME_OVER then
+        return "GAME_OVER"
+    
+    -- Special Game Modes
+    elseif G.STATE == G.STATES.SANDBOX then
+        return "SANDBOX"
+    
     else
-        -- Log the numeric state for debugging
+        -- Log the numeric state with more debugging info
+        print("BalatroMCP: Unknown game state - value=" .. tostring(G.STATE) .. ", type=" .. type(G.STATE))
         return "UNKNOWN_STATE_" .. tostring(G.STATE)
     end
 end
@@ -286,7 +331,7 @@ function GameStateExtractor:get_available_actions()
     local actions = {}
     local phase = self:get_game_phase()
     
-    if phase == "PLAYING" then
+    if phase == "PLAYING" or phase == "SELECTING_HAND" then
         -- Card play actions
         if G.hand and G.hand.highlighted and #G.hand.highlighted > 0 then
             table.insert(actions, "play_hand")
@@ -315,6 +360,38 @@ function GameStateExtractor:get_available_actions()
         table.insert(actions, "select_big_blind")
         table.insert(actions, "select_boss_blind")
         table.insert(actions, "skip_blind")
+        
+    elseif phase == "MENU" then
+        -- Menu actions
+        table.insert(actions, "start_new_run")
+        table.insert(actions, "continue_run")
+        table.insert(actions, "settings")
+        
+    elseif phase == "DECK_SELECT" then
+        -- Deck selection actions
+        table.insert(actions, "select_deck")
+        table.insert(actions, "back")
+        
+    elseif phase == "TAROT_PACK" or phase == "PLANET_PACK" or phase == "SPECTRAL_PACK" 
+           or phase == "STANDARD_PACK" or phase == "BUFFOON_PACK" or phase == "BOOSTER_PACK" then
+        -- Pack opening actions
+        table.insert(actions, "open_pack")
+        table.insert(actions, "skip_pack")
+        
+    elseif phase == "PLAY_TAROT" then
+        -- Tarot usage actions
+        table.insert(actions, "use_consumable")
+        table.insert(actions, "cancel")
+        
+    elseif phase == "ROUND_EVAL" then
+        -- Round evaluation actions
+        table.insert(actions, "continue")
+        table.insert(actions, "go_to_shop")
+        
+    elseif phase == "GAME_OVER" then
+        -- Game over actions
+        table.insert(actions, "return_to_menu")
+        table.insert(actions, "view_stats")
     end
     
     return actions
