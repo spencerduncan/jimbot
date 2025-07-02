@@ -1,0 +1,207 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: ['--allow-multiple-documents']
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: debug-statements
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: requirements-txt-fixer
+
+  # Python formatting and linting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.9
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.1.11
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [
+          flake8-docstrings,
+          flake8-bugbear,
+          flake8-comprehensions,
+          flake8-simplify,
+        ]
+        args: ['--config=.flake8']
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [
+          types-redis,
+          types-requests,
+          types-PyYAML,
+          types-protobuf,
+        ]
+        args: ['--config-file=mypy.ini']
+
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        additional_dependencies: [toml]
+        args: ['--config=pyproject.toml']
+
+  # Security checks
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        args: ['-r', 'jimbot', '-f', 'json', '-o', 'bandit-report.json']
+        exclude: ^tests/
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+
+  # Lua formatting and linting
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v0.19.1
+    hooks:
+      - id: stylua
+        types_or: [lua]
+        args: ['--config-path=.stylua.toml']
+
+  - repo: https://github.com/lunarmodules/luacheck
+    rev: v1.1.1
+    hooks:
+      - id: luacheck
+        args: ['--config', '.luacheckrc']
+
+  # C++ formatting and linting
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v17.0.6
+    hooks:
+      - id: clang-format
+        types_or: [c++, c, cuda]
+        args: ['-i', '--style=file']
+
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: v1.3.5
+    hooks:
+      - id: clang-tidy
+        args: ['-p=build', '--config-file=.clang-tidy']
+      - id: cppcheck
+        args: ['--enable=warning,style,performance,portability', '--inline-suppr']
+
+  # Protocol Buffers
+  - repo: https://github.com/bufbuild/buf
+    rev: v1.28.1
+    hooks:
+      - id: buf-lint
+        args: ['--config=buf.yaml']
+      - id: buf-format
+        args: ['--config=buf.yaml']
+
+  # SQL formatting
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 3.0.0a4
+    hooks:
+      - id: sqlfluff-lint
+        args: ['--config=.sqlfluff']
+      - id: sqlfluff-fix
+        args: ['--config=.sqlfluff']
+
+  # JavaScript/TypeScript (if added)
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx, json, yaml, markdown]
+        exclude: '^(docs/|vendor/)'
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        types_or: [javascript, jsx, ts, tsx]
+        additional_dependencies: [
+          '@typescript-eslint/parser@^6.16.0',
+          '@typescript-eslint/eslint-plugin@^6.16.0',
+          'eslint-config-prettier@^9.1.0'
+        ]
+
+  # Docker
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: ['--ignore', 'DL3008', '--ignore', 'DL3009']
+
+  # Shell scripts
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+
+  # YAML
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.33.0
+    hooks:
+      - id: yamllint
+        args: ['-c=.yamllint']
+
+  # Markdown
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: ['--config=.markdownlint.json']
+
+  # Git commit messages
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.13.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  # Local hooks
+  - repo: local
+    hooks:
+      - id: no-commit-to-main
+        name: Prevent commits to main branch
+        entry: bash -c 'if [[ $(git symbolic-ref HEAD) == "refs/heads/main" ]]; then echo "Direct commits to main branch are not allowed"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+
+      - id: pytest-check
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [push]

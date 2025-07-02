@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # Development container with all tools installed
+  dev-env:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: jimbot-dev:latest
+    volumes:
+      - .:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.gitconfig:/etc/gitconfig:ro
+      - ~/.ssh:/root/.ssh:ro
+    environment:
+      - DISPLAY=${DISPLAY}
+      - PYTHONPATH=/workspace
+    working_dir: /workspace
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+    networks:
+      - jimbot
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Jupyter notebook for interactive development
+  jupyter:
+    image: jupyter/tensorflow-notebook:latest
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/jovyan/work
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    networks:
+      - jimbot
+
+  # Code quality dashboard
+  sonarqube:
+    image: sonarqube:community
+    ports:
+      - "9001:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - jimbot
+
+  # Development database for testing
+  postgres-test:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=jimbot_test
+      - POSTGRES_USER=jimbot
+      - POSTGRES_PASSWORD=testpass
+    ports:
+      - "5433:5432"
+    networks:
+      - jimbot
+
+  # Redis for caching and rate limiting
+  redis-dev:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    networks:
+      - jimbot
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - jimbot
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - jimbot
+
+networks:
+  jimbot:
+    driver: bridge
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  grafana_data:
