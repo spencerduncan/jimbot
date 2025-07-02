@@ -1,0 +1,32 @@
+{
+  "development": {
+    "response_mode": "always_grant",
+    "gpu_capacity": 24000,
+    "claude_capacity": 100,
+    "memory_capacity": 32768,
+    "cpu_capacity": 16
+  },
+  "testing_contention": {
+    "response_mode": "simulate_contention",
+    "deny_probability": 0.1,
+    "queue_probability": 0.2,
+    "gpu_capacity": 24000,
+    "claude_capacity": 100,
+    "memory_capacity": 32768,
+    "cpu_capacity": 16
+  },
+  "testing_limits": {
+    "response_mode": "respect_limits",
+    "gpu_capacity": 8000,
+    "claude_capacity": 50,
+    "memory_capacity": 16384,
+    "cpu_capacity": 8
+  },
+  "production_simulation": {
+    "response_mode": "respect_limits",
+    "gpu_capacity": 24000,
+    "claude_capacity": 100,
+    "memory_capacity": 32768,
+    "cpu_capacity": 16
+  }
+}

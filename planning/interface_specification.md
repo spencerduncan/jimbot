@@ -14,18 +14,43 @@ This document defines the comprehensive interface strategy for all JimBot compon
 
 ### Component Registry
 
-| Component | Language | Primary Interface | Secondary Interface |
-|-----------|----------|------------------|-------------------|
-| MCP Server | TypeScript | gRPC Event Producer | REST Health/Config |
-| Memgraph | Python/Cypher | GraphQL Query | gRPC Mutations |
-| Ray RLlib | Python | gRPC Model Serving | REST Job Management |
-| Claude/LangChain | Python | Async Queue | REST Cache Management |
-| Analytics | TypeScript | Event Consumer | SQL Query Interface |
-| Headless Balatro | Lua/C++ | gRPC Event Producer | REST Debug Interface |
-| Event Bus | Go/Rust | gRPC Streaming | REST Admin API |
-| Resource Coordinator | Python | gRPC Service | Prometheus Metrics |
+| Component | Language | Primary Interface | Secondary Interface | Status |
+|-----------|----------|------------------|-------------------|---------|
+| BalatroMCP | **Lua** | REST Event Producer | File I/O for Actions | **Implemented** |
+| Event Bus | **Rust** | REST API (for BalatroMCP) | gRPC Streaming | Planned |
+| Memgraph | Python/Cypher | GraphQL Query | gRPC Mutations | Planned |
+| Ray RLlib | Python | gRPC Model Serving | REST Job Management | Planned |
+| Claude/LangChain | Python | Async Queue | REST Cache Management | Planned |
+| Analytics | **Rust** | Event Consumer | SQL Query Interface | Planned |
+| Resource Coordinator | **Rust** | gRPC Service | Prometheus Metrics | Planned |
+| MAGE Modules | **Rust** | Cypher Procedures | N/A | Planned |
 
 ## Canonical Event Schema
+
+### Current BalatroMCP JSON Format
+The existing BalatroMCP implementation sends events in JSON format:
+```json
+{
+  "type": "GAME_STATE",
+  "source": "BalatroMCP",
+  "event_id": "uuid-here",
+  "timestamp": 1234567890000,
+  "version": 1,
+  "payload": {
+    "game_id": "seed_12345",
+    "ante": 3,
+    "round": 2,
+    "chips": 300,
+    "mult": 4,
+    "money": 15,
+    "jokers": [...],
+    "hand": [...],
+    "shop_items": {...}
+  }
+}
+```
+
+The Event Bus will accept this JSON format and internally convert to Protocol Buffers.
 
 ### Base Event Structure (Protocol Buffers v3)
 

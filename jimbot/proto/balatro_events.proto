@@ -1,0 +1,267 @@
+syntax = "proto3";
+
+package jimbot;
+
+// Base event wrapper for all events
+message Event {
+  string event_id = 1;        // UUID
+  int64 timestamp = 2;        // Unix timestamp in milliseconds
+  EventType type = 3;         // Event type enum
+  string source = 4;          // Source component (e.g., "BalatroMCP")
+  int32 version = 5;          // Event schema version
+  oneof payload {
+    GameStateEvent game_state = 10;
+    HeartbeatEvent heartbeat = 11;
+    MoneyChangedEvent money_changed = 12;
+    ScoreChangedEvent score_changed = 13;
+    HandPlayedEvent hand_played = 14;
+    CardsDiscardedEvent cards_discarded = 15;
+    JokersChangedEvent jokers_changed = 16;
+    RoundChangedEvent round_changed = 17;
+    PhaseChangedEvent phase_changed = 18;
+    RoundCompleteEvent round_complete = 19;
+    ConnectionTestEvent connection_test = 20;
+  }
+}
+
+// Event type enumeration
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_GAME_STATE = 1;
+  EVENT_TYPE_HEARTBEAT = 2;
+  EVENT_TYPE_MONEY_CHANGED = 3;
+  EVENT_TYPE_SCORE_CHANGED = 4;
+  EVENT_TYPE_HAND_PLAYED = 5;
+  EVENT_TYPE_CARDS_DISCARDED = 6;
+  EVENT_TYPE_JOKERS_CHANGED = 7;
+  EVENT_TYPE_ROUND_CHANGED = 8;
+  EVENT_TYPE_PHASE_CHANGED = 9;
+  EVENT_TYPE_ROUND_COMPLETE = 10;
+  EVENT_TYPE_CONNECTION_TEST = 11;
+}
+
+// Game phase enumeration
+enum GamePhase {
+  PHASE_UNSPECIFIED = 0;
+  PHASE_MENU = 1;
+  PHASE_BLIND_SELECT = 2;
+  PHASE_SHOP = 3;
+  PHASE_PLAYING = 4;
+  PHASE_GAME_OVER = 5;
+  PHASE_ROUND_EVAL = 6;
+  PHASE_TAROT_PACK = 7;
+  PHASE_PLANET_PACK = 8;
+  PHASE_SPECTRAL_PACK = 9;
+  PHASE_STANDARD_PACK = 10;
+  PHASE_BUFFOON_PACK = 11;
+  PHASE_BOOSTER_PACK = 12;
+}
+
+// Card suits
+enum Suit {
+  SUIT_UNSPECIFIED = 0;
+  SUIT_SPADES = 1;
+  SUIT_HEARTS = 2;
+  SUIT_CLUBS = 3;
+  SUIT_DIAMONDS = 4;
+}
+
+// Card ranks
+enum Rank {
+  RANK_UNSPECIFIED = 0;
+  RANK_ACE = 1;
+  RANK_TWO = 2;
+  RANK_THREE = 3;
+  RANK_FOUR = 4;
+  RANK_FIVE = 5;
+  RANK_SIX = 6;
+  RANK_SEVEN = 7;
+  RANK_EIGHT = 8;
+  RANK_NINE = 9;
+  RANK_TEN = 10;
+  RANK_JACK = 11;
+  RANK_QUEEN = 12;
+  RANK_KING = 13;
+}
+
+// Playing card
+message Card {
+  string id = 1;
+  Rank rank = 2;
+  Suit suit = 3;
+  string enhancement = 4;  // e.g., "Gold", "Steel", "Glass"
+  string edition = 5;      // e.g., "Foil", "Holographic", "Polychrome"
+  string seal = 6;         // e.g., "Gold", "Red", "Blue", "Purple"
+  int32 position = 7;      // 0-based position in hand
+}
+
+// Joker card
+message Joker {
+  string id = 1;
+  string name = 2;
+  int32 position = 3;      // 0-based position
+  JokerProperties properties = 4;
+}
+
+message JokerProperties {
+  int32 mult = 1;
+  int32 chips = 2;
+  int32 cost = 3;
+  int32 sell_value = 4;
+  string edition = 5;
+}
+
+// Consumable (Tarot, Planet, Spectral)
+message Consumable {
+  string id = 1;
+  string name = 2;
+  string card_type = 3;    // "Tarot", "Planet", "Spectral"
+  int32 position = 4;
+  ConsumableProperties properties = 5;
+}
+
+message ConsumableProperties {
+  int32 cost = 1;
+  string edition = 2;
+}
+
+// Blind information
+message Blind {
+  string name = 1;
+  int32 chips = 2;
+  string chip_text = 3;
+  float mult = 4;
+  bool defeated = 5;
+  bool boss = 6;
+}
+
+// Deck information
+message Deck {
+  int32 remaining_count = 1;
+  repeated Card cards_remaining = 2;  // Preview of top cards
+  repeated Card full_deck = 3;        // Complete deck composition
+}
+
+// Shop item
+message ShopItem {
+  string name = 1;
+  int32 cost = 2;
+  string rarity = 3;
+}
+
+// Complete game state
+message GameStateEvent {
+  bool in_game = 1;
+  string game_id = 2;
+  int32 ante = 3;
+  int32 round = 4;
+  int32 hand_number = 5;
+  
+  // Resources
+  int32 chips = 6;
+  int32 mult = 7;
+  int32 money = 8;
+  int32 hand_size = 9;
+  int32 hands_remaining = 10;
+  int32 discards_remaining = 11;
+  
+  // Collections
+  repeated Joker jokers = 12;
+  repeated Card hand = 13;
+  Deck deck = 14;
+  repeated Consumable consumables = 15;
+  map<string, ShopItem> shop_items = 16;
+  
+  // State
+  GamePhase game_state = 17;
+  string ui_state = 18;
+  Blind blind = 19;
+  
+  // Metadata
+  int32 frame_count = 20;
+  map<string, ScoreHistory> score_history = 21;
+  
+  // Change tracking
+  repeated Event changes = 22;
+  bool initial = 23;
+  bool debug = 24;
+}
+
+// Score history entry
+message ScoreHistory {
+  repeated int32 scores = 1;
+}
+
+// Heartbeat event
+message HeartbeatEvent {
+  string version = 1;
+  int64 uptime = 2;
+  bool headless = 3;
+  string game_state = 4;
+}
+
+// Money changed event
+message MoneyChangedEvent {
+  int32 old_value = 1;
+  int32 new_value = 2;
+  int32 difference = 3;
+}
+
+// Score changed event
+message ScoreChangedEvent {
+  int32 old_chips = 1;
+  int32 new_chips = 2;
+  int32 old_mult = 3;
+  int32 new_mult = 4;
+}
+
+// Hand played event
+message HandPlayedEvent {
+  int32 hands_remaining = 1;
+  int32 hand_number = 2;
+}
+
+// Cards discarded event
+message CardsDiscardedEvent {
+  int32 discards_remaining = 1;
+}
+
+// Jokers changed event
+message JokersChangedEvent {
+  int32 old_count = 1;
+  int32 new_count = 2;
+  repeated Joker jokers = 3;
+}
+
+// Round changed event
+message RoundChangedEvent {
+  int32 ante = 1;
+  int32 round = 2;
+}
+
+// Phase changed event
+message PhaseChangedEvent {
+  string old_phase = 1;
+  string new_phase = 2;
+}
+
+// Round complete event
+message RoundCompleteEvent {
+  int32 ante = 1;
+  int32 round = 2;
+  int32 score = 3;
+  int32 money = 4;
+}
+
+// Connection test event
+message ConnectionTestEvent {
+  string message = 1;
+}
+
+// Batch event wrapper for sending multiple events
+message EventBatch {
+  string batch_id = 1;
+  repeated Event events = 2;
+  string source = 3;
+  int64 timestamp = 4;
+}

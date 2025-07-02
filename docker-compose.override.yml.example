@@ -1,0 +1,79 @@
+# Example Docker Compose Override for Local Development
+# Copy this file to docker-compose.override.yml to add local services
+# This file is automatically loaded by docker-compose alongside docker-compose.minimal.yml
+
+version: '3.8'
+
+services:
+  # Example: Add your local Event Bus service once developed
+  # event-bus:
+  #   build:
+  #     context: ./event-bus
+  #     dockerfile: Dockerfile.dev
+  #   container_name: jimbot-event-bus-dev
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - DEBUG=true
+  #     - REDIS_URL=redis://redis:6379
+  #   volumes:
+  #     - ./event-bus:/app
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - jimbot-network
+
+  # Example: Add your local Resource Coordinator service
+  # resource-coordinator:
+  #   build:
+  #     context: ./resource-coordinator
+  #     dockerfile: Dockerfile.dev
+  #   container_name: jimbot-resource-coordinator-dev
+  #   ports:
+  #     - "8082:8082"
+  #   environment:
+  #     - DEBUG=true
+  #   volumes:
+  #     - ./resource-coordinator:/app
+  #   networks:
+  #     - jimbot-network
+
+  # Example: Add development tools
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: jimbot-pgadmin
+  #   ports:
+  #     - "5050:80"
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=admin@jimbot.local
+  #     - PGADMIN_DEFAULT_PASSWORD=admin
+  #   networks:
+  #     - jimbot-network
+
+  # Example: Override existing service configurations for development
+  # memgraph:
+  #   environment:
+  #     - MEMGRAPH_LOG_LEVEL=DEBUG
+  #   volumes:
+  #     - ./memgraph/queries:/usr/lib/memgraph/queries
+
+  # Example: Add monitoring stack
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: jimbot-prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   networks:
+  #     - jimbot-network
+
+  # grafana:
+  #   image: grafana/grafana
+  #   container_name: jimbot-grafana
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   networks:
+  #     - jimbot-network

@@ -1,0 +1,12 @@
+{
+  "name": "BalatroMCP",
+  "id": "balatro_mcp",
+  "author": ["BalatroMCP Team"],
+  "prefix": "bmcp",
+  "description": "MCP (Model Context Protocol) integration for AI agent interaction with Balatro",
+  "version": "1.0.0",
+  "min_steamodded_version": "1.0.0",
+  "dependencies": [],
+  "conflicts": [],
+  "main_file": "main.lua"
+}

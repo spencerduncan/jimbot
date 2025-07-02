@@ -1,0 +1,157 @@
+version: '3.8'
+
+services:
+  # Knowledge Graph Database
+  memgraph:
+    image: memgraph/memgraph-platform:latest
+    container_name: jimbot-memgraph
+    ports:
+      - "${MEMGRAPH_PORT:-7687}:7687"
+      - "${MEMGRAPH_LAB_PORT:-3000}:3000"
+    volumes:
+      - memgraph_data:/var/lib/memgraph
+      - memgraph_logs:/var/log/memgraph
+    environment:
+      - MEMGRAPH_TELEMETRY_ENABLED=false
+    deploy:
+      resources:
+        limits:
+          memory: 10G  # 12GB allocation with 2GB safety margin
+        reservations:
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "mg_client", "-h", "localhost", "-p", "7687", "--use-ssl=false", "-q", "MATCH (n) RETURN n LIMIT 1;"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - jimbot-network
+
+  # Time-series Database for Metrics
+  questdb:
+    image: questdb/questdb:latest
+    container_name: jimbot-questdb
+    ports:
+      - "${QUESTDB_HTTP_PORT:-9000}:9000"
+      - "${QUESTDB_PG_PORT:-8812}:8812"
+      - "${QUESTDB_ILP_PORT:-9009}:9009"
+    volumes:
+      - questdb_data:/var/lib/questdb
+    environment:
+      - QDB_TELEMETRY_ENABLED=false
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - jimbot-network
+
+  # Event Store for Game Histories
+  eventstore:
+    image: eventstore/eventstore:latest
+    container_name: jimbot-eventstore
+    ports:
+      - "${EVENTSTORE_TCP_PORT:-1113}:1113"
+      - "${EVENTSTORE_HTTP_PORT:-2113}:2113"
+    volumes:
+      - eventstore_data:/var/lib/eventstore
+      - eventstore_logs:/var/log/eventstore
+    environment:
+      - EVENTSTORE_CLUSTER_SIZE=1
+      - EVENTSTORE_RUN_PROJECTIONS=All
+      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+      - EVENTSTORE_INSECURE=true  # For development only
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - jimbot-network
+
+  # Shared Cache for Claude/Analytics
+  redis:
+    image: redis:7-alpine
+    container_name: jimbot-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 2g --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jimbot-network
+
+  # Temporary Event Receiver (until Event Bus is ready)
+  test-event-receiver:
+    build:
+      context: ./test-event-receiver
+      dockerfile: Dockerfile
+    container_name: jimbot-test-receiver
+    ports:
+      - "${TEST_RECEIVER_PORT:-8080}:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jimbot-network
+
+networks:
+  jimbot-network:
+    driver: bridge
+    name: jimbot-network
+
+volumes:
+  memgraph_data:
+    driver: local
+  memgraph_logs:
+    driver: local
+  questdb_data:
+    driver: local
+  eventstore_data:
+    driver: local
+  eventstore_logs:
+    driver: local
+  redis_data:
+    driver: local

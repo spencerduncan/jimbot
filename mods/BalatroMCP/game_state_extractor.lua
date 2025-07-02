@@ -1,15 +1,31 @@
 -- BalatroMCP: Game State Extractor Module
 -- Extracts current game state from Balatro's global objects
 
+local Utils = require("mods.BalatroMCP.utils")
 local GameStateExtractor = {}
 
 -- Extract current game state
 function GameStateExtractor:get_current_state()
+    -- Debug: Check if Utils is loaded
+    if not Utils then
+        print("BalatroMCP ERROR: Utils module not loaded!")
+        return {
+            in_game = false,
+            timestamp = os.time(),
+            phase = "ERROR_NO_UTILS"
+        }
+    end
+    
     if not G or not G.GAME then
-        return nil
+        return {
+            in_game = false,
+            timestamp = os.time(),
+            phase = "MENU"
+        }
     end
     
     local state = {
+        in_game = true,
         game_id = G.GAME.pseudorandom_seed or "unknown",
         ante = G.GAME.round_resets and G.GAME.round_resets.ante or 0,
         round = G.GAME.round or 0,
@@ -30,10 +46,12 @@ function GameStateExtractor:get_current_state()
         jokers = self:extract_jokers(),
         hand = self:extract_hand(),
         deck = self:extract_deck(),
+        consumables = self:extract_consumables(),
         shop_items = self:extract_shop(),
         
         -- Current state
         game_state = self:get_game_phase(),
+        ui_state = G.STATE and tostring(G.STATE) or "unknown",
         blind = self:extract_blind_info(),
         
         -- Additional metadata
@@ -51,72 +69,126 @@ function GameStateExtractor:get_current_state()
     return state
 end
 
--- Extract joker information
+-- Extract joker information with CIRCULAR REFERENCE SAFE access
 function GameStateExtractor:extract_jokers()
     local jokers = {}
     
-    if G.jokers and G.jokers.cards then
-        for i, joker in ipairs(G.jokers.cards) do
-            table.insert(jokers, {
-                name = joker.ability and joker.ability.name or "unknown",
-                rarity = joker.config and joker.config.center and joker.config.center.rarity or "common",
-                position = i,
+    if not Utils.safe_check_path(G, {"jokers", "cards"}) then
+        return jokers
+    end
+    
+    for i, joker in ipairs(G.jokers.cards) do
+        if joker then
+            local safe_joker = {
+                id = Utils.safe_primitive_value(joker, "unique_val", "joker_" .. i),
+                name = Utils.safe_primitive_nested_value(joker, {"ability", "name"}, "Unknown"),
+                position = i - 1, -- 0-based indexing
                 properties = {
-                    cost = joker.cost or 0,
-                    sell_value = joker.sell_cost or 0,
-                    edition = joker.edition and joker.edition.type or "base",
-                    level = joker.ability and joker.ability.level or 1,
-                    extra = joker.ability and joker.ability.extra or {}
+                    mult = Utils.safe_primitive_nested_value(joker, {"ability", "mult"}, 0),
+                    chips = Utils.safe_primitive_nested_value(joker, {"ability", "t_chips"}, 0),
+                    cost = Utils.safe_primitive_value(joker, "cost", 0),
+                    sell_value = Utils.safe_primitive_value(joker, "sell_cost", 0),
+                    edition = Utils.get_card_edition_safe(joker),
+                    -- Avoid extracting complex 'extra' object to prevent circular references
                 }
-            })
+            }
+            table.insert(jokers, safe_joker)
         end
     end
     
     return jokers
 end
 
--- Extract hand cards
+-- Extract hand cards with CIRCULAR REFERENCE SAFE access
 function GameStateExtractor:extract_hand()
     local hand = {}
     
-    if G.hand and G.hand.cards then
-        for _, card in ipairs(G.hand.cards) do
-            table.insert(hand, self:extract_card_info(card))
+    -- Debug logging
+    if not G then
+        print("BalatroMCP: G is nil in extract_hand")
+        return hand
+    end
+    
+    if not G.hand then
+        print("BalatroMCP: G.hand is nil")
+        return hand
+    end
+    
+    if not G.hand.cards then
+        print("BalatroMCP: G.hand.cards is nil")
+        return hand
+    end
+    
+    print("BalatroMCP: Extracting hand with " .. #G.hand.cards .. " cards")
+    
+    if not Utils.safe_check_path(G, {"hand", "cards"}) then
+        print("BalatroMCP: safe_check_path failed for hand.cards")
+        return hand
+    end
+    
+    for i, card in ipairs(G.hand.cards) do
+        if card then
+            local safe_card = {
+                id = Utils.safe_primitive_value(card, "unique_val", "card_" .. i),
+                rank = Utils.safe_primitive_nested_value(card, {"base", "value"}, "A"),
+                suit = Utils.safe_primitive_nested_value(card, {"base", "suit"}, "Spades"),
+                enhancement = Utils.get_card_enhancement_safe(card),
+                edition = Utils.get_card_edition_safe(card),
+                seal = Utils.get_card_seal_safe(card),
+                position = i - 1 -- 0-based indexing
+            }
+            table.insert(hand, safe_card)
         end
     end
     
+    print("BalatroMCP: Extracted " .. #hand .. " cards from hand")
     return hand
 end
 
 -- Extract deck information
 function GameStateExtractor:extract_deck()
-    local deck = {}
+    local deck_info = {
+        remaining_count = 0,
+        cards_remaining = {},
+        full_deck = {}
+    }
     
-    if G.deck and G.deck.cards then
-        -- Only extract top few cards to avoid sending entire deck
-        local max_cards = math.min(10, #G.deck.cards)
-        for i = 1, max_cards do
+    -- Get remaining cards in draw pile
+    if Utils.safe_check_path(G, {"deck", "cards"}) then
+        deck_info.remaining_count = #G.deck.cards
+        -- Only show top few cards to avoid large payloads
+        local max_preview = math.min(5, #G.deck.cards)
+        for i = 1, max_preview do
             local card = G.deck.cards[i]
             if card then
-                table.insert(deck, self:extract_card_info(card))
+                table.insert(deck_info.cards_remaining, self:extract_card_info(card))
             end
         end
     end
     
-    return deck
+    -- Get full deck composition from G.playing_cards
+    if Utils.safe_check_path(G, {"playing_cards"}) then
+        for i, card in ipairs(G.playing_cards) do
+            if card then
+                table.insert(deck_info.full_deck, self:extract_card_info(card))
+            end
+        end
+    end
+    
+    return deck_info
 end
 
--- Extract individual card information
+-- Extract individual card information with CIRCULAR REFERENCE SAFE access
 function GameStateExtractor:extract_card_info(card)
     if not card then return nil end
     
     return {
-        suit = card.base and card.base.suit or "unknown",
-        rank = card.base and card.base.value or "unknown",
-        enhancement = card.ability and card.ability.name or "none",
-        seal = card.seal or "none",
-        edition = card.edition and card.edition.type or "base",
-        id = card.unique_val or nil
+        id = Utils.safe_primitive_value(card, "unique_val", nil),
+        rank = Utils.safe_primitive_nested_value(card, {"base", "value"}, "unknown"),
+        suit = Utils.safe_primitive_nested_value(card, {"base", "suit"}, "unknown"),
+        enhancement = Utils.get_card_enhancement_safe(card),
+        edition = Utils.get_card_edition_safe(card),
+        seal = Utils.get_card_seal_safe(card)
     }
 end
 
@@ -157,6 +229,11 @@ end
 
 -- Get current game phase
 function GameStateExtractor:get_game_phase()
+    if not G or not G.STATE then
+        return "UNKNOWN"
+    end
+    
+    -- Check all possible game states
     if G.STATE == G.STATES.BLIND_SELECT then
         return "BLIND_SELECT"
     elseif G.STATE == G.STATES.SHOP then
@@ -167,8 +244,23 @@ function GameStateExtractor:get_game_phase()
         return "GAME_OVER"
     elseif G.STATE == G.STATES.MENU then
         return "MENU"
+    elseif G.STATE == G.STATES.ROUND_EVAL then
+        return "ROUND_EVAL"
+    elseif G.STATE == G.STATES.TAROT_PACK then
+        return "TAROT_PACK"
+    elseif G.STATE == G.STATES.PLANET_PACK then
+        return "PLANET_PACK"
+    elseif G.STATE == G.STATES.SPECTRAL_PACK then
+        return "SPECTRAL_PACK"
+    elseif G.STATE == G.STATES.STANDARD_PACK then
+        return "STANDARD_PACK"
+    elseif G.STATE == G.STATES.BUFFOON_PACK then
+        return "BUFFOON_PACK"
+    elseif G.STATE == G.STATES.SMODS_BOOSTER_OPENED then
+        return "BOOSTER_PACK"
     else
-        return "UNKNOWN"
+        -- Log the numeric state for debugging
+        return "UNKNOWN_STATE_" .. tostring(G.STATE)
     end
 end
 
@@ -228,13 +320,42 @@ function GameStateExtractor:get_available_actions()
     return actions
 end
 
+-- Extract consumables (tarot, planet, spectral cards) with CIRCULAR REFERENCE SAFE access
+function GameStateExtractor:extract_consumables()
+    local consumables = {}
+    
+    if not Utils.safe_check_path(G, {"consumeables", "cards"}) then
+        return consumables
+    end
+    
+    for i, consumable in ipairs(G.consumeables.cards) do
+        if consumable then
+            local safe_consumable = {
+                id = Utils.safe_primitive_value(consumable, "unique_val", "consumable_" .. i),
+                name = Utils.safe_primitive_nested_value(consumable, {"ability", "name"}, "Unknown"),
+                card_type = Utils.safe_primitive_nested_value(consumable, {"ability", "set"}, "Tarot"),
+                position = i - 1, -- 0-based indexing
+                properties = {
+                    cost = Utils.safe_primitive_value(consumable, "cost", 0),
+                    edition = Utils.get_card_edition_safe(consumable)
+                }
+            }
+            table.insert(consumables, safe_consumable)
+        end
+    end
+    
+    return consumables
+end
+
 -- Get highlighted cards
 function GameStateExtractor:get_highlighted_cards()
     local highlighted = {}
     
     if G.hand and G.hand.highlighted then
-        for _, card in ipairs(G.hand.highlighted) do
-            table.insert(highlighted, self:extract_card_info(card))
+        for i, card in ipairs(G.hand.highlighted) do
+            if card then
+                table.insert(highlighted, self:extract_card_info(card))
+            end
         end
     end
     
