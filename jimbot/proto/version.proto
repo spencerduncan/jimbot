@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package jimbot.version;
+
+import "google/protobuf/timestamp.proto";
+
+// Version information for schema management
+message SchemaVersion {
+  int32 major = 1;           // Breaking changes
+  int32 minor = 2;           // New features (backward compatible)
+  int32 patch = 3;           // Bug fixes
+  string build = 4;          // Build identifier
+  google.protobuf.Timestamp released_at = 5;
+}
+
+// Version compatibility information
+message VersionCompatibility {
+  SchemaVersion current_version = 1;
+  repeated SchemaVersion compatible_versions = 2;
+  repeated VersionMigration migrations = 3;
+}
+
+// Migration definition between versions
+message VersionMigration {
+  SchemaVersion from_version = 1;
+  SchemaVersion to_version = 2;
+  repeated MigrationStep steps = 3;
+  bool is_reversible = 4;
+}
+
+message MigrationStep {
+  string step_id = 1;
+  string description = 2;
+  oneof operation {
+    FieldRename field_rename = 3;
+    FieldTypeChange field_type_change = 4;
+    FieldAddition field_addition = 5;
+    FieldRemoval field_removal = 6;
+    EnumValueAddition enum_addition = 7;
+    MessageSplit message_split = 8;
+  }
+}
+
+// Migration operations
+message FieldRename {
+  string message_type = 1;
+  string old_name = 2;
+  string new_name = 3;
+}
+
+message FieldTypeChange {
+  string message_type = 1;
+  string field_name = 2;
+  string old_type = 3;
+  string new_type = 4;
+  string conversion_function = 5;
+}
+
+message FieldAddition {
+  string message_type = 1;
+  string field_name = 2;
+  string field_type = 3;
+  string default_value = 4;
+}
+
+message FieldRemoval {
+  string message_type = 1;
+  string field_name = 2;
+  bool move_to_metadata = 3;  // Preserve in metadata map
+}
+
+message EnumValueAddition {
+  string enum_type = 1;
+  string value_name = 2;
+  int32 value_number = 3;
+}
+
+message MessageSplit {
+  string original_message = 1;
+  repeated string new_messages = 2;
+  map<string, string> field_mapping = 3;
+}
+
+// Version negotiation for client/server compatibility
+message VersionHandshake {
+  string client_id = 1;
+  SchemaVersion client_version = 2;
+  repeated SchemaVersion supported_versions = 3;
+}
+
+message VersionHandshakeResponse {
+  SchemaVersion negotiated_version = 1;
+  bool requires_migration = 2;
+  repeated VersionMigration required_migrations = 3;
+  map<string, string> feature_flags = 4;
+}
