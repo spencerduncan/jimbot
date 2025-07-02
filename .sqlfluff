@@ -1,0 +1,85 @@
+# SQLFluff configuration for QuestDB
+[sqlfluff]
+dialect = postgres
+templater = raw
+sql_file_exts = .sql,.sql.j2,.dml,.ddl
+max_line_length = 100
+indent_unit = space
+exclude_rules = L031
+
+[sqlfluff:indentation]
+tab_space_size = 4
+indent_unit = space
+
+[sqlfluff:layout:type:comma]
+spacing_before = touch
+line_position = trailing
+
+[sqlfluff:layout:type:binary_operator]
+spacing_within = touch
+line_position = leading
+
+[sqlfluff:layout:type:statement_terminator]
+spacing_before = touch
+line_position = trailing
+
+[sqlfluff:layout:type:keyword]
+spacing_after = touch
+spacing_before = touch
+
+[sqlfluff:rules]
+# General rules
+max_line_length = 100
+tab_space_size = 4
+indent_unit = space
+
+[sqlfluff:rules:L003]
+# Indentation
+hanging_indents = True
+
+[sqlfluff:rules:L010]
+# Keywords should be uppercase
+capitalisation_policy = upper
+
+[sqlfluff:rules:L014]
+# Unquoted identifiers
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:L016]
+# Line length
+ignore_comment_lines = True
+ignore_comment_clauses = True
+
+[sqlfluff:rules:L019]
+# Leading comma alignment
+comma_style = trailing
+
+[sqlfluff:rules:L028]
+# References should be qualified
+single_table_references = qualified
+
+[sqlfluff:rules:L030]
+# Function names
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:L038]
+# Trailing commas in SELECT
+select_clause_trailing_comma = forbid
+
+[sqlfluff:rules:L040]
+# NULL & Boolean Literals
+capitalisation_policy = upper
+
+[sqlfluff:rules:L047]
+# Consistent syntax for COUNT
+prefer_count_1 = False
+prefer_count_0 = False
+
+[sqlfluff:rules:L057]
+# Special characters in identifiers
+unquoted_identifiers_policy = all
+
+[sqlfluff:rules:L063]
+# Quoted literals
+preferred_quoted_literal_style = single_quotes
+force_enable = True
