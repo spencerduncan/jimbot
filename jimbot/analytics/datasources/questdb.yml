@@ -1,0 +1,26 @@
+apiVersion: 1
+
+datasources:
+  - name: QuestDB
+    type: postgres
+    access: proxy
+    url: questdb:8812
+    database: qdb
+    user: admin
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1200
+      timescaledb: false
+    editable: true
+    isDefault: true
+
+  - name: QuestDB-InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://questdb:9009
+    jsonData:
+      version: Flux
+      organization: jimbot
+      defaultBucket: metrics
+      tlsSkipVerify: true
+    editable: true

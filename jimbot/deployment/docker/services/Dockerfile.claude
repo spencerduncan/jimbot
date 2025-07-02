@@ -1,0 +1,23 @@
+# Claude API gateway with rate limiting and caching
+FROM python-base
+
+# Install Claude gateway dependencies
+COPY requirements/llm.txt /tmp/requirements-llm.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-llm.txt
+
+# Copy LLM integration modules
+COPY --chown=jimbot:jimbot jimbot/llm /app/jimbot/llm
+COPY --chown=jimbot:jimbot jimbot/__init__.py /app/jimbot/
+
+# Create cache directory
+RUN mkdir -p /app/cache && chown -R jimbot:jimbot /app/cache
+
+# Expose API port
+EXPOSE 8766
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8766/health || exit 1
+
+# Start Claude gateway service
+CMD ["python", "-m", "jimbot.llm.gateway"]

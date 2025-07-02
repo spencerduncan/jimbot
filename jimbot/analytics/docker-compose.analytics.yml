@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  questdb:
+    image: questdb/questdb:latest
+    container_name: jimbot-questdb
+    ports:
+      - "9000:9000"  # Web Console
+      - "8812:8812"  # Postgres wire protocol
+      - "9009:9009"  # InfluxDB line protocol
+    volumes:
+      - questdb_data:/var/lib/questdb
+    environment:
+      - QDB_CAIRO_COMMIT_LAG=1000
+      - QDB_CAIRO_MAX_UNCOMMITTED_ROWS=100000
+      - QDB_HTTP_ENABLED=true
+      - QDB_PG_ENABLED=true
+      - QDB_LINE_TCP_ENABLED=true
+    mem_limit: 3g
+    mem_reservation: 2g
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jimbot-network
+
+  eventstore:
+    image: eventstore/eventstore:latest
+    container_name: jimbot-eventstore
+    ports:
+      - "2113:2113"  # HTTP API & UI
+      - "1113:1113"  # TCP Clients
+    volumes:
+      - eventstore_data:/var/lib/eventstore
+      - eventstore_logs:/var/log/eventstore
+    environment:
+      - EVENTSTORE_CLUSTER_SIZE=1
+      - EVENTSTORE_RUN_PROJECTIONS=All
+      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+      - EVENTSTORE_EXT_TCP_PORT=1113
+      - EVENTSTORE_HTTP_PORT=2113
+      - EVENTSTORE_INSECURE=true  # For development only
+      - EVENTSTORE_ENABLE_EXTERNAL_TCP=true
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+      - EVENTSTORE_MEM_DB=false
+      - EVENTSTORE_DB=/var/lib/eventstore
+      - EVENTSTORE_LOG=/var/log/eventstore
+    mem_limit: 2g
+    mem_reservation: 1g
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jimbot-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: jimbot-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./dashboards:/etc/grafana/provisioning/dashboards
+      - ./datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # Change in production
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=questdb-questdb-datasource
+    mem_limit: 1g
+    mem_reservation: 512m
+    restart: unless-stopped
+    depends_on:
+      - questdb
+    networks:
+      - jimbot-network
+
+volumes:
+  questdb_data:
+    driver: local
+  eventstore_data:
+    driver: local
+  eventstore_logs:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  jimbot-network:
+    external: true

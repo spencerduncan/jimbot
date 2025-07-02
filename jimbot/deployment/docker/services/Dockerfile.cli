@@ -1,0 +1,24 @@
+# CLI utility container for management tasks
+FROM python-base
+
+# Install all dependencies for CLI access to all services
+COPY requirements/base.txt requirements/mcp.txt requirements/training.txt requirements/llm.txt requirements/analytics.txt /tmp/
+RUN cat /tmp/*.txt | sort -u > /tmp/all-requirements.txt && \
+    pip install --no-cache-dir -r /tmp/all-requirements.txt
+
+# Copy entire jimbot package
+COPY --chown=jimbot:jimbot jimbot /app/jimbot
+
+# Copy CLI scripts
+COPY --chown=jimbot:jimbot deployment/scripts /app/scripts
+RUN chmod +x /app/scripts/*.sh
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/backups /app/exports && \
+    chown -R jimbot:jimbot /app/logs /app/backups /app/exports
+
+# Set up bash completion
+RUN echo 'source /app/scripts/completion.bash' >> /home/jimbot/.bashrc
+
+# Default to bash for interactive use
+CMD ["/bin/bash"]

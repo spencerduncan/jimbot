@@ -1,0 +1,311 @@
+version: '3.9'
+
+services:
+  # Infrastructure Services
+  memgraph:
+    image: memgraph/memgraph-platform:latest
+    container_name: jimbot-memgraph
+    restart: unless-stopped
+    ports:
+      - "7687:7687"
+      - "3000:3000"
+    volumes:
+      - memgraph_data:/var/lib/memgraph
+      - ./docker/scripts/memgraph:/docker-entrypoint-initdb.d
+    environment:
+      - MEMGRAPH_MEMORY_LIMIT=${MEMGRAPH_MEMORY:-12g}
+      - MEMGRAPH_LOG_LEVEL=${LOG_LEVEL:-INFO}
+    deploy:
+      resources:
+        limits:
+          memory: ${MEMGRAPH_MEMORY:-12g}
+          cpus: '2'
+    healthcheck:
+      test: ["CMD", "echo", "RETURN 1;", "|", "mgconsole"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  questdb:
+    image: questdb/questdb:latest
+    container_name: jimbot-questdb
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "8812:8812"
+    volumes:
+      - questdb_data:/var/lib/questdb
+    environment:
+      - QDB_MEMORY_LIMIT=${QUESTDB_MEMORY:-3g}
+      - QDB_LOG_LEVEL=${LOG_LEVEL:-INFO}
+    deploy:
+      resources:
+        limits:
+          memory: ${QUESTDB_MEMORY:-3g}
+          cpus: '1'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/exec?query=SELECT%201"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  eventstore:
+    image: eventstore/eventstore:latest
+    container_name: jimbot-eventstore
+    restart: unless-stopped
+    ports:
+      - "2113:2113"
+      - "1113:1113"
+    volumes:
+      - eventstore_data:/var/lib/eventstore
+    environment:
+      - EVENTSTORE_INSECURE=true
+      - EVENTSTORE_IN_MEM=false
+      - EVENTSTORE_LOG_LEVEL=${LOG_LEVEL:-INFO}
+    deploy:
+      resources:
+        limits:
+          memory: ${EVENTSTORE_MEMORY:-3g}
+          cpus: '1'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: jimbot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --maxmemory ${REDIS_MEMORY:-1g} --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEMORY:-1g}
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  # Application Services
+  jimbot-mcp:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/services/Dockerfile.mcp
+    container_name: jimbot-mcp
+    restart: unless-stopped
+    ports:
+      - "${MCP_PORT:-8765}:8765"
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8765
+      - MCP_BATCH_WINDOW_MS=${MCP_BATCH_WINDOW_MS:-100}
+      - REDIS_URL=redis://redis:6379
+      - QUESTDB_URL=http://questdb:9000
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+      questdb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: ${MCP_MEMORY:-1g}
+          cpus: '1'
+    healthcheck:
+      test: ["CMD", "python", "-m", "jimbot.mcp.health_check"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  jimbot-ray-head:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/services/Dockerfile.ray
+    container_name: jimbot-ray-head
+    restart: unless-stopped
+    ports:
+      - "8265:8265"  # Ray dashboard
+      - "6379:6379"  # Ray GCS
+    environment:
+      - RAY_HEAD=1
+      - RAY_MEMORY=${RAY_HEAD_MEMORY:-4g}
+      - MEMGRAPH_URL=bolt://memgraph:7687
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    command: ["ray", "start", "--head", "--dashboard-host=0.0.0.0", "--block"]
+    depends_on:
+      memgraph:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: ${RAY_HEAD_MEMORY:-4g}
+          cpus: '2'
+    healthcheck:
+      test: ["CMD", "ray", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  jimbot-ray-worker:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/services/Dockerfile.ray
+      args:
+        - CUDA_VERSION=11.8.0
+    container_name: jimbot-ray-worker
+    restart: unless-stopped
+    environment:
+      - RAY_HEAD=jimbot-ray-head:6379
+      - RAY_MEMORY=${RAY_WORKER_MEMORY:-4g}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - MEMGRAPH_URL=bolt://memgraph:7687
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    command: ["ray", "start", "--address=jimbot-ray-head:6379", "--block"]
+    runtime: nvidia
+    deploy:
+      resources:
+        limits:
+          memory: ${RAY_WORKER_MEMORY:-4g}
+          cpus: '2'
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      jimbot-ray-head:
+        condition: service_healthy
+    networks:
+      - jimbot-network
+
+  jimbot-claude-gateway:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/services/Dockerfile.claude
+    container_name: jimbot-claude-gateway
+    restart: unless-stopped
+    ports:
+      - "8766:8766"
+    environment:
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-3-opus}
+      - CLAUDE_HOURLY_LIMIT=${CLAUDE_HOURLY_LIMIT:-100}
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: ${CLAUDE_MEMORY:-512m}
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8766/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  jimbot-analytics:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/services/Dockerfile.analytics
+    container_name: jimbot-analytics
+    restart: unless-stopped
+    ports:
+      - "${METRICS_PORT:-8080}:8080"
+    environment:
+      - QUESTDB_URL=http://questdb:9000
+      - EVENTSTORE_URL=http://eventstore:2113
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      questdb:
+        condition: service_healthy
+      eventstore:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: ${ANALYTICS_MEMORY:-1g}
+          cpus: '1'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jimbot-network
+
+  # Utility Services
+  jimbot-cli:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/services/Dockerfile.cli
+    container_name: jimbot-cli
+    environment:
+      - MEMGRAPH_URL=bolt://memgraph:7687
+      - QUESTDB_URL=http://questdb:9000
+      - EVENTSTORE_URL=http://eventstore:2113
+      - REDIS_URL=redis://redis:6379
+      - RAY_ADDRESS=jimbot-ray-head:6379
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./scripts:/scripts
+      - checkpoints:/checkpoints
+      - backups:/backups
+    depends_on:
+      - memgraph
+      - questdb
+      - eventstore
+      - redis
+    networks:
+      - jimbot-network
+
+volumes:
+  memgraph_data:
+    driver: local
+  questdb_data:
+    driver: local
+  eventstore_data:
+    driver: local
+  redis_data:
+    driver: local
+  checkpoints:
+    driver: local
+  backups:
+    driver: local
+
+networks:
+  jimbot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

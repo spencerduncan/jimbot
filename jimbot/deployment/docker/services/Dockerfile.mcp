@@ -1,0 +1,22 @@
+# MCP WebSocket server and event aggregation service
+FROM python-base
+
+# Install MCP-specific dependencies
+COPY requirements/mcp.txt /tmp/requirements-mcp.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-mcp.txt
+
+# Copy MCP module
+COPY --chown=jimbot:jimbot jimbot/mcp /app/jimbot/mcp
+COPY --chown=jimbot:jimbot jimbot/__init__.py /app/jimbot/
+
+# Create directories for runtime
+RUN mkdir -p /app/logs /app/cache && chown -R jimbot:jimbot /app/logs /app/cache
+
+# Expose WebSocket port
+EXPOSE 8765
+
+# Health check script
+COPY --chown=jimbot:jimbot deployment/docker/scripts/mcp-health.py /app/health_check.py
+
+# Start MCP server
+CMD ["python", "-m", "jimbot.mcp.server"]

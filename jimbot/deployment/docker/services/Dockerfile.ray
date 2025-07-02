@@ -1,0 +1,56 @@
+# Ray/RLlib training service with optional GPU support
+ARG CUDA_VERSION=11.8.0
+FROM cuda-base as ray-gpu
+
+# Install Ray and training dependencies
+COPY requirements/training.txt /tmp/requirements-training.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-training.txt
+
+# Install PyTorch with CUDA support
+RUN pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 -f https://download.pytorch.org/whl/torch_stable.html
+
+# Copy training modules
+COPY --chown=jimbot:jimbot jimbot/training /app/jimbot/training
+COPY --chown=jimbot:jimbot jimbot/environment /app/jimbot/environment
+COPY --chown=jimbot:jimbot jimbot/__init__.py /app/jimbot/
+
+# Create directories for checkpoints and logs
+RUN mkdir -p /app/checkpoints /app/logs && chown -R jimbot:jimbot /app/checkpoints /app/logs
+
+# Ray dashboard port
+EXPOSE 8265
+
+# Set Ray environment variables
+ENV RAY_USAGE_STATS_DISABLED=1 \
+    RAY_DEDUP_LOGS=1
+
+# CPU-only version
+FROM python-base as ray-cpu
+
+# Install Ray and training dependencies
+COPY requirements/training.txt /tmp/requirements-training.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-training.txt
+
+# Install PyTorch CPU version
+RUN pip install torch==2.0.1+cpu torchvision==0.15.2+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+# Copy training modules
+COPY --chown=jimbot:jimbot jimbot/training /app/jimbot/training
+COPY --chown=jimbot:jimbot jimbot/environment /app/jimbot/environment
+COPY --chown=jimbot:jimbot jimbot/__init__.py /app/jimbot/
+
+# Create directories for checkpoints and logs
+RUN mkdir -p /app/checkpoints /app/logs && chown -R jimbot:jimbot /app/checkpoints /app/logs
+
+# Ray dashboard port
+EXPOSE 8265
+
+# Set Ray environment variables
+ENV RAY_USAGE_STATS_DISABLED=1 \
+    RAY_DEDUP_LOGS=1
+
+# Select final image based on build arg
+FROM ray-${BUILD_TARGET:-gpu} as final
+
+# Default command (overridden by docker-compose)
+CMD ["ray", "start", "--block"]

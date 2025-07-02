@@ -1,0 +1,35 @@
+# Base configuration for JimBot infrastructure
+infrastructure:
+  event_bus:
+    batch_window_ms: 100
+    max_batch_size: 1000
+    grpc_port: 50051
+    topics:
+      - game.state.*
+      - training.*
+      - strategy.*
+      - monitoring.*
+    
+  resource_coordinator:
+    gpu:
+      default_timeout_seconds: 300
+      priority_components:
+        - training
+        - inference
+        - evaluation
+    claude:
+      hourly_limit: 100
+      cache_ttl_seconds: 3600
+    redis:
+      max_connections: 20
+      connection_timeout_seconds: 5
+      
+  monitoring:
+    metrics_flush_interval_seconds: 1.0
+    health_check_interval_seconds: 30
+    profiling_enabled: false
+    
+  logging:
+    level: INFO
+    format: json
+    correlation_tracking: true

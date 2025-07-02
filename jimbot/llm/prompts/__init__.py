@@ -1,0 +1,20 @@
+"""
+Prompt templates and engineering for Claude AI integration.
+
+This module contains optimized prompts for various game situations
+and decision types.
+"""
+
+from .prompt_templates import (
+    SYSTEM_PROMPT,
+    STRATEGY_PROMPT,
+    META_ANALYSIS_PROMPT,
+    BATCH_DECISION_PROMPT
+)
+
+__all__ = [
+    'SYSTEM_PROMPT',
+    'STRATEGY_PROMPT', 
+    'META_ANALYSIS_PROMPT',
+    'BATCH_DECISION_PROMPT'
+]

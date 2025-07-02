@@ -1,0 +1,189 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "jimbot-system-health",
+    "title": "JimBot System Health",
+    "tags": ["jimbot", "system", "health"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "graph",
+        "title": "CPU Usage by Component",
+        "datasource": "QuestDB",
+        "targets": [
+          {
+            "rawSql": "SELECT timestamp, component, avg(value) as cpu_percent FROM cpu_usage WHERE timestamp > dateadd('m', -30, now()) SAMPLE BY 1m PARTITION BY component",
+            "format": "time_series"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "CPU %",
+            "show": true,
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "nullPointMode": "null",
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "avg": true,
+          "max": true
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "graph",
+        "title": "Memory Usage",
+        "datasource": "QuestDB",
+        "targets": [
+          {
+            "rawSql": "SELECT timestamp, component, avg(value) as memory_mb FROM memory_usage WHERE timestamp > dateadd('h', -1, now()) SAMPLE BY 1m PARTITION BY component",
+            "format": "time_series"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Memory (MB)",
+            "show": true,
+            "min": 0,
+            "max": 6144
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [5120],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Memory Usage Alert",
+          "noDataState": "no_data",
+          "notifications": []
+        },
+        "thresholds": [
+          {
+            "colorMode": "critical",
+            "fill": true,
+            "line": true,
+            "op": "gt",
+            "value": 5632,
+            "visible": true
+          },
+          {
+            "colorMode": "warning",
+            "fill": false,
+            "line": true,
+            "op": "gt",
+            "value": 5120,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8},
+        "type": "stat",
+        "title": "GPU Utilization",
+        "datasource": "QuestDB",
+        "targets": [
+          {
+            "rawSql": "SELECT avg(value) as gpu_percent FROM gpu_utilization WHERE timestamp > dateadd('m', -5, now())",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 50},
+                {"color": "orange", "value": 75},
+                {"color": "red", "value": 90}
+              ]
+            },
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 18, "x": 6, "y": 8},
+        "type": "table",
+        "title": "Component Status",
+        "datasource": "QuestDB",
+        "targets": [
+          {
+            "rawSql": "SELECT component, last(status) as current_status, last(timestamp) as last_heartbeat, count(*) as heartbeat_count FROM component_heartbeat WHERE timestamp > dateadd('m', -5, now()) GROUP BY component",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "showHeader": true
+        },
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "current_status"},
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {"type": "value", "value": "healthy", "color": "green", "text": "Healthy"},
+                    {"type": "value", "value": "warning", "color": "yellow", "text": "Warning"},
+                    {"type": "value", "value": "error", "color": "red", "text": "Error"}
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
