@@ -282,24 +282,32 @@ function ActionExecutor:go_to_shop()
     if G.STATE == G.STATES.ROUND_EVAL then
         self.logger:info("Attempting to go to shop from round evaluation")
         
-        -- First, log all available functions for debugging
+        -- Try shop-specific navigation functions directly
         if G.FUNCS then
-            local all_funcs = {}
-            for k, v in pairs(G.FUNCS) do
-                if type(v) == "function" then
-                    table.insert(all_funcs, k)
-                end
+            -- First priority: direct shop navigation functions
+            if G.FUNCS.go_to_shop then
+                G.FUNCS.go_to_shop()
+                self.logger:info("Called G.FUNCS.go_to_shop directly")
+                return
+            elseif G.FUNCS.to_shop then
+                G.FUNCS.to_shop()
+                self.logger:info("Called G.FUNCS.to_shop directly")
+                return
+            elseif G.FUNCS.skip_to_shop then
+                G.FUNCS.skip_to_shop()
+                self.logger:info("Called G.FUNCS.skip_to_shop directly")
+                return
             end
-            self.logger:debug("All available G.FUNCS", {count = #all_funcs})
-            -- Log first 20 functions
-            local sample = {}
-            for i = 1, math.min(20, #all_funcs) do
-                table.insert(sample, all_funcs[i])
+            
+            -- Fallback: continue button (usually goes to shop after round eval)
+            if G.FUNCS.continue then
+                G.FUNCS.continue()
+                self.logger:info("Called G.FUNCS.continue as fallback")
+                return
             end
-            self.logger:debug("Sample functions", {funcs = table.concat(sample, ", ")})
         end
         
-        -- Since we don't know the exact function, let's trigger any UI button that might be available
+        -- If no direct functions available, use navigate_menu as last resort
         self:navigate_menu({action = "shop"})
     else
         self.logger:warn("Not in round evaluation state", {current_state = tostring(G.STATE)})
@@ -446,34 +454,33 @@ function ActionExecutor:navigate_menu(params)
             self.logger:debug("Available shop/continue functions", {funcs = table.concat(available_funcs, ", ")})
         end
         
-        -- Try various shop-related functions
-        if G.FUNCS and G.FUNCS.go_to_shop then
-            G.FUNCS.go_to_shop()
-            self.logger:info("Going to shop from round evaluation")
-            return
-        elseif G.FUNCS and G.FUNCS.to_shop then
-            G.FUNCS.to_shop()
-            self.logger:info("Going to shop from round evaluation")
-            return
-        elseif G.FUNCS and G.FUNCS.skip_to_shop then
-            G.FUNCS.skip_to_shop()
-            self.logger:info("Skipping to shop from round evaluation")
-            return
+        -- When action is "shop", specifically look for shop navigation
+        if action == "shop" then
+            -- Try shop-specific functions first
+            if G.FUNCS and G.FUNCS.go_to_shop then
+                G.FUNCS.go_to_shop()
+                self.logger:info("Going to shop from round evaluation")
+                return
+            elseif G.FUNCS and G.FUNCS.to_shop then
+                G.FUNCS.to_shop()
+                self.logger:info("Going to shop from round evaluation")
+                return
+            elseif G.FUNCS and G.FUNCS.skip_to_shop then
+                G.FUNCS.skip_to_shop()
+                self.logger:info("Skipping to shop from round evaluation")
+                return
+            end
         end
         
-        -- Look for continue button which usually goes to shop
+        -- For general navigation or continue action, use continue button
         if G.FUNCS and G.FUNCS.continue then
             G.FUNCS.continue()
             self.logger:info("Clicked continue from round evaluation")
             return
         end
         
-        -- Try to trigger the default round eval button
-        if G.FUNCS and G.FUNCS.evaluate_round then
-            G.FUNCS.evaluate_round()
-            self.logger:info("Evaluating round")
-            return
-        end
+        -- REMOVED: evaluate_round call that was causing the bug
+        -- Do NOT call evaluate_round as it re-triggers the blind UI
     end
     
     -- Handle specific actions
