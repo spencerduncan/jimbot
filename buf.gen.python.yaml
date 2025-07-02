@@ -1,0 +1,10 @@
+# buf.gen.python.yaml - Python code generation configuration
+version: v1
+managed:
+  enabled: true
+  python_package_prefix: jimbot.proto
+plugins:
+  - plugin: buf.build/protocolbuffers/python
+    out: generated/python
+  - plugin: buf.build/protocolbuffers/pyi
+    out: generated/python

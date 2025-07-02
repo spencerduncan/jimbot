@@ -1,0 +1,18 @@
+# buf.gen.rust.yaml - Rust code generation configuration
+version: v1
+managed:
+  enabled: false
+plugins:
+  - plugin: buf.build/community/neoeinstein-prost
+    out: generated/rust/src
+    opt:
+      - bytes=.
+      - compile_well_known_types
+  - plugin: buf.build/community/neoeinstein-prost-serde
+    out: generated/rust/src
+    opt:
+      - bytes=.
+  - plugin: buf.build/community/neoeinstein-tonic
+    out: generated/rust/src
+    opt:
+      - compile_well_known_types
