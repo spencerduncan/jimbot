@@ -16,10 +16,14 @@ TestHelper.mock_calls = {}
 -- Assert functions
 function TestHelper.assert_equal(actual, expected, message)
     if actual ~= expected then
-        error(string.format("%s\nExpected: %s\nActual: %s", 
-            message or "Values not equal", 
-            tostring(expected), 
-            tostring(actual)))
+        error(
+            string.format(
+                "%s\nExpected: %s\nActual: %s",
+                message or "Values not equal",
+                tostring(expected),
+                tostring(actual)
+            )
+        )
     end
 end
 
@@ -37,9 +41,9 @@ end
 
 function TestHelper.assert_nil(value, message)
     if value ~= nil then
-        error(string.format("%s\nExpected nil, got: %s", 
-            message or "Expected nil", 
-            tostring(value)))
+        error(
+            string.format("%s\nExpected nil, got: %s", message or "Expected nil", tostring(value))
+        )
     end
 end
 
@@ -52,20 +56,23 @@ end
 function TestHelper.assert_called(mock_name, times)
     local calls = TestHelper.mock_calls[mock_name] or 0
     if times then
-        TestHelper.assert_equal(calls, times, 
-            string.format("Mock '%s' was called %d times, expected %d", 
-                mock_name, calls, times))
+        TestHelper.assert_equal(
+            calls,
+            times,
+            string.format("Mock '%s' was called %d times, expected %d", mock_name, calls, times)
+        )
     else
-        TestHelper.assert_true(calls > 0, 
-            string.format("Mock '%s' was not called", mock_name))
+        TestHelper.assert_true(calls > 0, string.format("Mock '%s' was not called", mock_name))
     end
 end
 
 function TestHelper.assert_not_called(mock_name)
     local calls = TestHelper.mock_calls[mock_name] or 0
-    TestHelper.assert_equal(calls, 0, 
-        string.format("Mock '%s' was called %d times, expected 0", 
-            mock_name, calls))
+    TestHelper.assert_equal(
+        calls,
+        0,
+        string.format("Mock '%s' was called %d times, expected 0", mock_name, calls)
+    )
 end
 
 -- Mock creation
@@ -93,9 +100,9 @@ end
 function TestHelper.test(name, func)
     TestHelper.current_test = name
     TestHelper.reset_mocks()
-    
+
     local success, error = pcall(func)
-    
+
     if success then
         TestHelper.passed = TestHelper.passed + 1
         print(string.format("✓ %s", name))
@@ -104,11 +111,11 @@ function TestHelper.test(name, func)
         print(string.format("✗ %s", name))
         print(string.format("  Error: %s", error))
     end
-    
+
     table.insert(TestHelper.tests, {
         name = name,
         passed = success,
-        error = error
+        error = error,
     })
 end
 
@@ -124,7 +131,7 @@ function TestHelper.report()
     print(string.format("Tests run: %d", TestHelper.passed + TestHelper.failed))
     print(string.format("Passed: %d", TestHelper.passed))
     print(string.format("Failed: %d", TestHelper.failed))
-    
+
     if TestHelper.failed > 0 then
         print("\nFailed tests:")
         for _, test in ipairs(TestHelper.tests) do
@@ -133,7 +140,7 @@ function TestHelper.report()
             end
         end
     end
-    
+
     return TestHelper.failed == 0
 end
 
@@ -144,34 +151,34 @@ function TestHelper.create_mock_globals()
         STATE = nil,
         STATES = {
             MENU = "MENU",
-            PLAYING = "PLAYING", 
+            PLAYING = "PLAYING",
             ROUND_EVAL = "ROUND_EVAL",
             SHOP = "SHOP",
             BLIND_SELECT = "BLIND_SELECT",
             DECK_SELECT = "DECK_SELECT",
-            STAKE_SELECT = "STAKE_SELECT"
+            STAKE_SELECT = "STAKE_SELECT",
         },
         FUNCS = {},
         GAME = {
             dollars = 100,
             current_round = {
                 discards_left = 3,
-                reroll_cost = 5
-            }
+                reroll_cost = 5,
+            },
         },
         hand = nil,
         shop = nil,
         jokers = nil,
-        blind_select_opts = nil
+        blind_select_opts = nil,
     }
-    
+
     -- Mock Love2D timer
     love = {
         timer = {
-            getTime = TestHelper.mock_function("love.timer.getTime", 0)
-        }
+            getTime = TestHelper.mock_function("love.timer.getTime", 0),
+        },
     }
-    
+
     -- Mock BalatroMCP
     BalatroMCP = {
         components = {
@@ -179,12 +186,12 @@ function TestHelper.create_mock_globals()
                 info = TestHelper.mock_function("logger.info"),
                 debug = TestHelper.mock_function("logger.debug"),
                 warn = TestHelper.mock_function("logger.warn"),
-                error = TestHelper.mock_function("logger.error")
-            }
+                error = TestHelper.mock_function("logger.error"),
+            },
         },
         config = {
-            auto_play = true
-        }
+            auto_play = true,
+        },
     }
 end
 

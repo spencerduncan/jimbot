@@ -145,7 +145,7 @@ mod tests {
         assert!(router.matches_pattern("game.state.update", "game.*.update"));
         assert!(router.matches_pattern("game.state.update", "game.*.*"));
         assert!(router.matches_pattern("game.state.update", "*.*.*"));
-        
+
         assert!(!router.matches_pattern("game.state.update", "game.state"));
         assert!(!router.matches_pattern("game.state.update", "system.*.*"));
     }

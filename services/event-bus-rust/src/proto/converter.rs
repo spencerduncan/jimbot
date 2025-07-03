@@ -3,7 +3,7 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::api::models::JsonEvent;
-use crate::proto::{Event, EventType, event};
+use crate::proto::{event, Event, EventType};
 
 /// Convert JSON event from BalatroMCP to Protocol Buffer event
 pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
@@ -22,9 +22,9 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
         _ => return Err(anyhow!("Unknown event type: {}", json_event.event_type)),
     };
 
-    let timestamp = json_event.timestamp.unwrap_or_else(|| {
-        Utc::now().timestamp_millis()
-    });
+    let timestamp = json_event
+        .timestamp
+        .unwrap_or_else(|| Utc::now().timestamp_millis());
 
     let mut proto_event = Event {
         event_id: Uuid::new_v4().to_string(),
@@ -37,18 +37,18 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
 
     // Convert payload based on event type
     proto_event.payload = match event_type {
-        EventType::EventTypeGameState => {
-            Some(event::Payload::GameState(parse_game_state(json_event.payload)?))
-        }
-        EventType::EventTypeHeartbeat => {
-            Some(event::Payload::Heartbeat(parse_heartbeat(json_event.payload)?))
-        }
-        EventType::EventTypeMoneyChanged => {
-            Some(event::Payload::MoneyChanged(parse_money_changed(json_event.payload)?))
-        }
-        EventType::EventTypeConnectionTest => {
-            Some(event::Payload::ConnectionTest(parse_connection_test(json_event.payload)?))
-        }
+        EventType::EventTypeGameState => Some(event::Payload::GameState(parse_game_state(
+            json_event.payload,
+        )?)),
+        EventType::EventTypeHeartbeat => Some(event::Payload::Heartbeat(parse_heartbeat(
+            json_event.payload,
+        )?)),
+        EventType::EventTypeMoneyChanged => Some(event::Payload::MoneyChanged(
+            parse_money_changed(json_event.payload)?,
+        )),
+        EventType::EventTypeConnectionTest => Some(event::Payload::ConnectionTest(
+            parse_connection_test(json_event.payload)?,
+        )),
         // TODO: Implement other event type parsers
         _ => None,
     };
@@ -56,22 +56,43 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
     Ok(proto_event)
 }
 
-use crate::proto::{GameStateEvent, HeartbeatEvent, MoneyChangedEvent, ConnectionTestEvent, GamePhase};
+use crate::proto::{
+    ConnectionTestEvent, GamePhase, GameStateEvent, HeartbeatEvent, MoneyChangedEvent,
+};
 
 fn parse_game_state(payload: serde_json::Value) -> Result<GameStateEvent> {
     // Basic parsing - expand as needed
     let mut game_state = GameStateEvent {
-        in_game: payload.get("in_game").and_then(|v| v.as_bool()).unwrap_or(false),
-        game_id: payload.get("game_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        in_game: payload
+            .get("in_game")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        game_id: payload
+            .get("game_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
         ante: payload.get("ante").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
         round: payload.get("round").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
-        hand_number: payload.get("hand_number").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
+        hand_number: payload
+            .get("hand_number")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as i32,
         chips: payload.get("chips").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
         mult: payload.get("mult").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
         money: payload.get("money").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
-        hand_size: payload.get("hand_size").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
-        hands_remaining: payload.get("hands_remaining").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
-        discards_remaining: payload.get("discards_remaining").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
+        hand_size: payload
+            .get("hand_size")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as i32,
+        hands_remaining: payload
+            .get("hands_remaining")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as i32,
+        discards_remaining: payload
+            .get("discards_remaining")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as i32,
         // Initialize with defaults
         jokers: vec![],
         hand: vec![],
@@ -87,7 +108,7 @@ fn parse_game_state(payload: serde_json::Value) -> Result<GameStateEvent> {
         initial: false,
         debug: false,
     };
-    
+
     // Parse game_state/phase if present
     if let Some(phase_str) = payload.get("game_state").and_then(|v| v.as_str()) {
         game_state.game_state = match phase_str {
@@ -99,33 +120,57 @@ fn parse_game_state(payload: serde_json::Value) -> Result<GameStateEvent> {
             _ => GamePhase::PhaseUnspecified as i32,
         };
     }
-    
+
     if let Some(ui_state) = payload.get("ui_state").and_then(|v| v.as_str()) {
         game_state.ui_state = ui_state.to_string();
     }
-    
+
     Ok(game_state)
 }
 
 fn parse_heartbeat(payload: serde_json::Value) -> Result<HeartbeatEvent> {
     Ok(HeartbeatEvent {
-        version: payload.get("version").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        version: payload
+            .get("version")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
         uptime: payload.get("uptime").and_then(|v| v.as_i64()).unwrap_or(0),
-        headless: payload.get("headless").and_then(|v| v.as_bool()).unwrap_or(false),
-        game_state: payload.get("game_state").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        headless: payload
+            .get("headless")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        game_state: payload
+            .get("game_state")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
     })
 }
 
 fn parse_money_changed(payload: serde_json::Value) -> Result<MoneyChangedEvent> {
     Ok(MoneyChangedEvent {
-        old_value: payload.get("old_value").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
-        new_value: payload.get("new_value").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
-        difference: payload.get("difference").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
+        old_value: payload
+            .get("old_value")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as i32,
+        new_value: payload
+            .get("new_value")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as i32,
+        difference: payload
+            .get("difference")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as i32,
     })
 }
 
 fn parse_connection_test(payload: serde_json::Value) -> Result<ConnectionTestEvent> {
     Ok(ConnectionTestEvent {
-        message: payload.get("message").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        message: payload
+            .get("message")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
     })
 }

@@ -4,12 +4,12 @@
 local test_suites = {
     {
         name = "Unit Tests",
-        file = "tests/test_game_state_extractor.lua"
+        file = "tests/test_game_state_extractor.lua",
     },
     {
-        name = "Integration Tests", 
-        file = "tests/test_game_state_integration.lua"
-    }
+        name = "Integration Tests",
+        file = "tests/test_game_state_integration.lua",
+    },
 }
 
 local total_passed = 0
@@ -24,29 +24,29 @@ print("====================================================\n")
 for _, suite in ipairs(test_suites) do
     print(string.format("Running %s...", suite.name))
     print(string.rep("-", 50))
-    
+
     -- Clear any previous module loads
     package.loaded[suite.file:gsub("%.lua$", ""):gsub("/", ".")] = nil
-    
+
     -- Load and run the test suite
     local success, test_module = pcall(require, suite.file:gsub("%.lua$", ""):gsub("/", "."))
-    
+
     if success and test_module and test_module.run_all_tests then
         local test_success = test_module.run_all_tests()
-        
+
         -- Extract results (assuming test modules set these)
         local passed = _G.tests_passed or 0
         local failed = _G.tests_failed or 0
-        
+
         suite_results[suite.name] = {
             passed = passed,
             failed = failed,
-            success = test_success
+            success = test_success,
         }
-        
+
         total_passed = total_passed + passed
         total_failed = total_failed + failed
-        
+
         -- Reset globals
         _G.tests_passed = nil
         _G.tests_failed = nil
@@ -56,11 +56,11 @@ for _, suite in ipairs(test_suites) do
             passed = 0,
             failed = 1,
             success = false,
-            error = "Failed to load test suite"
+            error = "Failed to load test suite",
         }
         total_failed = total_failed + 1
     end
-    
+
     print("")
 end
 

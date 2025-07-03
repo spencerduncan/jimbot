@@ -49,7 +49,10 @@ impl EventBusGrpc for EventBusService {
     ) -> Result<Response<PublishResponse>, Status> {
         let batch = request.into_inner();
         let event_count = batch.events.len();
-        info!("gRPC: Received batch with {} events from {}", event_count, batch.source);
+        info!(
+            "gRPC: Received batch with {} events from {}",
+            event_count, batch.source
+        );
 
         let mut errors = Vec::new();
         for (idx, event) in batch.events.into_iter().enumerate() {
@@ -76,12 +79,14 @@ impl EventBusGrpc for EventBusService {
         request: Request<SubscribeRequest>,
     ) -> Result<Response<tonic::Streaming<Event>>, Status> {
         let req = request.into_inner();
-        info!("gRPC: New subscription for pattern '{}' from subscriber '{}'", 
-              req.topic_pattern, req.subscriber_id);
+        info!(
+            "gRPC: New subscription for pattern '{}' from subscriber '{}'",
+            req.topic_pattern, req.subscriber_id
+        );
 
         // Create channel for this subscriber
         let (tx, rx) = mpsc::unbounded_channel();
-        
+
         // Register the channel with the router
         self.router.subscribe_channel(req.topic_pattern.clone(), tx);
 

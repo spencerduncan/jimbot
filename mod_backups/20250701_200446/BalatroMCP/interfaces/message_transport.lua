@@ -54,18 +54,18 @@ end
 function IMessageTransport.validate_implementation(instance)
     local required_methods = {
         "write_message",
-        "read_message", 
+        "read_message",
         "verify_message",
         "cleanup_old_messages",
-        "is_available"
+        "is_available",
     }
-    
+
     for _, method in ipairs(required_methods) do
         if type(instance[method]) ~= "function" then
             error("Implementation missing required method: " .. method)
         end
     end
-    
+
     return true
 end
 

@@ -8,7 +8,7 @@ function Utils.safe_check_path(root, path)
     if not root then
         return false
     end
-    
+
     local current = root
     for _, key in ipairs(path) do
         if type(current) ~= "table" or current[key] == nil then
@@ -24,11 +24,11 @@ function Utils.safe_get_value(table, key, default)
     if not table or type(table) ~= "table" then
         return default
     end
-    
+
     if table[key] ~= nil then
         return table[key]
     end
-    
+
     return default
 end
 
@@ -37,7 +37,7 @@ function Utils.safe_get_nested_value(root, path, default)
     if not root then
         return default
     end
-    
+
     local current = root
     for _, key in ipairs(path) do
         if type(current) ~= "table" or current[key] == nil then
@@ -55,7 +55,7 @@ function Utils.safe_primitive_value(table, key, default)
     if not table or type(table) ~= "table" then
         return default
     end
-    
+
     local value = table[key]
     if value ~= nil then
         local value_type = type(value)
@@ -66,7 +66,7 @@ function Utils.safe_primitive_value(table, key, default)
             return default
         end
     end
-    
+
     return default
 end
 
@@ -76,7 +76,7 @@ function Utils.safe_primitive_nested_value(root, path, default)
     if not root then
         return default
     end
-    
+
     local current = root
     for _, key in ipairs(path) do
         if type(current) ~= "table" or current[key] == nil then
@@ -84,7 +84,7 @@ function Utils.safe_primitive_nested_value(root, path, default)
         end
         current = current[key]
     end
-    
+
     -- Only return if it's a primitive type
     local value_type = type(current)
     if value_type == "string" or value_type == "number" or value_type == "boolean" then
@@ -101,8 +101,8 @@ function Utils.get_card_enhancement_safe(card)
     if not card then
         return "none"
     end
-    
-    local ability_name = Utils.safe_primitive_nested_value(card, {"ability", "name"}, nil)
+
+    local ability_name = Utils.safe_primitive_nested_value(card, { "ability", "name" }, nil)
     if ability_name and type(ability_name) == "string" then
         local enhancement_map = {
             m_bonus = "bonus",
@@ -111,7 +111,7 @@ function Utils.get_card_enhancement_safe(card)
             m_glass = "glass",
             m_steel = "steel",
             m_stone = "stone",
-            m_gold = "gold"
+            m_gold = "gold",
         }
         return enhancement_map[ability_name] or "none"
     end
@@ -123,7 +123,7 @@ function Utils.get_card_edition_safe(card)
     if not card then
         return "none"
     end
-    
+
     if card.edition and type(card.edition) == "table" then
         -- Check each edition type as primitive boolean
         if Utils.safe_primitive_value(card.edition, "foil", false) then
@@ -144,7 +144,7 @@ function Utils.get_card_seal_safe(card)
     if not card then
         return "none"
     end
-    
+
     local seal = Utils.safe_primitive_value(card, "seal", "none")
     return seal
 end

@@ -31,16 +31,16 @@ function IExtractor.validate_implementation(extractor)
     if not extractor then
         return false
     end
-    
+
     -- Check that required methods exist
     if type(extractor.extract) ~= "function" then
         return false
     end
-    
+
     if type(extractor.get_name) ~= "function" then
         return false
     end
-    
+
     return true
 end
 
