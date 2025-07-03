@@ -1,6 +1,7 @@
 # SQL Style Guide for JimBot
 
-This guide defines SQL conventions for the JimBot project, with specific focus on QuestDB time-series patterns and game performance analytics.
+This guide defines SQL conventions for the JimBot project, with specific focus
+on QuestDB time-series patterns and game performance analytics.
 
 ## Table of Contents
 
@@ -17,9 +18,11 @@ This guide defines SQL conventions for the JimBot project, with specific focus o
 
 Based on Simon Holywell's SQL Style Guide and QuestDB best practices:
 
-- **Consistency**: Maintain consistent naming and formatting throughout all queries
+- **Consistency**: Maintain consistent naming and formatting throughout all
+  queries
 - **Readability**: Use white space and indentation to enhance code clarity
-- **Portability**: Prefer standard SQL functions over vendor-specific when possible
+- **Portability**: Prefer standard SQL functions over vendor-specific when
+  possible
 - **Efficiency**: Write concise queries without redundant clauses
 - **Documentation**: Include comments for complex logic
 
@@ -27,20 +30,20 @@ Based on Simon Holywell's SQL Style Guide and QuestDB best practices:
 
 ```sql
 -- Good: Keywords uppercase, proper indentation
-SELECT 
+SELECT
     player_id,
     session_id,
     SUM(score) AS total_score,
     AVG(decision_time_ms) AS avg_decision_time
-FROM 
+FROM
     game_events
-WHERE 
+WHERE
     timestamp BETWEEN '2024-01-01' AND '2024-01-31'
     AND event_type = 'hand_played'
-GROUP BY 
-    player_id, 
+GROUP BY
+    player_id,
     session_id
-ORDER BY 
+ORDER BY
     total_score DESC;
 
 -- Bad: Poor formatting
@@ -102,10 +105,10 @@ Name indexes clearly to indicate their purpose:
 
 ```sql
 -- Pattern: idx_<table>_<columns>
-CREATE INDEX idx_game_event_player_session 
+CREATE INDEX idx_game_event_player_session
 ON game_event(player_id, session_id);
 
-CREATE INDEX idx_performance_metric_session_type 
+CREATE INDEX idx_performance_metric_session_type
 ON performance_metric(session_id, metric_type);
 ```
 
@@ -117,30 +120,30 @@ Use `SAMPLE BY` for efficient time-based grouping:
 
 ```sql
 -- Calculate 5-minute performance metrics
-SELECT 
+SELECT
     timestamp,
     player_id,
     AVG(decision_time_ms) AS avg_decision_time,
     SUM(score_gained) AS total_score,
     COUNT() AS actions_count
-FROM 
+FROM
     game_event
-WHERE 
+WHERE
     timestamp BETWEEN '2024-01-01' AND '2024-01-02'
     AND event_type = 'decision'
 SAMPLE BY 5m
 FILL(NULL);  -- Handle missing intervals
 
 -- Daily player performance summary
-SELECT 
+SELECT
     timestamp,
     player_id,
     SUM(chips_gained) AS daily_chips,
     MAX(highest_mult) AS best_multiplier,
     COUNT(DISTINCT session_id) AS sessions_played
-FROM 
+FROM
     player_action
-WHERE 
+WHERE
     timestamp > dateadd('d', -7, now())
 SAMPLE BY 1d
 ALIGN TO CALENDAR;  -- Align to day boundaries
@@ -152,26 +155,26 @@ Retrieve the most recent state efficiently:
 
 ```sql
 -- Get latest player statistics
-SELECT 
+SELECT
     player_id,
     elo_rating,
     total_games,
     win_rate,
     timestamp
-FROM 
+FROM
     player_stats
 LATEST ON timestamp PARTITION BY player_id;
 
 -- Find current session states
-SELECT 
+SELECT
     session_id,
     current_ante,
     current_blind,
     chips_total,
     active_jokers
-FROM 
+FROM
     session_state
-WHERE 
+WHERE
     player_id = 'player_123'
 LATEST ON timestamp PARTITION BY session_id;
 ```
@@ -182,7 +185,7 @@ Use QuestDB's native timestamp notation:
 
 ```sql
 -- Good: Native timestamp search
-SELECT * FROM game_event 
+SELECT * FROM game_event
 WHERE timestamp IN '2024-01-01;1d';  -- All events on Jan 1
 
 SELECT * FROM performance_metric
@@ -190,7 +193,7 @@ WHERE timestamp IN '2024-01;1M';     -- All January events
 
 -- Also good but less efficient
 SELECT * FROM game_event
-WHERE timestamp >= '2024-01-01' 
+WHERE timestamp >= '2024-01-01'
   AND timestamp < '2024-01-02';
 ```
 
@@ -200,44 +203,44 @@ WHERE timestamp >= '2024-01-01'
 
 ```sql
 -- Monitor live game performance (last 5 minutes)
-SELECT 
+SELECT
     timestamp,
     COUNT() AS events_per_second,
     AVG(decision_time_ms) AS avg_response_time,
     PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY decision_time_ms) AS p95_response
-FROM 
+FROM
     game_event
-WHERE 
+WHERE
     timestamp > dateadd('m', -5, now())
 SAMPLE BY 1s
 FILL(0);
 
 -- Track strategy effectiveness over time
 WITH strategy_performance AS (
-    SELECT 
+    SELECT
         timestamp,
         strategy_id,
         COUNT() AS uses,
         AVG(score_gained) AS avg_score,
         SUM(CASE WHEN won_hand = true THEN 1 ELSE 0 END) AS wins
-    FROM 
+    FROM
         strategy_event
-    WHERE 
+    WHERE
         timestamp > dateadd('h', -24, now())
-    GROUP BY 
-        timestamp, 
+    GROUP BY
+        timestamp,
         strategy_id
     SAMPLE BY 1h
 )
-SELECT 
+SELECT
     timestamp,
     strategy_id,
     uses,
     avg_score,
     wins::DOUBLE / uses AS win_rate
-FROM 
+FROM
     strategy_performance
-WHERE 
+WHERE
     uses > 10;  -- Filter out low-sample strategies
 ```
 
@@ -246,7 +249,7 @@ WHERE
 ```sql
 -- Analyze session patterns
 WITH session_metrics AS (
-    SELECT 
+    SELECT
         session_id,
         player_id,
         MIN(timestamp) AS session_start,
@@ -254,26 +257,26 @@ WITH session_metrics AS (
         COUNT() AS total_actions,
         SUM(score_gained) AS total_score,
         MAX(highest_ante) AS max_ante_reached
-    FROM 
+    FROM
         game_event
-    WHERE 
+    WHERE
         timestamp > dateadd('d', -7, now())
-    GROUP BY 
-        session_id, 
+    GROUP BY
+        session_id,
         player_id
 )
-SELECT 
+SELECT
     player_id,
     COUNT(session_id) AS sessions_count,
     AVG(DATEDIFF('minute', session_start, session_end)) AS avg_session_length,
     AVG(total_actions) AS avg_actions_per_session,
     AVG(total_score) AS avg_score_per_session,
     MAX(max_ante_reached) AS best_ante
-FROM 
+FROM
     session_metrics
-GROUP BY 
+GROUP BY
     player_id
-ORDER BY 
+ORDER BY
     sessions_count DESC;
 ```
 
@@ -304,15 +307,15 @@ CREATE TABLE player_action (
 
 ```sql
 -- Composite index for player session queries
-CREATE INDEX idx_event_player_session_time 
+CREATE INDEX idx_event_player_session_time
 ON game_event(player_id, session_id, timestamp);
 
 -- Index for strategy analysis
-CREATE INDEX idx_strategy_type_outcome 
+CREATE INDEX idx_strategy_type_outcome
 ON strategy_event(strategy_type, outcome, timestamp);
 
 -- Index for performance tracking
-CREATE INDEX idx_metric_type_player 
+CREATE INDEX idx_metric_type_player
 ON performance_metric(metric_type, player_id, timestamp);
 ```
 
@@ -466,43 +469,43 @@ CREATE TABLE daily_strategy_stats (
 -- Filter early in subqueries
 WITH filtered_events AS (
     -- Apply filters in the CTE
-    SELECT 
+    SELECT
         session_id,
         timestamp,
         score_gained
-    FROM 
+    FROM
         game_event
-    WHERE 
+    WHERE
         timestamp > dateadd('h', -1, now())
         AND player_id = 'player_123'
         AND event_type = 'hand_played'
 )
-SELECT 
+SELECT
     session_id,
     COUNT() AS hands_played,
     SUM(score_gained) AS total_score
-FROM 
+FROM
     filtered_events
-GROUP BY 
+GROUP BY
     session_id;
 
 -- Use designated timestamp for partition pruning
-SELECT 
+SELECT
     COUNT() AS event_count
-FROM 
+FROM
     game_event
-WHERE 
+WHERE
     timestamp IN '2024-01-15;1d'  -- Only scans one partition
     AND player_id = 'player_123';
 
 -- Scope columns to reduce I/O
-SELECT 
+SELECT
     timestamp,
     decision_time_ms,  -- Only fetch needed columns
     score_gained
-FROM 
+FROM
     game_event
-WHERE 
+WHERE
     timestamp > dateadd('m', -10, now())
 SAMPLE BY 10s;
 ```
@@ -512,7 +515,7 @@ SAMPLE BY 10s;
 ```sql
 -- Efficient batch insert for event aggregation
 INSERT INTO hourly_player_stats
-SELECT 
+SELECT
     date_trunc('hour', timestamp) AS hour_timestamp,
     player_id,
     COUNT(DISTINCT session_id) AS games_played,
@@ -520,18 +523,18 @@ SELECT
     MAX(ante_level) AS highest_ante,
     AVG(decision_time_ms) AS avg_decision_time_ms,
     COUNT(DISTINCT strategy_chosen) AS unique_strategies_used
-FROM 
+FROM
     game_event
-WHERE 
+WHERE
     timestamp >= date_trunc('hour', dateadd('h', -1, now()))
     AND timestamp < date_trunc('hour', now())
-GROUP BY 
+GROUP BY
     date_trunc('hour', timestamp),
     player_id;
 
 -- Periodic cleanup of old partitions
 -- Run daily to maintain 30-day retention
-ALTER TABLE game_event DROP PARTITION 
+ALTER TABLE game_event DROP PARTITION
 WHERE timestamp < dateadd('d', -30, now());
 ```
 
@@ -539,43 +542,43 @@ WHERE timestamp < dateadd('d', -30, now());
 
 ```sql
 -- System health check
-SELECT 
+SELECT
     table_name,
     partition_by,
     COUNT() AS partition_count,
     SUM(row_count) AS total_rows,
     MAX(max_timestamp) AS latest_data
-FROM 
+FROM
     table_partitions
-WHERE 
+WHERE
     table_name IN ('game_event', 'performance_metric', 'strategy_decision')
-GROUP BY 
+GROUP BY
     table_name,
     partition_by;
 
 -- Query performance tracking
 WITH recent_queries AS (
-    SELECT 
+    SELECT
         query_text,
         execution_time_ms,
         rows_processed,
         timestamp
-    FROM 
+    FROM
         query_log
-    WHERE 
+    WHERE
         timestamp > dateadd('h', -1, now())
 )
-SELECT 
+SELECT
     SUBSTRING(query_text, 1, 50) AS query_preview,
     COUNT() AS execution_count,
     AVG(execution_time_ms) AS avg_time_ms,
     MAX(execution_time_ms) AS max_time_ms,
     SUM(rows_processed) AS total_rows
-FROM 
+FROM
     recent_queries
-GROUP BY 
+GROUP BY
     SUBSTRING(query_text, 1, 50)
-ORDER BY 
+ORDER BY
     avg_time_ms DESC
 LIMIT 10;
 ```
@@ -583,7 +586,8 @@ LIMIT 10;
 ## Best Practices Summary
 
 1. **Always use designated timestamps** for time-series tables
-2. **Partition by time** appropriate to your data volume (DAY for high-volume, WEEK/MONTH for summaries)
+2. **Partition by time** appropriate to your data volume (DAY for high-volume,
+   WEEK/MONTH for summaries)
 3. **Use SYMBOL type** for categorical data with known cardinality
 4. **Apply filters early** and on designated timestamp when possible
 5. **Leverage SAMPLE BY** for time-based aggregations

@@ -1,10 +1,12 @@
 # BalatroMCP GitHub Issue Creation Commands
 
-This file contains GitHub CLI (`gh`) commands to create tracking issues for BalatroMCP development.
+This file contains GitHub CLI (`gh`) commands to create tracking issues for
+BalatroMCP development.
 
 ## Prerequisites
 
 First, create the balatro-mod label:
+
 ```bash
 gh label create balatro-mod --description "Issues related to BalatroMCP mod development" --color 0e8a16
 ```
@@ -240,6 +242,7 @@ Improve configuration management and create comprehensive documentation for all 
 ## Bulk Creation
 
 To create all issues at once:
+
 ```bash
 # Create the label first
 gh label create balatro-mod --description "Issues related to BalatroMCP mod development" --color 0e8a16
@@ -250,6 +253,7 @@ gh label create balatro-mod --description "Issues related to BalatroMCP mod deve
 ## Additional Labels
 
 Consider creating these additional labels for better organization:
+
 ```bash
 gh label create priority-high --color d93f0b
 gh label create reliability --color 1d76db

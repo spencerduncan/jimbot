@@ -2,12 +2,16 @@
 
 ## Overview
 
-BalatroMCP is a Love2D mod for Balatro that enables headless operation and AI integration. It extracts game state, sends events to an external event bus, and can execute AI-generated actions automatically.
+BalatroMCP is a Love2D mod for Balatro that enables headless operation and AI
+integration. It extracts game state, sends events to an external event bus, and
+can execute AI-generated actions automatically.
 
 ## Features
 
-- **Headless Mode**: Disables rendering for faster execution and server deployment
-- **Game State Extraction**: Captures complete game state including cards, jokers, shop, etc.
+- **Headless Mode**: Disables rendering for faster execution and server
+  deployment
+- **Game State Extraction**: Captures complete game state including cards,
+  jokers, shop, etc.
 - **Event Streaming**: Sends game events via REST API with configurable batching
 - **AI Control**: Executes actions received from AI decision-making systems
 - **Configurable**: JSON-based configuration for all settings
@@ -47,6 +51,7 @@ The mod creates a default `config.json` on first run:
 Events follow the Protocol Buffers schema defined in the JimBot project:
 
 ### Game State Event
+
 ```json
 {
   "type": "GAME_STATE",
@@ -66,6 +71,7 @@ Events follow the Protocol Buffers schema defined in the JimBot project:
 ```
 
 ### Decision Request
+
 ```json
 {
   "type": "LEARNING_DECISION",
@@ -91,12 +97,14 @@ The mod expects to communicate with an event bus that implements:
 The mod can execute these actions when `auto_play` is enabled:
 
 ### Playing Phase
+
 - `play_hand` - Play highlighted cards
 - `discard` - Discard highlighted cards
 - `sort_hand` - Sort hand by rank/suit
 - `select_card` - Toggle card selection
 
 ### Shop Phase
+
 - `buy_joker` - Purchase joker by index
 - `buy_booster` - Purchase booster pack
 - `buy_voucher` - Purchase voucher
@@ -105,6 +113,7 @@ The mod can execute these actions when `auto_play` is enabled:
 - `skip_shop` - Exit shop
 
 ### Blind Selection
+
 - `select_small_blind` - Choose small blind
 - `select_big_blind` - Choose big blind
 - `select_boss_blind` - Choose boss blind
@@ -140,16 +149,19 @@ The mod can execute these actions when `auto_play` is enabled:
 ## Troubleshooting
 
 ### Events not sending
+
 - Check `event_bus_url` in config
 - Verify event bus is running
 - Check logs in `balatro_mcp.log`
 
 ### Actions not executing
+
 - Ensure `auto_play` is enabled
 - Check action parameters match expected format
 - Verify game is in correct phase for action
 
 ### Performance issues
+
 - Reduce `batch_window_ms` for faster updates
 - Decrease `game_speed_multiplier`
 - Check CPU usage of event processing

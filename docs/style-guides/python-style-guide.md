@@ -1,8 +1,10 @@
 # Python Style Guide for JimBot
 
-This style guide defines the Python coding conventions for the JimBot project, a sequential learning system for mastering Balatro using ML and AI integration.
+This style guide defines the Python coding conventions for the JimBot project, a
+sequential learning system for mastering Balatro using ML and AI integration.
 
 ## Table of Contents
+
 1. [Foundation Standards](#foundation-standards)
 2. [Code Formatting](#code-formatting)
 3. [Naming Conventions](#naming-conventions)
@@ -17,12 +19,14 @@ This style guide defines the Python coding conventions for the JimBot project, a
 ## Foundation Standards
 
 ### Core Principles
+
 - **PEP 8** as the base standard with practical adaptations
 - **Black** formatter for consistent code style
 - **Type hints** for all public APIs and complex functions
 - **Async-first** for I/O operations
 
 ### Tools Configuration
+
 ```toml
 # pyproject.toml
 [tool.black]
@@ -44,11 +48,13 @@ testpaths = ["tests"]
 ## Code Formatting
 
 ### Black Formatter
+
 - Use Black with default settings (88-character line length)
 - Run before every commit: `black .`
 - No manual formatting debates
 
 ### Import Organization
+
 ```python
 # Standard library imports
 import asyncio
@@ -68,6 +74,7 @@ from jimbot.mcp.aggregator import EventAggregator
 ## Naming Conventions
 
 ### General Rules
+
 - **Classes**: `UpperCamelCase`
 - **Functions/Variables**: `snake_case`
 - **Constants**: `UPPER_SNAKE_CASE`
@@ -75,6 +82,7 @@ from jimbot.mcp.aggregator import EventAggregator
 - **Type Aliases**: `UpperCamelCase`
 
 ### Domain-Specific Names
+
 ```python
 # Type aliases for domain concepts
 JokerID = str
@@ -85,10 +93,10 @@ GameStateID = str
 # Domain entities
 class Joker:
     """Represents a Balatro joker with its properties."""
-    
+
 class SynergyGraph:
     """Knowledge graph for joker synergies."""
-    
+
 # Event types
 class MCPGameEvent:
     """MCP protocol game event."""
@@ -97,6 +105,7 @@ class MCPGameEvent:
 ## Type Hints
 
 ### Basic Usage
+
 ```python
 from typing import Dict, List, Optional, Union, TypedDict, Protocol
 
@@ -117,6 +126,7 @@ def get_strategy_recommendation(
 ```
 
 ### ML-Specific Types
+
 ```python
 from typing import TypeVar, Generic
 import numpy as np
@@ -131,7 +141,7 @@ class ModelOutput(TypedDict):
     action: int
     value: float
     policy_logits: NDArray[np.float32]
-    
+
 def preprocess_state(
     raw_state: Dict[str, Any]
 ) -> NDArray[np.float32]:
@@ -142,23 +152,24 @@ def preprocess_state(
 ## Documentation
 
 ### Google-Style Docstrings
+
 ```python
 def aggregate_events(
     events: List[MCPGameEvent],
     window_ms: int = 100
 ) -> AggregatedGameState:
     """Aggregate multiple game events within a time window.
-    
+
     Combines multiple MCP events into a single state update
     for efficient processing by the RL model.
-    
+
     Args:
         events: List of game events from MCP
         window_ms: Aggregation window in milliseconds
-        
+
     Returns:
         Aggregated game state ready for model input
-        
+
     Raises:
         ValueError: If events list is empty
         AggregationError: If events cannot be combined
@@ -167,18 +178,19 @@ def aggregate_events(
 ```
 
 ### Class Documentation
+
 ```python
 class EventAggregator:
     """Aggregates MCP events for batch processing.
-    
+
     Implements a sliding window aggregator that batches
     game events to reduce model inference overhead while
     maintaining real-time responsiveness.
-    
+
     Attributes:
         window_ms: Aggregation window in milliseconds
         event_queue: Async queue for incoming events
-        
+
     Example:
         >>> aggregator = EventAggregator(window_ms=100)
         >>> await aggregator.start()
@@ -229,6 +241,7 @@ tests/
 ## Async Patterns
 
 ### Basic Async/Await
+
 ```python
 async def fetch_game_state(game_id: str) -> GameState:
     """Fetch current game state asynchronously."""
@@ -243,23 +256,24 @@ async def fetch_game_state(game_id: str) -> GameState:
 ```
 
 ### Event Aggregation Pattern
+
 ```python
 class EventAggregator:
     def __init__(self, batch_window_ms: int = 100):
         self.batch_window = batch_window_ms / 1000.0
         self.event_queue: asyncio.Queue[MCPGameEvent] = asyncio.Queue()
-        
+
     async def process_batch(self) -> List[MCPGameEvent]:
         """Process a batch of events within the time window."""
         events = []
         deadline = asyncio.get_event_loop().time() + self.batch_window
-        
+
         while True:
             try:
                 timeout = deadline - asyncio.get_event_loop().time()
                 if timeout <= 0:
                     break
-                    
+
                 event = await asyncio.wait_for(
                     self.event_queue.get(),
                     timeout=timeout
@@ -267,11 +281,12 @@ class EventAggregator:
                 events.append(event)
             except asyncio.TimeoutError:
                 break
-                
+
         return events
 ```
 
 ### Concurrent Operations
+
 ```python
 async def parallel_strategy_check(
     jokers: List[JokerID],
@@ -288,6 +303,7 @@ async def parallel_strategy_check(
 ## Testing Conventions
 
 ### Test Organization
+
 ```python
 # tests/unit/test_event_aggregator.py
 import pytest
@@ -295,29 +311,30 @@ from jimbot.mcp.aggregator import EventAggregator
 
 class TestEventAggregator:
     """Test suite for EventAggregator."""
-    
+
     @pytest.fixture
     def aggregator(self):
         """Create aggregator instance for testing."""
         return EventAggregator(batch_window_ms=50)
-        
+
     @pytest.mark.asyncio
     async def test_batch_processing(self, aggregator):
         """Test that events are batched within window."""
         # Arrange
         events = [create_test_event(i) for i in range(5)]
-        
+
         # Act
         for event in events:
             await aggregator.event_queue.put(event)
         batch = await aggregator.process_batch()
-        
+
         # Assert
         assert len(batch) == 5
         assert all(e in events for e in batch)
 ```
 
 ### Fixtures and Mocking
+
 ```python
 @pytest.fixture
 async def mock_memgraph_client():
@@ -325,7 +342,7 @@ async def mock_memgraph_client():
     with patch("jimbot.memgraph.client.MemgraphClient") as mock:
         mock.query.return_value = {"synergy": 2.5}
         yield mock
-        
+
 @pytest.fixture
 def game_state_factory():
     """Factory for creating test game states."""
@@ -344,21 +361,22 @@ def game_state_factory():
 ## Ray RLlib Patterns
 
 ### Model Configuration
+
 ```python
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 
 class BalatroNet(TorchModelV2):
     """Custom neural network for Balatro RL agent."""
-    
-    def __init__(self, obs_space, action_space, num_outputs, 
+
+    def __init__(self, obs_space, action_space, num_outputs,
                  model_config, name):
         super().__init__(obs_space, action_space, num_outputs,
                         model_config, name)
-        
+
         # Extract custom config
         hidden_size = model_config["custom_model_config"]["hidden_size"]
         memgraph_dim = model_config["custom_model_config"]["memgraph_embedding_dim"]
-        
+
         # Build layers
         self.encoder = nn.Sequential(
             nn.Linear(obs_space.shape[0], hidden_size),
@@ -366,7 +384,7 @@ class BalatroNet(TorchModelV2):
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU()
         )
-        
+
     def forward(self, input_dict, state, seq_lens):
         """Forward pass with knowledge graph embeddings."""
         obs = input_dict["obs"]
@@ -375,6 +393,7 @@ class BalatroNet(TorchModelV2):
 ```
 
 ### Training Configuration
+
 ```python
 PPO_CONFIG = {
     "framework": "torch",
@@ -400,12 +419,13 @@ PPO_CONFIG = {
 ```
 
 ### Custom Callbacks
+
 ```python
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
 class BalatroCallbacks(DefaultCallbacks):
     """Custom callbacks for training metrics."""
-    
+
     def on_episode_end(self, *, episode, **kwargs):
         """Log episode metrics."""
         episode.custom_metrics["final_ante"] = episode.last_info_for()["ante"]
@@ -416,21 +436,23 @@ class BalatroCallbacks(DefaultCallbacks):
 ## Error Handling
 
 ### Custom Exceptions
+
 ```python
 class JimBotError(Exception):
     """Base exception for JimBot errors."""
-    
+
 class AggregationError(JimBotError):
     """Raised when event aggregation fails."""
-    
+
 class MemgraphQueryError(JimBotError):
     """Raised when Memgraph query fails."""
-    
+
 class RateLimitError(JimBotError):
     """Raised when API rate limit is exceeded."""
 ```
 
 ### Error Handling Pattern
+
 ```python
 async def safe_claude_query(
     prompt: str,
@@ -441,21 +463,22 @@ async def safe_claude_query(
         if not rate_limiter.can_request():
             logger.warning("Rate limit reached, using cached response")
             return get_cached_response(prompt)
-            
+
         response = await claude_client.query(prompt)
         rate_limiter.record_request()
         return response
-        
+
     except RateLimitError:
         logger.error("Claude rate limit exceeded")
         return get_cached_response(prompt)
-        
+
     except Exception as e:
         logger.error(f"Unexpected error querying Claude: {e}")
         return None
 ```
 
 ### Context Managers
+
 ```python
 from contextlib import asynccontextmanager
 
@@ -474,6 +497,7 @@ async def memgraph_transaction():
 ## Performance Considerations
 
 ### Memory Management
+
 ```python
 # Use generators for large datasets
 def process_game_history(history_file: Path) -> Iterator[GameState]:
@@ -481,7 +505,7 @@ def process_game_history(history_file: Path) -> Iterator[GameState]:
     with open(history_file) as f:
         for line in f:
             yield GameState.from_json(line)
-            
+
 # Pre-allocate arrays for known sizes
 def create_observation_tensor(state: GameState) -> np.ndarray:
     """Create observation tensor with pre-allocation."""
@@ -491,6 +515,7 @@ def create_observation_tensor(state: GameState) -> np.ndarray:
 ```
 
 ### Caching Patterns
+
 ```python
 from functools import lru_cache
 
@@ -498,13 +523,13 @@ from functools import lru_cache
 def get_joker_synergy(joker1: JokerID, joker2: JokerID) -> float:
     """Cache joker synergy calculations."""
     return calculate_synergy(joker1, joker2)
-    
+
 # Time-based cache for Claude responses
 class TimedCache:
     def __init__(self, ttl_seconds: int = 300):
         self.cache: Dict[str, tuple[float, Any]] = {}
         self.ttl = ttl_seconds
-        
+
     def get(self, key: str) -> Optional[Any]:
         """Get cached value if not expired."""
         if key in self.cache:

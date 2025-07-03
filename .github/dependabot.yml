@@ -3,77 +3,136 @@
 version: 2
 updates:
   # Python dependencies
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: 'pip'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
     open-pull-requests-limit: 10
     reviewers:
-      - "spencerduncan"
+      - 'spencerduncan'
     labels:
-      - "dependencies"
-      - "python"
+      - 'dependencies'
+      - 'python'
     groups:
       dev-dependencies:
         patterns:
-          - "black"
-          - "flake8*"
-          - "mypy"
-          - "pytest*"
-          - "ruff"
-          - "isort"
+          - 'black'
+          - 'flake8*'
+          - 'mypy'
+          - 'pytest*'
+          - 'ruff'
+          - 'isort'
       ml-dependencies:
         patterns:
-          - "torch*"
-          - "ray*"
-          - "numpy"
-          - "pandas"
+          - 'torch*'
+          - 'ray*'
+          - 'numpy'
+          - 'pandas'
     ignore:
       # Ignore major version updates for critical dependencies
-      - dependency-name: "ray"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "torch"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: 'ray'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'torch'
+        update-types: ['version-update:semver-major']
 
   # GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
     labels:
-      - "dependencies"
-      - "github-actions"
+      - 'dependencies'
+      - 'github-actions'
 
   # Docker dependencies
-  - package-ecosystem: "docker"
-    directory: "/docker"
+  - package-ecosystem: 'docker'
+    directory: '/docker'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
     labels:
-      - "dependencies"
-      - "docker"
+      - 'dependencies'
+      - 'docker'
     reviewers:
-      - "spencerduncan"
+      - 'spencerduncan'
 
   # JavaScript dependencies (if package.json exists)
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
     open-pull-requests-limit: 5
     labels:
-      - "dependencies"
-      - "javascript"
+      - 'dependencies'
+      - 'javascript'
     groups:
       dev-dependencies:
-        dependency-type: "development"
+        dependency-type: 'development'
       production-dependencies:
-        dependency-type: "production"
+        dependency-type: 'production'
+
+  # Rust dependencies
+  - package-ecosystem: 'cargo'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 10
+    reviewers:
+      - 'spencerduncan'
+    assignees:
+      - 'spencerduncan'
+    commit-message:
+      prefix: 'cargo'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'rust'
+      - 'automated'
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+    groups:
+      rust-development:
+        patterns:
+          - 'serde*'
+          - 'tokio*'
+          - 'tracing*'
+          - 'clap*'
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # Check for Rust components in subdirectories
+  - package-ecosystem: 'cargo'
+    directory: '/services/event-bus-rust'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 5
+    reviewers:
+      - 'spencerduncan'
+    labels:
+      - 'dependencies'
+      - 'rust'
+      - 'event-bus'
+
+  - package-ecosystem: 'cargo'
+    directory: '/jimbot/infrastructure/resource_coordinator_rust'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 5
+    reviewers:
+      - 'spencerduncan'
+    labels:
+      - 'dependencies'
+      - 'rust'
+      - 'resource-coordinator'

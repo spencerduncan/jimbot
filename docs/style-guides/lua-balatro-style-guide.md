@@ -1,8 +1,11 @@
 # Lua Style Guide for Balatro Mod Development
 
-This guide defines Lua coding conventions specifically for Balatro mod development, incorporating best practices from the Lua community and patterns from successful Balatro mods.
+This guide defines Lua coding conventions specifically for Balatro mod
+development, incorporating best practices from the Lua community and patterns
+from successful Balatro mods.
 
 ## Table of Contents
+
 1. [General Principles](#general-principles)
 2. [File Organization](#file-organization)
 3. [Naming Conventions](#naming-conventions)
@@ -18,6 +21,7 @@ This guide defines Lua coding conventions specifically for Balatro mod developme
 ## General Principles
 
 ### Core Rules
+
 - **Always use `local`** - Never pollute the global namespace
 - **Consistent indentation** - 2 or 4 spaces (never tabs)
 - **Descriptive names** - Code is read more than written
@@ -25,16 +29,17 @@ This guide defines Lua coding conventions specifically for Balatro mod developme
 - **Hook responsibly** - Preserve original functionality
 
 ### Code Style
+
 ```lua
 -- Good: Clear, local scope, proper spacing
 local function calculate_joker_mult(card, context)
     if not card or not context then
         return 0
     end
-    
+
     local base_mult = card.ability.extra.mult or 1
     local bonus = context.scoring_hand and 2 or 1
-    
+
     return base_mult * bonus
 end
 
@@ -47,6 +52,7 @@ end
 ## File Organization
 
 ### Mod Structure
+
 ```
 YourMod/
 ├── mod.json              -- Mod metadata
@@ -56,7 +62,7 @@ YourMod/
 │   └── en-us.lua         -- English strings
 ├── assets/
 │   ├── 1x/               -- Standard resolution
-│   │   └── jokers.png    
+│   │   └── jokers.png
 │   └── 2x/               -- High resolution
 │       └── jokers.png
 ├── jokers/               -- Joker definitions
@@ -70,6 +76,7 @@ YourMod/
 ```
 
 ### Main File Structure
+
 ```lua
 -- main.lua
 --- @module YourModName
@@ -97,10 +104,10 @@ local function init()
     -- Load jokers
     require("jokers.multiplier_jokers")
     require("jokers.chip_jokers")
-    
+
     -- Load consumables
     require("consumables.custom_tarots")
-    
+
     -- Set up hooks
     setup_hooks()
 end
@@ -117,18 +124,20 @@ init()
 ## Naming Conventions
 
 ### General Rules
-| Type | Convention | Example |
-|------|------------|---------|
-| Local variables | `snake_case` | `local card_count = 5` |
-| Global variables | Avoid! Use mod namespace | `MOD.my_value` |
-| Constants | `UPPER_SNAKE_CASE` | `local MAX_MULT = 100` |
-| Functions | `snake_case` | `function calculate_score()` |
-| Modules | `snake_case` | `require("utils.helpers")` |
-| Classes/Constructors | `PascalCase` | `function JokerCard()` |
-| Private/Internal | `_leading_underscore` | `local _internal_state` |
-| Ignored variables | `_` | `for _, card in ipairs(cards)` |
+
+| Type                 | Convention               | Example                        |
+| -------------------- | ------------------------ | ------------------------------ |
+| Local variables      | `snake_case`             | `local card_count = 5`         |
+| Global variables     | Avoid! Use mod namespace | `MOD.my_value`                 |
+| Constants            | `UPPER_SNAKE_CASE`       | `local MAX_MULT = 100`         |
+| Functions            | `snake_case`             | `function calculate_score()`   |
+| Modules              | `snake_case`             | `require("utils.helpers")`     |
+| Classes/Constructors | `PascalCase`             | `function JokerCard()`         |
+| Private/Internal     | `_leading_underscore`    | `local _internal_state`        |
+| Ignored variables    | `_`                      | `for _, card in ipairs(cards)` |
 
 ### Balatro-Specific Naming
+
 ```lua
 -- Joker keys follow pattern: j_prefix_name
 SMODS.Joker({
@@ -155,16 +164,17 @@ SMODS.Sound({
 ## Variables and Scope
 
 ### Always Use Local
+
 ```lua
 -- Good: Local by default
 local function process_hand(cards)
     local total_chips = 0
     local total_mult = 1
-    
+
     for _, card in ipairs(cards) do
         total_chips = total_chips + card.base.nominal
     end
-    
+
     return total_chips, total_mult
 end
 
@@ -177,6 +187,7 @@ end
 ```
 
 ### Caching Global Access
+
 ```lua
 -- Cache frequently accessed globals at file scope
 local G = G
@@ -194,6 +205,7 @@ end
 ```
 
 ### Module-Level State
+
 ```lua
 -- Use module table for shared state
 local M = {}
@@ -214,6 +226,7 @@ return M
 ## Tables and Metatables
 
 ### Table Initialization
+
 ```lua
 -- Good: Initialize with known structure
 local joker_data = {
@@ -242,6 +255,7 @@ end
 ```
 
 ### Metatables for Joker Behavior
+
 ```lua
 -- Joker class with metamethods
 local JokerBase = {}
@@ -272,12 +286,12 @@ LuckyJoker.__index = LuckyJoker
 function LuckyJoker:calculate(context)
     -- Call parent
     local result = JokerBase.calculate(self, context)
-    
+
     -- Add lucky logic
     if context.scoring_name == "Lucky 7s" then
         result.mult_mod = result.mult_mod * 2
     end
-    
+
     return result
 end
 ```
@@ -285,20 +299,21 @@ end
 ## Functions
 
 ### Function Definition
+
 ```lua
 -- Good: Clear parameters, local scope
 local function calculate_hand_score(cards, mult, chips)
     if not cards or #cards == 0 then
         return 0, 0
     end
-    
+
     local total_chips = chips or 0
     local total_mult = mult or 1
-    
+
     for _, card in ipairs(cards) do
         total_chips = total_chips + (card.base.nominal or 0)
     end
-    
+
     return total_chips, total_mult
 end
 
@@ -314,6 +329,7 @@ end
 ```
 
 ### Callback Patterns
+
 ```lua
 -- Balatro callback pattern
 SMODS.Joker({
@@ -322,11 +338,11 @@ SMODS.Joker({
         -- Early returns for invalid contexts
         if not context.joker_main then return end
         if not context.scoring_hand then return end
-        
+
         -- Calculate effect
         local mult = card.ability.extra.mult or 4
         local hand_size = #context.scoring_hand
-        
+
         -- Return effect table
         return {
             mult_mod = mult * hand_size,
@@ -342,6 +358,7 @@ SMODS.Joker({
 ```
 
 ### Hook Pattern
+
 ```lua
 -- Safe hook pattern
 local function hook_function(original_func)
@@ -351,16 +368,16 @@ local function hook_function(original_func)
         if not validate_args(args) then
             return original_func(...)
         end
-        
+
         -- Pre-hook logic
         modify_args(args)
-        
+
         -- Call original with modified args
         local results = {original_func(table.unpack(args))}
-        
+
         -- Post-hook logic
         modify_results(results)
-        
+
         return table.unpack(results)
     end
 end
@@ -373,6 +390,7 @@ G.FUNCS.play_cards_from_highlighted = hook_function(original_play)
 ## Error Handling
 
 ### Defensive Programming
+
 ```lua
 -- Always validate inputs
 local function apply_joker_effect(card, context)
@@ -380,43 +398,44 @@ local function apply_joker_effect(card, context)
     if not card then
         return nil, "No card provided"
     end
-    
+
     if not card.ability then
         return nil, "Card has no ability"
     end
-    
+
     -- Validate context
     if not context or type(context) ~= "table" then
         return nil, "Invalid context"
     end
-    
+
     -- Safe property access
     local mult = (card.ability.extra and card.ability.extra.mult) or 1
     local triggers = card.ability.extra and card.ability.extra.triggers
-    
+
     -- Process effect
     if triggers and triggers > 0 then
         return mult * triggers, nil
     end
-    
+
     return mult, nil
 end
 ```
 
 ### Protected Calls
+
 ```lua
 -- Use pcall for risky operations
 local function load_mod_config(path)
     local success, result = pcall(function()
         return require(path)
     end)
-    
+
     if not success then
         -- Log error, return defaults
         print("[ERROR] Failed to load config: " .. tostring(result))
         return get_default_config()
     end
-    
+
     return result
 end
 
@@ -426,7 +445,7 @@ local function debug_call(func, ...)
         print("[ERROR] " .. err)
         print(debug.traceback())
     end
-    
+
     local success, result = xpcall(func, error_handler, ...)
     return success, result
 end
@@ -435,6 +454,7 @@ end
 ## Balatro-Specific Patterns
 
 ### Creating Custom Jokers
+
 ```lua
 -- Complete joker implementation
 SMODS.Joker({
@@ -447,18 +467,18 @@ SMODS.Joker({
             "{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)"
         }
     },
-    config = { 
-        extra = { 
+    config = {
+        extra = {
             mult_per_trigger = 2,
             current_mult = 0,
             fib_ranks = {1, 2, 3, 5, 8}  -- Store as array for performance
-        } 
+        }
     },
     rarity = 2,
     cost = 6,
     atlas = 'ym_jokers',
     pos = { x = 0, y = 0 },
-    
+
     -- Localization variables
     loc_vars = function(self, info_queue, card)
         return {
@@ -468,7 +488,7 @@ SMODS.Joker({
             }
         }
     end,
-    
+
     -- Main calculation
     calculate = function(self, card, context)
         -- Fibonacci number detection
@@ -476,12 +496,12 @@ SMODS.Joker({
             local rank = context.other_card:get_id()
             for _, fib_rank in ipairs(card.ability.extra.fib_ranks) do
                 if rank == fib_rank then
-                    card.ability.extra.current_mult = card.ability.extra.current_mult + 
+                    card.ability.extra.current_mult = card.ability.extra.current_mult +
                         card.ability.extra.mult_per_trigger
-                    
+
                     -- Visual feedback
                     card:juice_up(0.5, 0.5)
-                    
+
                     return {
                         extra = {
                             focus = card,
@@ -491,7 +511,7 @@ SMODS.Joker({
                 end
             end
         end
-        
+
         -- Apply accumulated mult
         if context.joker_main and card.ability.extra.current_mult > 0 then
             return {
@@ -504,7 +524,7 @@ SMODS.Joker({
             }
         end
     end,
-    
+
     -- Reset on round end
     on_round_end = function(self, card)
         card.ability.extra.current_mult = 0
@@ -513,6 +533,7 @@ SMODS.Joker({
 ```
 
 ### UI Element Creation
+
 ```lua
 -- Create custom UI box
 local function create_joker_info_box()
@@ -575,27 +596,28 @@ end
 ```
 
 ### Card Manipulation
+
 ```lua
 -- Add enhancement to cards in hand
 local function enhance_hand_cards(enhancement_type)
     if not G.hand or not G.hand.cards then return end
-    
+
     for _, card in ipairs(G.hand.cards) do
         -- Check if card can be enhanced
         if card.config.center ~= G.P_CENTERS.c_base then
             -- Skip already enhanced cards
             goto continue
         end
-        
+
         -- Apply enhancement
         card:set_edition({
             [enhancement_type] = true
         })
-        
+
         -- Visual feedback
         card:juice_up(0.3, 0.5)
         play_sound('gold_seal')
-        
+
         ::continue::
     end
 end
@@ -604,28 +626,29 @@ end
 local function spawn_random_joker()
     -- Create joker with random or specific key
     local card = create_card('Joker', G.jokers, nil, nil, nil, nil, nil)
-    
+
     -- Add to joker area
     card:add_to_deck()
     G.jokers:emplace(card)
-    
+
     -- Animation
     card:start_materialize()
-    
+
     -- Play sound
     play_sound('card1')
-    
+
     return card
 end
 ```
 
 ### Save Data Management
+
 ```lua
 -- Initialize mod save data
 local function init_save_data()
     -- Ensure save structure exists
     G.GAME.ym_mod_data = G.GAME.ym_mod_data or {}
-    
+
     -- Set defaults if missing
     local data = G.GAME.ym_mod_data
     data.version = data.version or MOD_VERSION
@@ -635,7 +658,7 @@ local function init_save_data()
         hands_played = 0,
         best_mult = 0
     }
-    
+
     -- Migrate old save data if needed
     if data.version ~= MOD_VERSION then
         migrate_save_data(data)
@@ -647,7 +670,7 @@ local function track_statistic(stat_name, value)
     if not G.GAME.ym_mod_data then
         init_save_data()
     end
-    
+
     local stats = G.GAME.ym_mod_data.statistics
     if stat_name == "best_mult" then
         stats[stat_name] = math.max(stats[stat_name] or 0, value)
@@ -660,49 +683,51 @@ end
 ## Common Interactions
 
 ### Scoring Modification
+
 ```lua
 -- Modify hand chips/mult during scoring
 local function modify_hand_scoring()
     local old_evaluate = G.FUNCS.evaluate_play
-    
+
     G.FUNCS.evaluate_play = function(e)
         -- Let original function run first
         local ret = old_evaluate(e)
-        
+
         -- Modify the scoring
         if G.GAME.current_round.hands_played == 0 then
             -- First hand bonus
             hand_chips = hand_chips * 2
             mult = mult * 2
-            
+
             -- Add floating text
             card_eval_status_text(
-                G.hand.cards[1], 
-                'extra', 
-                nil, 
-                nil, 
+                G.hand.cards[1],
+                'extra',
+                nil,
+                nil,
                 {
                     message = "First Hand!",
                     colour = G.C.GOLD
                 }
             )
         end
-        
+
         return ret
     end
 end
 ```
 
 ### Shop Manipulation
+
 ```lua
 -- Modify shop on creation
 local function modify_shop()
     local old_shop = G.FUNCS.shop_generation
-    
+
     G.FUNCS.shop_generation = function()
         -- Generate normal shop
         local ret = old_shop()
-        
+
         -- Add custom joker to shop
         if G.GAME.round % 3 == 0 then  -- Every 3rd round
             local card = create_card('Joker', G.shop_jokers, nil, nil, nil, nil, 'j_ym_special')
@@ -710,18 +735,19 @@ local function modify_shop()
             card:set_edition({negative = true})  -- Make it negative
             G.shop_jokers:emplace(card)
         end
-        
+
         return ret
     end
 end
 ```
 
 ### Deck Manipulation
+
 ```lua
 -- Add cards to deck
 local function add_special_cards_to_deck(count)
     count = count or 5
-    
+
     G.E_MANAGER:add_event(Event({
         func = function()
             for i = 1, count do
@@ -735,13 +761,13 @@ local function add_special_cards_to_deck(count)
                     nil,                 -- soulable
                     'm_gold'            -- key for Gold Card
                 )
-                
+
                 -- Set specific rank/suit if needed
                 card:set_base(G.P_CARDS["S_A"])  -- Ace of Spades
-                
+
                 -- Add to deck
                 G.deck:emplace(card)
-                
+
                 -- Small delay between cards
                 if i < count then
                     G.E_MANAGER:add_event(Event({
@@ -752,10 +778,10 @@ local function add_special_cards_to_deck(count)
                     }))
                 end
             end
-            
+
             -- Update deck display
             G.deck:shuffle()
-            
+
             return true
         end
     }))
@@ -763,6 +789,7 @@ end
 ```
 
 ### Consumable Effects
+
 ```lua
 -- Create custom tarot card
 SMODS.Tarot({
@@ -777,7 +804,7 @@ SMODS.Tarot({
     config = {},
     pos = { x = 0, y = 1 },
     atlas = 'ym_tarots',
-    
+
     use = function(self, card, area, copier)
         -- Transform all cards in hand to Aces
         G.E_MANAGER:add_event(Event({
@@ -788,7 +815,7 @@ SMODS.Tarot({
                 for _, hand_card in ipairs(G.hand.cards) do
                     table.insert(cards, hand_card)
                 end
-                
+
                 -- Transform each card
                 for i, hand_card in ipairs(cards) do
                     G.E_MANAGER:add_event(Event({
@@ -798,16 +825,16 @@ SMODS.Tarot({
                             -- Keep suit, change to Ace
                             local suit = hand_card.base.suit
                             local ace_key = suit .. "_A"
-                            
+
                             hand_card:set_base(G.P_CARDS[ace_key])
                             hand_card:juice_up(0.3, 0.5)
                             play_sound('tarot1')
-                            
+
                             return true
                         end
                     }))
                 end
-                
+
                 return true
             end
         }))
@@ -816,6 +843,7 @@ SMODS.Tarot({
 ```
 
 ### Round Events
+
 ```lua
 -- Hook into round transitions
 local function setup_round_hooks()
@@ -835,27 +863,27 @@ local function setup_round_hooks()
                 major = G.play
             })
         end
-        
+
         return old_round_start()
     end
-    
+
     -- After hand played
     local old_play_hand = G.FUNCS.play_cards_from_highlighted
     G.FUNCS.play_cards_from_highlighted = function(e)
         local ret = old_play_hand(e)
-        
+
         -- Check for special conditions
         if #G.play.cards == 5 then
             local all_same_suit = true
             local suit = G.play.cards[1].base.suit
-            
+
             for _, card in ipairs(G.play.cards) do
                 if card.base.suit ~= suit then
                     all_same_suit = false
                     break
                 end
             end
-            
+
             if all_same_suit then
                 -- Bonus for flush
                 ease_dollars(5)
@@ -872,7 +900,7 @@ local function setup_round_hooks()
                 )
             end
         end
-        
+
         return ret
     end
 end
@@ -881,6 +909,7 @@ end
 ## Performance Guidelines
 
 ### Table Optimization
+
 ```lua
 -- Pre-allocate tables when size is known
 local function create_card_pool(size)
@@ -889,12 +918,12 @@ local function create_card_pool(size)
     for i = 1, size do
         pool[i] = false
     end
-    
+
     -- Fill pool
     for i = 1, size do
         pool[i] = create_card(i)
     end
-    
+
     return pool
 end
 
@@ -906,18 +935,19 @@ local function evaluate_hand(cards)
     for k in pairs(temp_hand) do
         temp_hand[k] = nil
     end
-    
+
     -- Use temporary table
     for _, card in ipairs(cards) do
         local rank = card:get_id()
         temp_hand[rank] = (temp_hand[rank] or 0) + 1
     end
-    
+
     return calculate_hand_type(temp_hand)
 end
 ```
 
 ### String Optimization
+
 ```lua
 -- Cache string concatenations
 local MULT_PREFIX = "Mult x"
@@ -942,11 +972,12 @@ end
 ```
 
 ### Loop Optimization
+
 ```lua
 -- Cache table lengths
 local function process_large_array(array)
     local len = #array  -- Cache length
-    
+
     for i = 1, len do
         -- Process array[i]
     end
@@ -955,13 +986,13 @@ end
 -- Use pairs vs ipairs appropriately
 local function count_suits(cards)
     local suits = {}
-    
+
     -- ipairs for arrays
     for _, card in ipairs(cards) do
         local suit = card.base.suit
         suits[suit] = (suits[suit] or 0) + 1
     end
-    
+
     -- pairs for hash tables
     local count = 0
     for suit, amount in pairs(suits) do
@@ -969,7 +1000,7 @@ local function count_suits(cards)
             count = count + 1
         end
     end
-    
+
     return count
 end
 ```
@@ -977,13 +1008,14 @@ end
 ## Debugging and Testing
 
 ### Debug Helpers
+
 ```lua
 -- Conditional debug logging
 local DEBUG = false  -- Set to true during development
 
 local function debug_log(message, data)
     if not DEBUG then return end
-    
+
     print("[YM_DEBUG] " .. message)
     if data then
         print("  Data: " .. inspect(data))
@@ -995,16 +1027,17 @@ local function timed_function(name, func, ...)
     local start = os.clock()
     local results = {func(...)}
     local elapsed = os.clock() - start
-    
+
     if elapsed > 0.016 then  -- Log if > 1 frame at 60fps
         print(string.format("[PERF] %s took %.3f seconds", name, elapsed))
     end
-    
+
     return table.unpack(results)
 end
 ```
 
 ### Testing Patterns
+
 ```lua
 -- Test helper functions
 local function test_joker_effect()
@@ -1017,16 +1050,16 @@ local function test_joker_effect()
             }
         }
     }
-    
+
     local test_context = {
         joker_main = true,
         scoring_hand = true,
         full_hand = {}
     }
-    
+
     -- Run calculation
     local result = calculate_joker_mult(test_card, test_context)
-    
+
     -- Verify
     assert(result == 15, "Expected 15, got " .. tostring(result))
     debug_log("Joker effect test passed")
@@ -1040,6 +1073,7 @@ end
 ```
 
 ### Common Debugging Issues
+
 ```lua
 -- Issue: Card doesn't appear in shop
 -- Solution: Check atlas loading
@@ -1057,7 +1091,7 @@ calculate = function(self, card, context)
         context_type = context.joker_main and "joker_main" or "other",
         card_area = context.cardarea and context.cardarea.config.type
     })
-    
+
     -- Effect logic...
 end
 
@@ -1068,12 +1102,12 @@ local function safe_get_joker_mult(card)
         debug_log("WARNING: Nil card passed")
         return 1
     end
-    
+
     if not card.ability then
         debug_log("WARNING: Card missing ability")
         return 1
     end
-    
+
     return card.ability.extra and card.ability.extra.mult or 1
 end
 ```

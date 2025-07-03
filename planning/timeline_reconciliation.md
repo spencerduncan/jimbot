@@ -3,18 +3,21 @@
 ## Overall Project Timeline (10 Weeks)
 
 ### Week 0: Foundation and Interface Specification
+
 - **All Teams**: Define Protocol Buffer schemas
 - **Infrastructure**: Set up Event Bus and Resource Coordinator
 - **Environment**: Create Docker Compose development environment
 - **Deliverable**: Working Event Bus with defined interfaces
 
 ### Weeks 1-3: MCP Development (Critical Path)
+
 - **Week 1**: Core MCP implementation and BalatroMCP integration
 - **Week 2**: Complex scoring capture and optimization
 - **Week 3**: System integration and production readiness
 - **Dependencies**: Provides events for all other components
 
 ### Weeks 1-8: Knowledge Graph Development
+
 - **Weeks 1-2**: Foundation, Event Bus integration, schema
 - **Weeks 3-4**: GraphQL API and analytics algorithms
 - **Weeks 5-6**: Ray integration and advanced analytics
@@ -22,6 +25,7 @@
 - **Dependencies**: Consumes MCP events, provides queries to Ray/Claude
 
 ### Weeks 2-8: Ray RLlib Development
+
 - **Week 2**: Foundation and Event Bus integration
 - **Week 3**: Core RL algorithms (PPO, DQN)
 - **Week 4**: Knowledge Graph integration
@@ -32,6 +36,7 @@
 - **Dependencies**: Needs MCP events (Week 3), KG queries (Week 4)
 
 ### Weeks 4-7: Claude Integration
+
 - **Week 4**: Foundation and Event Bus async queue
 - **Week 5**: Semantic caching and optimization
 - **Week 6**: Advanced strategy analysis
@@ -39,6 +44,7 @@
 - **Dependencies**: Needs game context from Ray/KG
 
 ### Weeks 5-10: Analytics Development
+
 - **Week 5**: Foundation and Event Bus integration
 - **Week 6**: Schema implementation
 - **Week 7**: Query optimization and MLflow
@@ -48,6 +54,7 @@
 - **Dependencies**: Consumes all event types
 
 ### Headless Balatro (Parallel Track)
+
 - Developed independently
 - Must integrate with MCP by Week 2
 - Shares 2GB allocation with MCP
@@ -55,11 +62,13 @@
 ## Memory Allocation Summary (32GB Total)
 
 ### Infrastructure (5GB)
+
 - **Event Bus**: 2GB (NATS or similar)
 - **Resource Coordinator**: 1GB
 - **Redis Cache**: 2GB (shared between Claude and Analytics)
 
 ### Core Components (26GB)
+
 - **Memgraph**: 10GB (reduced from 12GB)
 - **Ray RLlib**: 8GB
   - Object Store: 2.5GB
@@ -73,21 +82,25 @@
 - **Claude/LangChain**: 1GB (uses shared Redis)
 
 ### System Buffer (1GB)
+
 - OS and burst capacity
 
 ## Critical Integration Points
 
 ### Week 3 Checkpoint
+
 - MCP publishing events to Event Bus
 - Ray consuming learning requests
 - Knowledge Graph ingesting game states
 
 ### Week 7 Checkpoint
+
 - Full bidirectional integration between Ray ↔ KG ↔ Claude
 - Analytics capturing all event types
 - End-to-end data flow validated
 
 ### Week 10 Final Integration
+
 - All components operational
 - Performance targets met
 - Production deployment ready
@@ -95,22 +108,24 @@
 ## Risk Mitigation
 
 ### Timeline Risks
+
 1. **MCP Delays**: Would impact all components
    - Mitigation: Mock Event Bus producer by Week 1
-   
 2. **Integration Complexity**: Multiple moving parts
    - Mitigation: Weekly integration tests, clear interfaces
 
 ### Resource Risks
+
 1. **Memory Pressure**: Total allocation near limit
    - Mitigation: Aggressive pruning, Resource Coordinator management
-   
 2. **Redis Conflicts**: Shared between components
    - Mitigation: Namespace separation, monitoring
 
 ## Development Approach
 
-This is designed as a single-developer or small team project with parallel development possible due to:
+This is designed as a single-developer or small team project with parallel
+development possible due to:
+
 - Clean interface boundaries (Event Bus)
 - Mock implementations for early testing
 - Independent component development
@@ -124,4 +139,5 @@ This is designed as a single-developer or small team project with parallel devel
 4. Performance targets achieved
 5. Clean handoff at Week 10
 
-This reconciliation ensures all components align with the overall 10-week timeline while respecting resource constraints and dependencies.
+This reconciliation ensures all components align with the overall 10-week
+timeline while respecting resource constraints and dependencies.

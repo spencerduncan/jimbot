@@ -11,15 +11,17 @@ This guide explains how to run Windows Balatro with the BalatroMCP mod from WSL.
 ## Setup
 
 1. **Install the mod to Windows Balatro:**
+
    ```bash
    # If your Windows username differs from WSL username:
    WINDOWS_USER=YourWindowsUsername ./install_mod_windows.sh
-   
+
    # Otherwise just run:
    ./install_mod_windows.sh
    ```
 
 2. **Start the Event Bus server** (in a separate terminal):
+
    ```bash
    python mods/BalatroMCP/test_server.py
    ```
@@ -31,7 +33,7 @@ This guide explains how to run Windows Balatro with the BalatroMCP mod from WSL.
 
 ## File Locations
 
-- **Windows Balatro executable:** 
+- **Windows Balatro executable:**
   - Steam: `C:\Program Files (x86)\Steam\steamapps\common\Balatro\Balatro.exe`
   - Standalone: `C:\Users\<username>\AppData\Local\Balatro\Balatro.exe`
 
@@ -51,19 +53,24 @@ This guide explains how to run Windows Balatro with the BalatroMCP mod from WSL.
 ## Configuration
 
 The mod configuration file is located at:
+
 - Windows: `%APPDATA%\Balatro\mods\BalatroMCP\config.json`
-- WSL: `/mnt/c/Users/<username>/AppData/Roaming/Balatro/mods/BalatroMCP/config.json`
+- WSL:
+  `/mnt/c/Users/<username>/AppData/Roaming/Balatro/mods/BalatroMCP/config.json`
 
 Key settings for Windows:
+
 - `headless`: Set to `false` for Windows GUI
 - `disable_sound`: Set to `false` to keep sound enabled
 - `game_speed_multiplier`: Set to 1 for normal speed
 
 ## Troubleshooting
 
-1. **Balatro not found:** Edit `run_windows_balatro.sh` and update the `BALATRO_EXE` path
+1. **Balatro not found:** Edit `run_windows_balatro.sh` and update the
+   `BALATRO_EXE` path
 
 2. **Permission denied:** Make sure scripts are executable:
+
    ```bash
    chmod +x *.sh
    ```
@@ -71,7 +78,8 @@ Key settings for Windows:
 3. **Mod not loading:** Check the Balatro logs at:
    - `%APPDATA%\Balatro\mods\BalatroMCP\balatro_mcp.log`
 
-4. **Can't connect to Event Bus:** Ensure the test server is running and accessible at `http://localhost:8080`
+4. **Can't connect to Event Bus:** Ensure the test server is running and
+   accessible at `http://localhost:8080`
 
 ## Notes
 

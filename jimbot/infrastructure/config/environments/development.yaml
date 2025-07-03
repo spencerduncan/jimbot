@@ -1,10 +1,10 @@
 # Development environment overrides
 infrastructure:
   event_bus:
-    batch_window_ms: 50  # Faster batching for development
-    
+    batch_window_ms: 50 # Faster batching for development
+
   monitoring:
-    profiling_enabled: true  # Enable profiling in dev
-    
+    profiling_enabled: true # Enable profiling in dev
+
   logging:
-    level: DEBUG  # More verbose logging
+    level: DEBUG # More verbose logging

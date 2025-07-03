@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  event-bus:
+    build:
+      context: ../..
+      dockerfile: services/event-bus-rust/Dockerfile
+    container_name: jimbot-event-bus
+    ports:
+      - "8080:8080"   # REST API
+      - "50051:50051" # gRPC
+    environment:
+      - RUST_LOG=event_bus_rust=debug,tower_http=debug
+      - RUST_BACKTRACE=1
+    networks:
+      - jimbot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  jimbot-network:
+    external: true

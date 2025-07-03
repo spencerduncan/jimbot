@@ -2,9 +2,16 @@
 
 ## Executive Summary
 
-This plan outlines the development of the Claude integration layer for the Balatro Sequential Learning System, to be implemented during Weeks 4-7 of the project timeline. The integration will consume strategy requests from the Event Bus using an async queue pattern, provide strategic advice to the learning system, and implement aggressive cost optimization to operate within a 100 requests/hour rate limit while maintaining high-quality decision support.
+This plan outlines the development of the Claude integration layer for the
+Balatro Sequential Learning System, to be implemented during Weeks 4-7 of the
+project timeline. The integration will consume strategy requests from the Event
+Bus using an async queue pattern, provide strategic advice to the learning
+system, and implement aggressive cost optimization to operate within a 100
+requests/hour rate limit while maintaining high-quality decision support.
 
-The system will integrate with the central Resource Coordinator for API quota management and use the Event Bus for all communications, ensuring clean separation of concerns and scalability.
+The system will integrate with the central Resource Coordinator for API quota
+management and use the Event Bus for all communications, ensuring clean
+separation of concerns and scalability.
 
 ## Technical Architecture
 
@@ -23,7 +30,7 @@ class ClaudeStrategyAdvisor:
         self.resource_coordinator = ResourceCoordinator()
         self.claude = ChatAnthropic(model="claude-3-7-sonnet")
         self.rate_limiter = TokenBucket(capacity=100, refill_rate=100/3600)
-        
+
     async def start(self):
         # Subscribe to strategy request queue
         await self.event_bus.subscribe(
@@ -31,26 +38,29 @@ class ClaudeStrategyAdvisor:
             handler=self.handle_strategy_request,
             queue_mode=True  # Async queue processing
         )
-        
+
     async def handle_strategy_request(self, event: Event):
         request = StrategyRequest()
         event.payload.Unpack(request)
-        
+
         # Check rate limit via Resource Coordinator
         if await self.can_process_request():
             response = await self.get_strategic_advice(request)
         else:
             response = await self.get_cached_strategy(request)
-            
+
         await self.publish_response(response)
 ```
 
 ### Cost Optimization Architecture
 
-The system implements three-tier optimization to maximize value within the 100 requests/hour limit:
+The system implements three-tier optimization to maximize value within the 100
+requests/hour limit:
 
-1. **Semantic Caching**: Redis-backed cache with vector similarity search (85-95% hit rate target)
-2. **Request Prioritization**: Only consult Claude for low-confidence decisions (<70% confidence)
+1. **Semantic Caching**: Redis-backed cache with vector similarity search
+   (85-95% hit rate target)
+2. **Request Prioritization**: Only consult Claude for low-confidence decisions
+   (<70% confidence)
 3. **Batch Analysis**: Aggregate post-game analysis into single requests
 
 ### Resource Coordination
@@ -126,17 +136,17 @@ class SemanticCache:
         self.redis = redis_client
         self.embedder = embedding_model
         self.similarity_threshold = 0.85
-        
+
     async def get_or_compute(self, game_state: GameState) -> StrategyResponse:
         # Generate embedding for current state
         embedding = await self.embedder.embed(game_state.serialize())
-        
+
         # Search for similar cached responses
         similar = await self.redis.vector_search(
-            embedding, 
+            embedding,
             threshold=self.similarity_threshold
         )
-        
+
         if similar and similar.score > 0.95:
             # Direct cache hit
             return similar.response
@@ -184,7 +194,7 @@ class RateLimitedAdvisor:
     def __init__(self, hourly_limit=100):
         self.token_bucket = TokenBucket(hourly_limit, refill_rate=hourly_limit/3600)
         self.fallback_strategies = self.load_cached_strategies()
-        
+
     async def get_advice(self, request: StrategyRequest) -> StrategyResponse:
         if self.token_bucket.try_consume(1):
             # Use Claude API
@@ -192,13 +202,13 @@ class RateLimitedAdvisor:
         else:
             # Use fallback
             return await self.fallback_strategy(request)
-            
+
     async def fallback_strategy(self, request: StrategyRequest) -> StrategyResponse:
         # Try cache first
         cached = await self.semantic_cache.get(request)
         if cached:
             return cached
-            
+
         # Use rule-based fallback
         return self.rule_based_strategy(request)
 ```
@@ -220,7 +230,7 @@ async def enrich_with_knowledge(self, request: StrategyRequest):
             }
         }
     """, variables={"jokers": request.game_state.jokers})
-    
+
     # Include in prompt context
     request.context.synergies = joker_synergies
     return request
@@ -232,11 +242,11 @@ async def enrich_with_knowledge(self, request: StrategyRequest):
 async def analyze_game_batch(self, game_histories: List[GameHistory]):
     # Aggregate multiple games for efficient analysis
     batch_prompt = self.create_batch_analysis_prompt(game_histories)
-    
+
     # Single API call for multiple games
-    analysis = await self.claude.analyze(batch_prompt, 
+    analysis = await self.claude.analyze(batch_prompt,
                                        extended_thinking=True)
-    
+
     # Extract and store insights
     for insight in analysis.strategic_insights:
         await self.publish_knowledge_update(insight)
@@ -245,18 +255,21 @@ async def analyze_game_batch(self, game_histories: List[GameHistory]):
 ## Risk Mitigation
 
 ### API Rate Limit Management
+
 - Token bucket algorithm with 100/hour capacity
 - Automatic fallback to cached strategies
 - Priority queue for critical decisions
 - Circuit breaker pattern for API failures
 
 ### Cache Poisoning Prevention
+
 - Version tagging for all cached entries
 - Periodic validation against known good strategies
 - Automatic expiry for low-confidence responses
 - A/B testing of cached vs fresh responses
 
 ### Cost Control Measures
+
 - Only consult Claude for decisions with <70% confidence
 - Batch non-urgent requests
 - Aggressive semantic caching (target 85%+ hit rate)
@@ -281,15 +294,18 @@ async def analyze_game_batch(self, game_histories: List[GameHistory]):
 ## Resource Requirements
 
 ### Development Approach
+
 Single developer or small team with LLM and game AI experience.
 
 ### Technical Skills
+
 - **Python**: Async programming, LangChain framework
 - **LLM Integration**: Prompt engineering, caching strategies
 - **Event-Driven Systems**: Message queue patterns
 - **Game AI**: Understanding of strategic decision making
 
 ### Infrastructure
+
 - Redis (shared with Analytics): Vector search capability
 - Python 3.11+ environment
 - Access to Claude API
@@ -298,6 +314,7 @@ Single developer or small team with LLM and game AI experience.
 ## Key Deliverables
 
 By Week 7:
+
 - Async Event Bus consumer for strategy requests
 - Semantic caching with 85%+ hit rate
 - Rate-limited Claude integration
@@ -306,4 +323,5 @@ By Week 7:
 - Integration with Knowledge Graph
 - Production monitoring and alerts
 
-This plan provides a practical approach to integrating Claude as a strategic advisor within the strict constraints of API limits and system architecture.
+This plan provides a practical approach to integrating Claude as a strategic
+advisor within the strict constraints of API limits and system architecture.

@@ -1,10 +1,12 @@
 # JimBot LLM Integration
 
-This module provides Claude AI integration for strategic consultation in Balatro gameplay, with a focus on cost optimization and intelligent decision-making.
+This module provides Claude AI integration for strategic consultation in Balatro
+gameplay, with a focus on cost optimization and intelligent decision-making.
 
 ## Overview
 
 The LLM subsystem serves two primary functions:
+
 1. **Strategic Consultation**: Provides expert advice for complex game decisions
 2. **Meta-Analysis**: Analyzes failed runs to improve future performance
 
@@ -65,25 +67,32 @@ insights = await advisor.analyze_failure(failed_run)
 ## Cost Optimization Strategies
 
 ### 1. Intelligent Request Filtering
+
 Only consult Claude for high-value decisions:
+
 - Complex joker synergies (3+ jokers)
 - Unknown boss blind effects
 - Critical voucher decisions
 - Spectral card usage
 
 ### 2. Advanced Caching System
+
 Three-tier cache hierarchy:
+
 1. **Exact Match**: Direct game state mapping
 2. **Similarity**: Cosine similarity > 0.85
 3. **Pattern**: Abstract strategy patterns
 
 ### 3. Confidence-Based Consultation
+
 Dynamic thresholds based on game stage:
+
 - Early Game (Antes 1-3): 30% confidence required
 - Mid Game (Antes 4-6): 50% confidence required
 - Late Game (Antes 7-8): 70% confidence required
 
 ### 4. Request Batching
+
 Batch similar decisions within 100ms windows to reduce API calls.
 
 ## Fallback Strategies
@@ -123,6 +132,7 @@ llm/
 ## Configuration
 
 Environment variables:
+
 ```bash
 ANTHROPIC_API_KEY=your_api_key_here
 CLAUDE_MODEL=claude-3-opus-20240229
@@ -134,6 +144,7 @@ LLM_CONFIDENCE_THRESHOLD=0.5
 ## Monitoring
 
 Key metrics tracked:
+
 - Requests per hour
 - Cache hit rate (target: >95%)
 - Decision consultation rate (target: <5%)
@@ -171,18 +182,21 @@ python -m jimbot.llm.analyze_costs
 ## Troubleshooting
 
 ### High API Costs
+
 - Check consultation rate (should be <5%)
 - Verify cache is working properly
 - Review confidence thresholds
 - Analyze decision patterns
 
 ### Rate Limit Errors
+
 - Check hourly request count
 - Verify rate limiter configuration
 - Ensure proper request distribution
 - Consider increasing cache size
 
 ### Slow Response Times
+
 - Check network latency
 - Verify async implementation
 - Review prompt size
@@ -191,6 +205,7 @@ python -m jimbot.llm.analyze_costs
 ## Contributing
 
 When adding new features:
+
 1. Maintain <5% consultation target
 2. Add comprehensive caching
 3. Include fallback strategies

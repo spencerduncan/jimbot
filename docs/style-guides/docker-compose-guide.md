@@ -1,8 +1,10 @@
 # Docker & Docker Compose Best Practices for JimBot
 
-This guide defines Docker and Docker Compose conventions for the JimBot project's multi-service ML architecture.
+This guide defines Docker and Docker Compose conventions for the JimBot
+project's multi-service ML architecture.
 
 ## Table of Contents
+
 1. [General Principles](#general-principles)
 2. [Dockerfile Best Practices](#dockerfile-best-practices)
 3. [Docker Compose Patterns](#docker-compose-patterns)
@@ -17,6 +19,7 @@ This guide defines Docker and Docker Compose conventions for the JimBot project'
 ## General Principles
 
 ### Core Guidelines
+
 - **One process per container** - Each service runs independently
 - **Immutable infrastructure** - Containers are disposable
 - **12-Factor App principles** - Configuration via environment
@@ -24,6 +27,7 @@ This guide defines Docker and Docker Compose conventions for the JimBot project'
 - **Layer caching optimization** - Order matters in Dockerfiles
 
 ### Project Structure
+
 ```
 jimbot/
 ├── docker/
@@ -49,6 +53,7 @@ jimbot/
 ## Dockerfile Best Practices
 
 ### Multi-Stage Build Pattern
+
 ```dockerfile
 # docker/services/app/Dockerfile
 # Build stage
@@ -96,6 +101,7 @@ CMD ["python", "-m", "jimbot.main"]
 ```
 
 ### GPU-Enabled Dockerfile
+
 ```dockerfile
 # docker/services/ray/Dockerfile
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
@@ -120,6 +126,7 @@ CMD ["ray", "start", "--head", "--port=6379", "--dashboard-host=0.0.0.0"]
 ```
 
 ### Memgraph with Custom Modules
+
 ```dockerfile
 # docker/services/memgraph/Dockerfile
 FROM memgraph/memgraph-mage:latest
@@ -142,6 +149,7 @@ CMD ["memgraph", "--config", "/etc/memgraph/memgraph.conf"]
 ## Docker Compose Patterns
 
 ### Base Configuration
+
 ```yaml
 # docker-compose.yml
 version: '3.9'
@@ -159,8 +167,8 @@ services:
     container_name: jimbot-memgraph
     restart: unless-stopped
     ports:
-      - "7687:7687"  # Bolt protocol
-      - "3000:3000"  # Memgraph Lab
+      - '7687:7687' # Bolt protocol
+      - '3000:3000' # Memgraph Lab
     volumes:
       - memgraph_data:/var/lib/memgraph
       - ./mage_modules:/mage_modules:ro
@@ -175,7 +183,7 @@ services:
         reservations:
           memory: 10G
     healthcheck:
-      test: ["CMD", "echo", "MATCH (n) RETURN n LIMIT 1;", "|", "mgconsole"]
+      test: ['CMD', 'echo', 'MATCH (n) RETURN n LIMIT 1;', '|', 'mgconsole']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -190,9 +198,9 @@ services:
     container_name: jimbot-questdb
     restart: unless-stopped
     ports:
-      - "9000:9000"  # HTTP API
-      - "8812:8812"  # PostgreSQL wire protocol
-      - "9009:9009"  # InfluxDB line protocol
+      - '9000:9000' # HTTP API
+      - '8812:8812' # PostgreSQL wire protocol
+      - '9009:9009' # InfluxDB line protocol
     volumes:
       - questdb_data:/var/lib/questdb
     environment:
@@ -207,7 +215,7 @@ services:
         reservations:
           memory: 3G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/exec?query=SELECT%201"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/exec?query=SELECT%201']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -221,8 +229,8 @@ services:
     container_name: jimbot-eventstore
     restart: unless-stopped
     ports:
-      - "2113:2113"  # HTTP API & UI
-      - "1113:1113"  # TCP
+      - '2113:2113' # HTTP API & UI
+      - '1113:1113' # TCP
     volumes:
       - eventstore_data:/var/lib/eventstore
       - eventstore_logs:/var/log/eventstore
@@ -242,7 +250,7 @@ services:
         reservations:
           memory: 1G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:2113/health/live']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -257,11 +265,11 @@ services:
       dockerfile: Dockerfile
     container_name: jimbot-ray-head
     restart: unless-stopped
-    shm_size: 2G  # Shared memory for Ray object store
+    shm_size: 2G # Shared memory for Ray object store
     ports:
-      - "6379:6379"    # Ray port
-      - "8265:8265"    # Ray dashboard
-      - "10001:10001"  # Client port
+      - '6379:6379' # Ray port
+      - '8265:8265' # Ray dashboard
+      - '10001:10001' # Client port
     volumes:
       - ray_data:/tmp/ray
       - ./jimbot:/app/jimbot:ro
@@ -269,7 +277,7 @@ services:
       <<: *common-variables
       RAY_HEAD_SERVICE_HOST: ray-head
       RAY_HEAD_SERVICE_PORT: 6379
-      RAY_OBJECT_STORE_MEMORY: 2147483648  # 2GB
+      RAY_OBJECT_STORE_MEMORY: 2147483648 # 2GB
       CUDA_VISIBLE_DEVICES: 0
     deploy:
       resources:
@@ -283,7 +291,7 @@ services:
               count: 1
               capabilities: [gpu]
     healthcheck:
-      test: ["CMD", "ray", "status"]
+      test: ['CMD', 'ray', 'status']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -302,7 +310,7 @@ services:
     container_name: jimbot-app
     restart: unless-stopped
     ports:
-      - "8000:8000"  # MCP server
+      - '8000:8000' # MCP server
     volumes:
       - ./jimbot:/app/jimbot:ro
       - ./config:/app/config:ro
@@ -330,7 +338,7 @@ services:
       ray-head:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -371,6 +379,7 @@ networks:
 ## Volume Management
 
 ### Named Volumes for Persistence
+
 ```yaml
 volumes:
   # Database volumes
@@ -380,7 +389,7 @@ volumes:
       type: none
       o: bind
       device: /data/jimbot/memgraph
-  
+
   questdb_data:
     driver: local
     driver_opts:
@@ -390,27 +399,30 @@ volumes:
 ```
 
 ### Development Bind Mounts
+
 ```yaml
 # docker-compose.dev.yml
 services:
   app:
     volumes:
-      - ./jimbot:/app/jimbot:rw  # Hot reload
+      - ./jimbot:/app/jimbot:rw # Hot reload
       - ./tests:/app/tests:ro
       - ./scripts:/app/scripts:ro
 ```
 
 ### Temporary Volumes
+
 ```yaml
 services:
   ray-head:
     tmpfs:
-      - /tmp/ray:size=2G  # In-memory for performance
+      - /tmp/ray:size=2G # In-memory for performance
 ```
 
 ## Networking
 
 ### Network Segmentation
+
 ```yaml
 networks:
   # External-facing services
@@ -419,7 +431,7 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/24
-  
+
   # Internal service communication
   backend_network:
     driver: bridge
@@ -427,7 +439,7 @@ networks:
     ipam:
       config:
         - subnet: 172.21.0.0/24
-  
+
   # Database layer
   data_network:
     driver: bridge
@@ -438,6 +450,7 @@ networks:
 ```
 
 ### Service Discovery
+
 ```yaml
 services:
   app:
@@ -446,12 +459,13 @@ services:
       MEMGRAPH_HOST: memgraph
       QUESTDB_HOST: questdb
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
 ```
 
 ## Resource Management
 
 ### Memory Allocation Strategy
+
 ```yaml
 # Total system: 32GB
 # Reserved for OS: 6GB
@@ -465,7 +479,7 @@ services:
           memory: 12G
         reservations:
           memory: 10G
-  
+
   ray-head:
     deploy:
       resources:
@@ -474,7 +488,7 @@ services:
           cpus: '4'
         reservations:
           memory: 6G
-  
+
   questdb:
     deploy:
       resources:
@@ -482,7 +496,7 @@ services:
           memory: 4G
         reservations:
           memory: 3G
-  
+
   eventstore:
     deploy:
       resources:
@@ -493,6 +507,7 @@ services:
 ```
 
 ### GPU Allocation
+
 ```yaml
 services:
   ray-head:
@@ -503,34 +518,45 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-              device_ids: ['0']  # Specific GPU
+              device_ids: ['0'] # Specific GPU
 ```
 
 ## Development vs Production
 
 ### Development Overrides
+
 ```yaml
 # docker-compose.dev.yml
 services:
   memgraph:
     ports:
-      - "7444:7444"  # Debug port
+      - '7444:7444' # Debug port
     environment:
       MEMGRAPH_LOG_LEVEL: DEBUG
-    command: ["memgraph", "--log-level=DEBUG", "--also-log-to-stderr"]
-  
+    command: ['memgraph', '--log-level=DEBUG', '--also-log-to-stderr']
+
   app:
     build:
-      target: development  # Dev stage with debugging tools
+      target: development # Dev stage with debugging tools
     volumes:
       - ./jimbot:/app/jimbot:rw
     environment:
-      DEBUG: "true"
-      RELOAD: "true"
-    command: ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "jimbot.main"]
+      DEBUG: 'true'
+      RELOAD: 'true'
+    command:
+      [
+        'python',
+        '-m',
+        'debugpy',
+        '--listen',
+        '0.0.0.0:5678',
+        '-m',
+        'jimbot.main',
+      ]
 ```
 
 ### Production Configuration
+
 ```yaml
 # docker-compose.prod.yml
 services:
@@ -541,7 +567,7 @@ services:
       MEMGRAPH_SSL_KEY: /certs/key.pem
     volumes:
       - ./certs:/certs:ro
-  
+
   app:
     restart: always
     environment:
@@ -558,33 +584,35 @@ services:
 ## Health Checks
 
 ### Service-Specific Health Checks
+
 ```yaml
 services:
   memgraph:
     healthcheck:
-      test: ["CMD", "echo", "MATCH (n) RETURN n LIMIT 1;", "|", "mgconsole"]
+      test: ['CMD', 'echo', 'MATCH (n) RETURN n LIMIT 1;', '|', 'mgconsole']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-  
+
   questdb:
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/exec?query=SELECT%201"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/exec?query=SELECT%201']
       interval: 30s
       timeout: 10s
       retries: 3
-  
+
   ray-head:
     healthcheck:
-      test: ["CMD", "ray", "status"]
+      test: ['CMD', 'ray', 'status']
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s  # Ray takes time to start
+      start_period: 60s # Ray takes time to start
 ```
 
 ### Custom Health Check Script
+
 ```bash
 #!/bin/bash
 # docker/scripts/health-check.sh
@@ -603,6 +631,7 @@ fi
 ## Security
 
 ### Secrets Management
+
 ```yaml
 # docker-compose.yml
 services:
@@ -621,6 +650,7 @@ secrets:
 ```
 
 ### Security Best Practices
+
 ```dockerfile
 # Run as non-root user
 RUN useradd -m -u 1000 jimbot
@@ -640,22 +670,24 @@ services:
 ```
 
 ### Network Security
+
 ```yaml
 networks:
   # Internal networks for sensitive services
   data_network:
     internal: true
-  
+
   # Frontend with restricted access
   frontend_network:
     driver: bridge
     driver_opts:
-      com.docker.network.bridge.enable_icc: "false"
+      com.docker.network.bridge.enable_icc: 'false'
 ```
 
 ## GPU Support
 
 ### NVIDIA Docker Configuration
+
 ```yaml
 # Ensure nvidia-docker2 is installed
 # Add to /etc/docker/daemon.json:
@@ -679,6 +711,7 @@ services:
 ```
 
 ### Multi-GPU Support
+
 ```yaml
 services:
   ray-worker-gpu-0:
@@ -692,7 +725,7 @@ services:
             - driver: nvidia
               device_ids: ['0']
               capabilities: [gpu]
-  
+
   ray-worker-gpu-1:
     extends: ray-head
     environment:
@@ -709,6 +742,7 @@ services:
 ## Deployment Commands
 
 ### Development
+
 ```bash
 # Start all services
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
@@ -721,6 +755,7 @@ docker-compose build --no-cache app
 ```
 
 ### Production
+
 ```bash
 # Deploy with production settings
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
@@ -733,6 +768,7 @@ docker run --rm -v jimbot_memgraph_data:/data -v $(pwd):/backup alpine tar czf /
 ```
 
 ### Monitoring
+
 ```bash
 # Check resource usage
 docker stats

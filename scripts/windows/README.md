@@ -23,4 +23,5 @@ These scripts are designed to be run from Git Bash or WSL on Windows:
 ./stop_windows_balatro.sh
 ```
 
-Note: These scripts manage the Balatro process and create PID files for tracking.
+Note: These scripts manage the Balatro process and create PID files for
+tracking.

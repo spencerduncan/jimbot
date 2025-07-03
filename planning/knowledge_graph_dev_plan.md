@@ -2,7 +2,12 @@
 
 ## Executive Summary
 
-This plan details the implementation of a Memgraph-based knowledge graph for the Balatro Sequential Learning System, to be developed during Weeks 1-8 of the project timeline. Working within a 10GB memory allocation (reduced from 12GB to accommodate Event Bus infrastructure), the system will consume game state events from the Event Bus, expose a GraphQL query interface, and provide strategic knowledge to the learning system via efficient graph queries.
+This plan details the implementation of a Memgraph-based knowledge graph for the
+Balatro Sequential Learning System, to be developed during Weeks 1-8 of the
+project timeline. Working within a 10GB memory allocation (reduced from 12GB to
+accommodate Event Bus infrastructure), the system will consume game state events
+from the Event Bus, expose a GraphQL query interface, and provide strategic
+knowledge to the learning system via efficient graph queries.
 
 ## 1. Memgraph Configuration for Balatro
 
@@ -35,6 +40,7 @@ docker run -p 7687:7687 -p 3000:3000 \
 ### MAGE Modules for Balatro
 
 Essential algorithms for strategy discovery:
+
 - **Community Detection**: Identify joker synergy clusters
 - **PageRank**: Determine influential jokers in winning runs
 - **Path Analysis**: Find optimal play sequences
@@ -44,7 +50,8 @@ Essential algorithms for strategy discovery:
 
 ### Event Bus Integration
 
-The Knowledge Graph consumes game state events and knowledge updates from the Event Bus:
+The Knowledge Graph consumes game state events and knowledge updates from the
+Event Bus:
 
 ```python
 from jimbot.proto.events_pb2 import Event, GameStateEvent, KnowledgeUpdate
@@ -55,13 +62,13 @@ class MemgraphEventConsumer:
     def __init__(self):
         self.event_bus = EventBusClient()
         self.memgraph = Memgraph()
-        
+
     async def start(self):
         await self.event_bus.subscribe(
             topics=['game.state', 'knowledge.update'],
             handler=self.process_event
         )
-        
+
     async def process_event(self, event: Event):
         if event.type == EventType.GAME_STATE:
             await self.update_game_state(event)
@@ -91,7 +98,7 @@ class Query:
         query = """
         MATCH (j1:Joker)-[s:SYNERGIZES_WITH]->(j2:Joker)
         WHERE j1.name IN $names AND j2.name IN $names
-        RETURN j1.name as joker1, j2.name as joker2, 
+        RETURN j1.name as joker1, j2.name as joker2,
                s.synergy_strength as strength, s.win_rate as win_rate
         """
         results = await self.memgraph.execute(query, names=joker_names)
@@ -235,7 +242,7 @@ class KnowledgeGraphService(KnowledgeServicer):
 ```cypher
 // Remove low-value game states older than 7 days
 CALL apoc.periodic.iterate(
-  "MATCH (gs:GameState) 
+  "MATCH (gs:GameState)
    WHERE gs.timestamp < datetime() - duration('P7D')
    AND NOT EXISTS((gs)<-[:CRITICAL_DECISION]-())
    RETURN gs",
@@ -246,7 +253,7 @@ CALL apoc.periodic.iterate(
 // Aggregate old decisions into summary nodes
 MATCH (d:Decision)
 WHERE d.timestamp < datetime() - duration('P14D')
-WITH d.run_id as run, d.decision_type as type, 
+WITH d.run_id as run, d.decision_type as type,
      collect(d) as decisions, avg(d.calculated_score) as avg_score
 CREATE (s:DecisionSummary {
   run_id: run,
@@ -279,7 +286,7 @@ def detect_joker_synergies(
     min_occurrences: int = 20,
     min_win_rate: float = 0.6
 ) -> mgp.Record(synergies=mgp.List[mgp.Map]):
-    
+
     query = """
     MATCH (r:Run)-[:USED_JOKER]->(j1:Joker)
     MATCH (r)-[:USED_JOKER]->(j2:Joker)
@@ -289,11 +296,11 @@ def detect_joker_synergies(
     MATCH (r2)-[:USED_JOKER]->(j2)
     WITH j1, j2, wins, count(r2) as total
     WHERE total >= $min_occurrences
-    RETURN j1.name as joker1, j2.name as joker2, 
+    RETURN j1.name as joker1, j2.name as joker2,
            wins * 1.0 / total as win_rate, total as games
     ORDER BY win_rate DESC
     """
-    
+
     results = []
     for record in ctx.execute(query, {'min_occurrences': min_occurrences}):
         if record['win_rate'] >= min_win_rate:
@@ -303,7 +310,7 @@ def detect_joker_synergies(
                 'win_rate': record['win_rate'],
                 'sample_size': record['games']
             })
-    
+
     return mgp.Record(synergies=results)
 ```
 
@@ -315,7 +322,7 @@ def optimize_joker_order(
     ctx: mgp.ProcCtx,
     joker_ids: mgp.List[str]
 ) -> mgp.Record(optimal_order=mgp.List[str], expected_mult=float):
-    
+
     # Retrieve joker effects
     jokers = []
     for jid in joker_ids:
@@ -325,7 +332,7 @@ def optimize_joker_order(
         ).fetchone()
         if result:
             jokers.append(result['j'])
-    
+
     # Sort by Balatro rules: additive before multiplicative
     def sort_key(joker):
         effect = joker.properties.get('effect_type', '')
@@ -338,16 +345,16 @@ def optimize_joker_order(
         elif 'xmult' in effect:
             return 3  # X multipliers last
         return 4
-    
+
     sorted_jokers = sorted(jokers, key=sort_key)
     optimal_order = [j.properties['id'] for j in sorted_jokers]
-    
+
     # Calculate expected multiplier
     base_mult = 1.0
     for joker in sorted_jokers:
         if 'mult_modifier' in joker.properties:
             base_mult *= joker.properties['mult_modifier']
-    
+
     return mgp.Record(
         optimal_order=optimal_order,
         expected_mult=base_mult
@@ -362,10 +369,10 @@ MATCH path = (start:GameState)-[:LEADS_TO*1..5]->(end:GameState)
 WHERE start.blind_type = $blind_type
   AND end.outcome = 'blind_cleared'
   AND end.hands_remaining >= 1
-WITH path, 
+WITH path,
      [n IN nodes(path) WHERE n:Decision | n] as decisions,
      end.hands_remaining as efficiency
-RETURN 
+RETURN
   [d IN decisions | {
     cards: d.cards_played,
     hand_type: d.hand_type,
@@ -425,11 +432,12 @@ LIMIT 10
 - Performance benchmarking
 
 **Key Implementation:**
+
 ```python
 class BalatroAnalyzer:
     def __init__(self, memgraph):
         self.db = memgraph
-        
+
     def analyze_ante_progression(self, run_id):
         """Analyze score progression through antes"""
         query = """
@@ -488,6 +496,7 @@ class BalatroAnalyzer:
 ## 6. Performance Targets
 
 ### Query Performance Requirements
+
 - Simple lookups (joker by ID): <1ms
 - Synergy detection: <50ms
 - Play sequence mining: <100ms
@@ -495,6 +504,7 @@ class BalatroAnalyzer:
 - Full ante analysis: <500ms
 
 ### Memory Targets
+
 - Base graph structure: ~4GB
 - Active game states (last 7 days): ~3GB
 - Historical summaries: ~2GB
@@ -504,6 +514,7 @@ class BalatroAnalyzer:
 ## 7. Testing Strategy
 
 ### Unit Tests
+
 ```python
 def test_joker_synergy_detection():
     # Create test data
@@ -519,7 +530,7 @@ def test_joker_synergy_detection():
         CREATE (r2)-[:USED_JOKER]->(mime)
         CREATE (r3)-[:USED_JOKER]->(baron)
     """)
-    
+
     # Test synergy detection
     result = detect_joker_synergies(min_occurrences=2)
     assert len(result) == 1
@@ -527,18 +538,19 @@ def test_joker_synergy_detection():
 ```
 
 ### Performance Benchmarks
+
 ```python
 class BalatroPerformanceTest:
     def benchmark_pattern_mining(self):
         """Test pattern mining performance with realistic data"""
         start = time.time()
-        
+
         result = self.db.execute_and_fetch("""
             MATCH path = (s:GameState {ante: 8})-[:LEADS_TO*1..5]->(:GameState)
             WITH path LIMIT 1000
             RETURN count(path)
         """)
-        
+
         duration = time.time() - start
         assert duration < 0.1  # Must complete in 100ms
 ```
@@ -546,6 +558,7 @@ class BalatroPerformanceTest:
 ## 8. Integration Points
 
 ### MCP Server Integration
+
 ```python
 class MCPToMemgraphBridge:
     def process_game_state(self, mcp_state):
@@ -558,7 +571,7 @@ class MCPToMemgraphBridge:
         MATCH (j:Joker {id: joker_id})
         MERGE (gs)-[:HAS_JOKER]->(j)
         """
-        
+
         self.db.execute(query, {
             'id': f"{mcp_state['session_id']}_{mcp_state['sequence_id']}",
             'properties': {
@@ -571,6 +584,7 @@ class MCPToMemgraphBridge:
 ```
 
 ### Ray RLlib Interface
+
 ```python
 def get_strategy_features(game_state):
     """Extract features for RL model"""
@@ -578,13 +592,13 @@ def get_strategy_features(game_state):
     MATCH (gs:GameState {id: $id})
     OPTIONAL MATCH (gs)-[:HAS_JOKER]->(j:Joker)
     OPTIONAL MATCH (j)-[s:SYNERGIZES_WITH]-(j2:Joker)<-[:HAS_JOKER]-(gs)
-    RETURN 
+    RETURN
         gs.ante as ante,
         gs.money as money,
         collect(DISTINCT j.id) as jokers,
         sum(s.synergy_strength) as total_synergy
     """
-    
+
     result = memgraph.execute_and_fetch(query, {'id': game_state['id']})
     return vectorize_features(result)
 ```
@@ -592,6 +606,7 @@ def get_strategy_features(game_state):
 ## 9. Monitoring and Maintenance
 
 ### Health Checks
+
 ```python
 @mgp.read_proc
 def health_check(ctx: mgp.ProcCtx) -> mgp.Record(status=str, details=mgp.Map):
@@ -600,10 +615,10 @@ def health_check(ctx: mgp.ProcCtx) -> mgp.Record(status=str, details=mgp.Map):
         'memory_usage': "CALL mg.memory() YIELD used_memory, total_memory",
         'largest_paths': "MATCH p=(:GameState)-[:LEADS_TO*]->(:GameState) RETURN length(p) ORDER BY length(p) DESC LIMIT 1"
     }
-    
+
     results = {}
     all_healthy = True
-    
+
     for check_name, query in checks.items():
         try:
             result = ctx.execute(query).fetchone()
@@ -611,7 +626,7 @@ def health_check(ctx: mgp.ProcCtx) -> mgp.Record(status=str, details=mgp.Map):
         except Exception as e:
             results[check_name] = f"ERROR: {str(e)}"
             all_healthy = False
-    
+
     return mgp.Record(
         status="HEALTHY" if all_healthy else "UNHEALTHY",
         details=results
@@ -619,6 +634,7 @@ def health_check(ctx: mgp.ProcCtx) -> mgp.Record(status=str, details=mgp.Map):
 ```
 
 ### Automated Cleanup
+
 ```bash
 # Cron job for nightly cleanup
 0 3 * * * docker exec balatro-memgraph cypher-shell -u "" -p "" "CALL prune_old_data()"
@@ -627,18 +643,21 @@ def health_check(ctx: mgp.ProcCtx) -> mgp.Record(status=str, details=mgp.Map):
 ## 10. Risk Mitigation
 
 ### Memory Exhaustion Prevention
+
 - Aggressive pruning of old game states
 - Summary nodes for historical data
 - Configurable retention policies
 - Real-time memory monitoring with alerts at 80% usage
 
 ### Query Performance Degradation
+
 - Limited path traversal depth (max 5 hops)
 - Query timeouts at 60 seconds
 - Materialized views for complex aggregations
 - Regular index maintenance
 
 ### Data Quality Issues
+
 - Validation on ingestion
 - Consistency checks between game states
 - Anomaly detection for impossible scores
@@ -675,7 +694,7 @@ async def execute_heavy_query(self, query: str):
         'type': ResourceType.MEMORY_MB,
         'amount': 500  # 500MB for complex query
     })
-    
+
     if grant.approved:
         with grant:
             return await self.memgraph.execute(query)
@@ -686,7 +705,8 @@ async def execute_heavy_query(self, query: str):
 
 ## 12. Success Criteria
 
-- **Performance**: All queries complete within specified SLAs (<50ms for synergies)
+- **Performance**: All queries complete within specified SLAs (<50ms for
+  synergies)
 - **Memory**: Stable operation within 10GB allocation
 - **Integration**: Seamless Event Bus consumption and GraphQL serving
 - **Reliability**: 99.9% uptime with automatic recovery
@@ -695,18 +715,25 @@ async def execute_heavy_query(self, query: str):
 ## 13. Resource Requirements
 
 ### Development Approach
-This component is designed for implementation by a single developer or small team with graph database expertise.
+
+This component is designed for implementation by a single developer or small
+team with graph database expertise.
 
 ### Technical Skills Required
+
 - **Cypher Query Language**: Advanced proficiency
 - **Python**: For MAGE modules and integrations
 - **GraphQL**: API design and implementation
 - **Event-Driven Architecture**: Understanding of Event Bus patterns
 
 ### Memory Allocation
+
 - **Total**: 10GB RAM (reduced from 12GB)
 - **Graph Storage**: ~8GB
 - **Query Processing**: ~1.5GB
 - **Buffer**: ~0.5GB
 
-This implementation plan provides a comprehensive approach to building a sophisticated knowledge graph within the JimBot architecture, optimized for Balatro's specific requirements while maintaining strict memory constraints and clean integration patterns.
+This implementation plan provides a comprehensive approach to building a
+sophisticated knowledge graph within the JimBot architecture, optimized for
+Balatro's specific requirements while maintaining strict memory constraints and
+clean integration patterns.

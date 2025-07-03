@@ -7,8 +7,8 @@ services:
     container_name: jimbot-memgraph
     restart: unless-stopped
     ports:
-      - "7687:7687"
-      - "3000:3000"
+      - '7687:7687'
+      - '3000:3000'
     volumes:
       - memgraph_data:/var/lib/memgraph
       - ./docker/scripts/memgraph:/docker-entrypoint-initdb.d
@@ -21,7 +21,7 @@ services:
           memory: ${MEMGRAPH_MEMORY:-12g}
           cpus: '2'
     healthcheck:
-      test: ["CMD", "echo", "RETURN 1;", "|", "mgconsole"]
+      test: ['CMD', 'echo', 'RETURN 1;', '|', 'mgconsole']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,8 +33,8 @@ services:
     container_name: jimbot-questdb
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "8812:8812"
+      - '9000:9000'
+      - '8812:8812'
     volumes:
       - questdb_data:/var/lib/questdb
     environment:
@@ -46,7 +46,7 @@ services:
           memory: ${QUESTDB_MEMORY:-3g}
           cpus: '1'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/exec?query=SELECT%201"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/exec?query=SELECT%201']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,8 +58,8 @@ services:
     container_name: jimbot-eventstore
     restart: unless-stopped
     ports:
-      - "2113:2113"
-      - "1113:1113"
+      - '2113:2113'
+      - '1113:1113'
     volumes:
       - eventstore_data:/var/lib/eventstore
     environment:
@@ -72,7 +72,7 @@ services:
           memory: ${EVENTSTORE_MEMORY:-3g}
           cpus: '1'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:2113/health/live']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -84,7 +84,7 @@ services:
     container_name: jimbot-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     command: redis-server --maxmemory ${REDIS_MEMORY:-1g} --maxmemory-policy allkeys-lru
@@ -94,7 +94,7 @@ services:
           memory: ${REDIS_MEMORY:-1g}
           cpus: '0.5'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -109,7 +109,7 @@ services:
     container_name: jimbot-mcp
     restart: unless-stopped
     ports:
-      - "${MCP_PORT:-8765}:8765"
+      - '${MCP_PORT:-8765}:8765'
     environment:
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8765
@@ -128,7 +128,7 @@ services:
           memory: ${MCP_MEMORY:-1g}
           cpus: '1'
     healthcheck:
-      test: ["CMD", "python", "-m", "jimbot.mcp.health_check"]
+      test: ['CMD', 'python', '-m', 'jimbot.mcp.health_check']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -142,15 +142,15 @@ services:
     container_name: jimbot-ray-head
     restart: unless-stopped
     ports:
-      - "8265:8265"  # Ray dashboard
-      - "6379:6379"  # Ray GCS
+      - '8265:8265' # Ray dashboard
+      - '6379:6379' # Ray GCS
     environment:
       - RAY_HEAD=1
       - RAY_MEMORY=${RAY_HEAD_MEMORY:-4g}
       - MEMGRAPH_URL=bolt://memgraph:7687
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    command: ["ray", "start", "--head", "--dashboard-host=0.0.0.0", "--block"]
+    command: ['ray', 'start', '--head', '--dashboard-host=0.0.0.0', '--block']
     depends_on:
       memgraph:
         condition: service_healthy
@@ -162,7 +162,7 @@ services:
           memory: ${RAY_HEAD_MEMORY:-4g}
           cpus: '2'
     healthcheck:
-      test: ["CMD", "ray", "status"]
+      test: ['CMD', 'ray', 'status']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -183,7 +183,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - MEMGRAPH_URL=bolt://memgraph:7687
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    command: ["ray", "start", "--address=jimbot-ray-head:6379", "--block"]
+    command: ['ray', 'start', '--address=jimbot-ray-head:6379', '--block']
     runtime: nvidia
     deploy:
       resources:
@@ -208,7 +208,7 @@ services:
     container_name: jimbot-claude-gateway
     restart: unless-stopped
     ports:
-      - "8766:8766"
+      - '8766:8766'
     environment:
       - CLAUDE_API_KEY=${CLAUDE_API_KEY}
       - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-3-opus}
@@ -224,7 +224,7 @@ services:
           memory: ${CLAUDE_MEMORY:-512m}
           cpus: '0.5'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8766/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8766/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -238,7 +238,7 @@ services:
     container_name: jimbot-analytics
     restart: unless-stopped
     ports:
-      - "${METRICS_PORT:-8080}:8080"
+      - '${METRICS_PORT:-8080}:8080'
     environment:
       - QUESTDB_URL=http://questdb:9000
       - EVENTSTORE_URL=http://eventstore:2113
@@ -257,7 +257,7 @@ services:
           memory: ${ANALYTICS_MEMORY:-1g}
           cpus: '1'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
       interval: 10s
       timeout: 5s
       retries: 5

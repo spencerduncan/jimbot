@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package jimbot;
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
 // Base event wrapper for all events
 message Event {
   string event_id = 1;        // UUID
@@ -9,7 +12,13 @@ message Event {
   EventType type = 3;         // Event type enum
   string source = 4;          // Source component (e.g., "BalatroMCP")
   int32 version = 5;          // Event schema version
+  string priority = 6;        // Priority level: "low", "normal", "high"
+  string game_id = 7;         // Game instance ID
+  string session_id = 8;      // Session ID
+  int32 sequence_number = 9;  // Sequence number for ordering
+  
   oneof payload {
+    // Game flow events
     GameStateEvent game_state = 10;
     HeartbeatEvent heartbeat = 11;
     MoneyChangedEvent money_changed = 12;
@@ -21,7 +30,35 @@ message Event {
     PhaseChangedEvent phase_changed = 18;
     RoundCompleteEvent round_complete = 19;
     ConnectionTestEvent connection_test = 20;
+    
+    // Additional game events
+    GameStartEvent game_start = 21;
+    GameOverEvent game_over = 22;
+    BlindDefeatedEvent blind_defeated = 23;
+    ShopEnteredEvent shop_entered = 24;
+    CardPurchasedEvent card_purchased = 25;
+    CardSoldEvent card_sold = 26;
+    CardEnhancedEvent card_enhanced = 27;
+    JokerTriggeredEvent joker_triggered = 28;
+    StateSnapshotEvent state_snapshot = 29;
+    ErrorEvent error = 30;
+    
+    // Learning and strategy events
+    LearningDecisionRequest learning_decision_request = 31;
+    LearningDecisionResponse learning_decision_response = 32;
+    StrategyRequest strategy_request = 33;
+    StrategyResponse strategy_response = 34;
+    
+    // Knowledge and metrics events
+    KnowledgeUpdate knowledge_update = 35;
+    MetricEvent metric = 36;
+    
+    // Extension point for custom events
+    google.protobuf.Any custom_event = 99;
   }
+  
+  // Metadata for correlation and debugging
+  map<string, string> metadata = 100;
 }
 
 // Event type enumeration
@@ -38,6 +75,23 @@ enum EventType {
   EVENT_TYPE_PHASE_CHANGED = 9;
   EVENT_TYPE_ROUND_COMPLETE = 10;
   EVENT_TYPE_CONNECTION_TEST = 11;
+  EVENT_TYPE_GAME_START = 12;
+  EVENT_TYPE_GAME_OVER = 13;
+  EVENT_TYPE_BLIND_DEFEATED = 14;
+  EVENT_TYPE_SHOP_ENTERED = 15;
+  EVENT_TYPE_CARD_PURCHASED = 16;
+  EVENT_TYPE_CARD_SOLD = 17;
+  EVENT_TYPE_CARD_ENHANCED = 18;
+  EVENT_TYPE_JOKER_TRIGGERED = 19;
+  EVENT_TYPE_STATE_SNAPSHOT = 20;
+  EVENT_TYPE_ERROR = 21;
+  EVENT_TYPE_LEARNING_DECISION_REQUEST = 22;
+  EVENT_TYPE_LEARNING_DECISION_RESPONSE = 23;
+  EVENT_TYPE_STRATEGY_REQUEST = 24;
+  EVENT_TYPE_STRATEGY_RESPONSE = 25;
+  EVENT_TYPE_KNOWLEDGE_UPDATE = 26;
+  EVENT_TYPE_METRIC = 27;
+  EVENT_TYPE_CUSTOM = 99;
 }
 
 // Game phase enumeration
@@ -264,4 +318,244 @@ message EventBatch {
   repeated Event events = 2;
   string source = 3;
   int64 timestamp = 4;
+}
+
+// Game start event
+message GameStartEvent {
+  string seed = 1;
+  string stake = 2;
+  string deck = 3;
+  int32 starting_money = 4;
+  int32 starting_hands = 5;
+  int32 starting_discards = 6;
+  map<string, string> game_config = 7;
+}
+
+// Game over event
+message GameOverEvent {
+  string reason = 1;      // "victory", "defeat", "quit"
+  int32 final_ante = 2;
+  int32 final_round = 3;
+  int64 final_score = 4;
+  int32 final_money = 5;
+  int64 duration_ms = 6;
+  map<string, int32> stats = 7;
+}
+
+// Blind defeated event
+message BlindDefeatedEvent {
+  Blind blind = 1;
+  int32 score_achieved = 2;
+  int32 hands_used = 3;
+  int32 money_earned = 4;
+}
+
+// Shop entered event  
+message ShopEnteredEvent {
+  int32 ante = 1;
+  int32 round = 2;
+  int32 money_available = 3;
+  repeated ShopItem items = 4;
+}
+
+// Card purchased event
+message CardPurchasedEvent {
+  ShopItem item = 1;
+  int32 cost = 2;
+  int32 money_after = 3;
+  string purchase_type = 4;  // "joker", "consumable", "voucher"
+}
+
+// Card sold event
+message CardSoldEvent {
+  oneof sold_item {
+    Joker joker = 1;
+    Consumable consumable = 2;
+  }
+  int32 sell_value = 3;
+  int32 money_after = 4;
+}
+
+// Card enhanced event
+message CardEnhancedEvent {
+  Card card = 1;
+  string enhancement_type = 2;
+  string previous_enhancement = 3;
+  Consumable used_consumable = 4;
+}
+
+// Joker triggered event
+message JokerTriggeredEvent {
+  Joker joker = 1;
+  string trigger_context = 2;  // "hand_played", "card_discarded", etc.
+  int32 mult_added = 3;
+  int32 chips_added = 4;
+  map<string, string> trigger_data = 5;
+}
+
+// State snapshot event (full game state at a point in time)
+message StateSnapshotEvent {
+  GameStateEvent full_state = 1;
+  string reason = 2;  // "periodic", "requested", "checkpoint"
+}
+
+// Error event
+message ErrorEvent {
+  string error_code = 1;
+  string message = 2;
+  string stack_trace = 3;
+  map<string, string> context = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+}
+
+// Learning decision request
+message LearningDecisionRequest {
+  string request_id = 1;
+  GameStateEvent game_state = 2;
+  repeated Action available_actions = 3;
+  int32 time_limit_ms = 4;
+  map<string, float> context_features = 5;
+}
+
+// Learning decision response  
+message LearningDecisionResponse {
+  string request_id = 1;
+  string response_id = 2;
+  Action selected_action = 3;
+  float confidence = 4;
+  map<string, float> action_scores = 5;
+  string strategy_used = 6;
+  int32 processing_time_ms = 7;
+}
+
+// Strategy request
+message StrategyRequest {
+  string request_id = 1;
+  GameStateEvent game_state = 2;
+  string strategy_type = 3;  // "immediate", "short_term", "long_term"
+  repeated string considerations = 4;
+  int32 time_limit_ms = 5;
+}
+
+// Strategy response
+message StrategyResponse {
+  string request_id = 1;
+  string response_id = 2;
+  Strategy recommended_strategy = 3;
+  repeated StrategyOption alternatives = 4;
+  map<string, float> evaluation_scores = 5;
+  int32 processing_time_ms = 6;
+}
+
+// Knowledge update
+message KnowledgeUpdate {
+  string update_id = 1;
+  string knowledge_type = 2;  // "joker_synergy", "hand_value", "blind_strategy"
+  oneof update {
+    JokerSynergyUpdate joker_synergy = 3;
+    HandValueUpdate hand_value = 4;
+    BlindStrategyUpdate blind_strategy = 5;
+    google.protobuf.Any custom_update = 99;
+  }
+  float confidence = 100;
+  string source = 101;  // "learned", "calculated", "observed"
+}
+
+// Metric event
+message MetricEvent {
+  string metric_name = 1;
+  string metric_type = 2;  // "counter", "gauge", "histogram", "summary"
+  double value = 3;
+  map<string, string> labels = 4;
+  google.protobuf.Timestamp recorded_at = 5;
+  string unit = 6;
+}
+
+// Action definition (for learning/strategy)
+message Action {
+  string action_id = 1;
+  string action_type = 2;  // "play_hand", "discard", "buy", "sell", "reroll", "skip"
+  oneof action_data {
+    PlayHandAction play_hand = 3;
+    DiscardAction discard = 4;
+    BuyAction buy = 5;
+    SellAction sell = 6;
+    RerollAction reroll = 7;
+    SkipAction skip = 8;
+  }
+  map<string, string> metadata = 99;
+}
+
+// Specific action types
+message PlayHandAction {
+  repeated int32 card_indices = 1;  // 0-based indices
+}
+
+message DiscardAction {
+  repeated int32 card_indices = 1;  // 0-based indices
+}
+
+message BuyAction {
+  int32 shop_index = 1;  // 0-based index in shop
+  string item_type = 2;  // "joker", "consumable", "voucher"
+}
+
+message SellAction {
+  oneof target {
+    int32 joker_index = 1;      // 0-based index
+    int32 consumable_index = 2; // 0-based index
+  }
+}
+
+message RerollAction {
+  // Empty - reroll has no parameters
+}
+
+message SkipAction {
+  string skip_type = 1;  // "skip_blind", "skip_shop", "end_round"
+}
+
+// Strategy definition
+message Strategy {
+  string strategy_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated StrategyStep steps = 4;
+  map<string, float> expected_outcomes = 5;
+}
+
+message StrategyStep {
+  int32 step_number = 1;
+  string description = 2;
+  Action recommended_action = 3;
+  repeated string conditions = 4;
+  float priority = 5;
+}
+
+message StrategyOption {
+  Strategy strategy = 1;
+  float score = 2;
+  string reasoning = 3;
+}
+
+// Knowledge update types
+message JokerSynergyUpdate {
+  string joker1_id = 1;
+  string joker2_id = 2;
+  float synergy_score = 3;
+  string synergy_type = 4;
+  repeated string conditions = 5;
+}
+
+message HandValueUpdate {
+  string hand_type = 1;  // "pair", "flush", etc.
+  float base_value = 2;
+  map<string, float> modifiers = 3;
+}
+
+message BlindStrategyUpdate {
+  string blind_name = 1;
+  repeated string effective_strategies = 2;
+  repeated string ineffective_strategies = 3;
+  map<string, float> hand_type_effectiveness = 4;
 }

@@ -2,7 +2,9 @@
 
 ## Executive Summary
 
-After reviewing all 51 existing GitHub issues against the Rust migration plan, this document provides a clear action plan for aligning the project's issue tracker with the new architecture.
+After reviewing all 51 existing GitHub issues against the Rust migration plan,
+this document provides a clear action plan for aligning the project's issue
+tracker with the new architecture.
 
 ## Immediate Actions (Do First)
 
@@ -136,7 +138,7 @@ Create comprehensive Docker Compose configuration for local development with all
 
 ## Services to Include
 - Event Bus (Rust)
-- Resource Coordinator (Rust) 
+- Resource Coordinator (Rust)
 - Memgraph (10GB)
 - QuestDB (3GB)
 - EventStoreDB (2GB)
@@ -257,18 +259,21 @@ Create comprehensive guide for Rust development environment setup.
 ## Sprint Planning Updates
 
 ### Sprint 1 (Current)
+
 1. Create all missing infrastructure issues ✓
 2. Update existing issues with Rust notes
 3. Set up basic Rust development environment
 4. Begin Event Bus implementation
 
 ### Sprint 2
+
 1. Complete Event Bus REST API
 2. Implement Protocol Buffers
 3. Start Resource Coordinator
 4. Set up CI/CD pipeline
 
 ### Sprint 3
+
 1. Complete Resource Coordinator
 2. Add Event Bus gRPC interface
 3. Begin Analytics component
@@ -279,6 +284,7 @@ Create comprehensive guide for Rust development environment setup.
 ### New Dashboard View
 
 Create a GitHub Project board with these columns:
+
 - **Rust Infrastructure** (new issues)
 - **Needs Rust Update** (existing issues)
 - **In Progress**
@@ -308,18 +314,21 @@ For team communication about the changes:
 We're updating our architecture to use Rust for performance-critical components:
 
 **What's Changing:**
+
 - Event Bus: New Rust implementation (Issue #52)
 - Analytics: Moving from TypeScript to Rust
 - MAGE Modules: Moving from Python to Rust
 - Resource Coordinator: New Rust service (Issue #53)
 
 **What's NOT Changing:**
+
 - BalatroMCP remains in Lua
 - Ray RLlib remains in Python
 - Claude/LangChain remains in Python
 - All APIs and interfaces remain compatible
 
 **Benefits:**
+
 - 5-10x performance improvement
 - Better resource utilization
 - Type safety across components
@@ -331,6 +340,7 @@ See planning/rust_migration_summary.md for details.
 ## Success Metrics
 
 Track these metrics weekly:
+
 - New infrastructure issues created: 5/5 ✓
 - Existing issues updated: 0/10 (in progress)
 - Rust components started: 0/4

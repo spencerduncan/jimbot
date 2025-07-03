@@ -1,6 +1,7 @@
 # JimBot Test Suite
 
-This directory contains all tests for the JimBot system, organized by test type and component.
+This directory contains all tests for the JimBot system, organized by test type
+and component.
 
 ## Directory Structure
 
@@ -23,6 +24,7 @@ tests/
 ## Quick Start
 
 ### Running All Tests
+
 ```bash
 # Run all tests
 pytest
@@ -35,6 +37,7 @@ pytest -n auto
 ```
 
 ### Running Specific Test Categories
+
 ```bash
 # Unit tests only
 pytest tests/unit/ -v
@@ -50,6 +53,7 @@ pytest tests/unit/mcp/ -v
 ```
 
 ### Common Test Commands
+
 ```bash
 # Run tests matching a pattern
 pytest -k "event_aggregation"
@@ -70,6 +74,7 @@ pytest --cov=jimbot.mcp.aggregator --cov-report=term-missing
 ## Test Organization
 
 ### Unit Tests
+
 Each component has its own subdirectory with tests organized by module:
 
 ```
@@ -81,6 +86,7 @@ unit/mcp/
 ```
 
 ### Integration Tests
+
 Tests that span multiple components:
 
 ```
@@ -92,6 +98,7 @@ integration/
 ```
 
 ### Performance Tests
+
 Benchmarks and profiling tests:
 
 ```
@@ -105,18 +112,19 @@ performance/
 ## Writing Tests
 
 ### Basic Test Structure
+
 ```python
 import pytest
 from jimbot.mcp import EventAggregator
 
 class TestEventAggregator:
     """Test the MCP event aggregator."""
-    
+
     @pytest.fixture
     def aggregator(self):
         """Create an aggregator instance for testing."""
         return EventAggregator(batch_window_ms=50)
-    
+
     def test_aggregates_events_within_window(self, aggregator):
         """Test that events are properly batched within time window."""
         # Test implementation
@@ -124,7 +132,9 @@ class TestEventAggregator:
 ```
 
 ### Using Fixtures
-Common fixtures are defined in `conftest.py` and component-specific fixture files:
+
+Common fixtures are defined in `conftest.py` and component-specific fixture
+files:
 
 ```python
 # Use provided fixtures
@@ -137,18 +147,23 @@ def test_game_state_processing(sample_game_state, memgraph_client):
 ## CI Integration
 
 ### GitHub Actions Workflow
+
 Tests run automatically on:
+
 - Every push to a PR
 - Merges to main
 - Nightly for performance tests
 
 ### Local Pre-commit Hooks
+
 Install pre-commit hooks:
+
 ```bash
 pre-commit install
 ```
 
 This runs:
+
 - Unit tests for changed files
 - Code formatting checks
 - Basic linting
@@ -156,11 +171,13 @@ This runs:
 ## Test Coverage
 
 ### Current Coverage Requirements
+
 - Overall: >80%
 - Critical components (MCP, LLM): >85%
 - New code: >90%
 
 ### Viewing Coverage Reports
+
 ```bash
 # Generate HTML coverage report
 pytest --cov=jimbot --cov-report=html
@@ -171,6 +188,7 @@ xdg-open htmlcov/index.html  # Linux
 ```
 
 ### Excluding Code from Coverage
+
 ```python
 # Mark code as not needing coverage
 if TYPE_CHECKING:  # pragma: no cover
@@ -180,6 +198,7 @@ if TYPE_CHECKING:  # pragma: no cover
 ## Performance Testing
 
 ### Running Benchmarks
+
 ```bash
 # Run all benchmarks
 pytest tests/performance/ --benchmark-only
@@ -192,6 +211,7 @@ pytest tests/performance/ --benchmark-save=baseline
 ```
 
 ### Memory Profiling
+
 ```bash
 # Profile memory usage
 pytest tests/performance/test_memory.py --memprof
@@ -203,6 +223,7 @@ python -m memory_profiler tests/performance/profile_training.py
 ## Debugging Failed Tests
 
 ### Verbose Output
+
 ```bash
 # Maximum verbosity
 pytest -vvvs tests/unit/mcp/test_aggregator.py
@@ -212,6 +233,7 @@ pytest -l tests/unit/mcp/test_aggregator.py
 ```
 
 ### Using Debugger
+
 ```python
 # Add breakpoint in test
 def test_complex_scenario():
@@ -221,6 +243,7 @@ def test_complex_scenario():
 ```
 
 ### Docker-based Tests
+
 ```bash
 # Ensure containers are running
 docker-compose -f tests/docker-compose.test.yml up -d
@@ -245,12 +268,14 @@ docker-compose -f tests/docker-compose.test.yml down
 ### Common Issues
 
 **Import Errors**
+
 ```bash
 # Ensure jimbot is in PYTHONPATH
 export PYTHONPATH="${PYTHONPATH}:/home/spduncan/jimbot-ws/jimbot-main"
 ```
 
 **Docker Connection Issues**
+
 ```bash
 # Reset test containers
 docker-compose -f tests/docker-compose.test.yml down -v
@@ -258,6 +283,7 @@ docker-compose -f tests/docker-compose.test.yml up -d
 ```
 
 **Flaky Tests**
+
 ```bash
 # Re-run flaky tests automatically
 pytest --reruns 3 --reruns-delay 1
@@ -266,12 +292,14 @@ pytest --reruns 3 --reruns-delay 1
 ## Maintenance
 
 ### Adding New Tests
+
 1. Create test file following naming convention
 2. Add fixtures to conftest.py if reusable
 3. Update component-specific README if needed
 4. Ensure coverage doesn't decrease
 
 ### Updating Fixtures
+
 1. Keep fixtures minimal and focused
 2. Version large fixture files
 3. Document fixture purpose and structure

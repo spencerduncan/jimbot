@@ -1,6 +1,9 @@
 # JimBot Python Style Guide
 
-This comprehensive style guide establishes coding standards for the JimBot project, incorporating best practices from PEP 8, Google Python Style Guide, Black formatter, and machine learning conventions. This guide is tailored for a Ray RLlib-based reinforcement learning system with asyncio integration.
+This comprehensive style guide establishes coding standards for the JimBot
+project, incorporating best practices from PEP 8, Google Python Style Guide,
+Black formatter, and machine learning conventions. This guide is tailored for a
+Ray RLlib-based reinforcement learning system with asyncio integration.
 
 ## Table of Contents
 
@@ -18,12 +21,14 @@ This comprehensive style guide establishes coding standards for the JimBot proje
 ## General Principles
 
 ### Philosophy
+
 - **Readability counts**: Code is read more often than written
 - **Consistency matters**: Follow conventions throughout the codebase
 - **Explicit is better than implicit**: Clear code beats clever code
 - **Think sequentially**: Use sequential thinking for complex problems
 
 ### Core Guidelines
+
 - Follow PEP 8 as the foundation
 - Use Black formatter with default settings (88 character line length)
 - Maintain at least 80% test coverage
@@ -75,6 +80,7 @@ from jimbot.utils import timer
 ```
 
 ### Line Length and Wrapping
+
 - Maximum line length: 88 characters (Black default)
 - Use parentheses for line continuation, not backslashes
 - Break before binary operators
@@ -97,14 +103,14 @@ total_reward = base_reward + exploration_bonus + \
 
 ### General Rules
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Variables | snake_case | `card_value`, `joker_synergy` |
-| Functions | snake_case | `calculate_score()`, `get_valid_actions()` |
-| Classes | PascalCase | `BalatroAgent`, `MemgraphConnector` |
-| Constants | UPPER_SNAKE_CASE | `MAX_JOKERS`, `DEFAULT_BATCH_SIZE` |
-| Module names | snake_case | `event_aggregator.py`, `ray_trainer.py` |
-| Type variables | PascalCase with suffix | `StateT`, `ActionT` |
+| Type           | Convention             | Example                                    |
+| -------------- | ---------------------- | ------------------------------------------ |
+| Variables      | snake_case             | `card_value`, `joker_synergy`              |
+| Functions      | snake_case             | `calculate_score()`, `get_valid_actions()` |
+| Classes        | PascalCase             | `BalatroAgent`, `MemgraphConnector`        |
+| Constants      | UPPER_SNAKE_CASE       | `MAX_JOKERS`, `DEFAULT_BATCH_SIZE`         |
+| Module names   | snake_case             | `event_aggregator.py`, `ray_trainer.py`    |
+| Type variables | PascalCase with suffix | `StateT`, `ActionT`                        |
 
 ### Specific Conventions
 
@@ -202,17 +208,17 @@ def train_agent(
     checkpoint_freq: int = 100
 ) -> Tuple[BalatroAgent, Dict[str, List[float]]]:
     """Train a Balatro agent using PPO algorithm.
-    
+
     This function initializes a Ray RLlib PPO trainer and runs training
     iterations on the Balatro environment. It handles checkpointing and
     metric collection throughout the training process.
-    
+
     Args:
         env_config: Configuration dict for the Balatro environment.
             Should contain 'seed', 'stake', and 'deck' keys.
         num_iterations: Number of training iterations to run.
         checkpoint_freq: Save checkpoint every N iterations.
-    
+
     Returns:
         A tuple containing:
             - The trained BalatroAgent instance
@@ -220,11 +226,11 @@ def train_agent(
                 'episode_reward_mean': List of mean rewards per iteration
                 'episode_len_mean': List of mean episode lengths
                 'learning_rate': Learning rate schedule over time
-    
+
     Raises:
         ValueError: If env_config is missing required keys.
         RuntimeError: If Ray cluster is not initialized.
-    
+
     Example:
         >>> config = {'seed': 42, 'stake': 1, 'deck': 'red'}
         >>> agent, metrics = train_agent(config, num_iterations=500)
@@ -238,24 +244,24 @@ def train_agent(
 ```python
 class EventAggregator:
     """Aggregates game events for efficient batch processing.
-    
+
     This class collects Balatro game events from the MCP connection and
     batches them for processing by the RL agent. It implements a sliding
     window approach to maintain low latency while reducing overhead.
-    
+
     Attributes:
         batch_window_ms: Time window for collecting events (default: 100ms).
         event_queue: Async queue for incoming events.
         metrics_collector: QuestDB client for performance metrics.
-    
+
     Note:
         This class is designed for single-producer, single-consumer use.
         For multi-threaded scenarios, use EventAggregatorMT instead.
     """
-    
+
     def __init__(self, batch_window_ms: int = 100):
         """Initialize the event aggregator.
-        
+
         Args:
             batch_window_ms: Milliseconds to wait before processing batch.
         """
@@ -352,7 +358,7 @@ from jimbot.core.types import GameState
 
 class TestBalatroAgent:
     """Test suite for BalatroAgent class."""
-    
+
     @pytest.fixture
     def mock_game_state(self) -> GameState:
         """Create a mock game state for testing."""
@@ -362,32 +368,32 @@ class TestBalatroAgent:
             "money": 25,
             "round": 3,
         }
-    
+
     @pytest.fixture
     def agent(self) -> BalatroAgent:
         """Create agent instance with test configuration."""
         config = {"learning_rate": 0.001, "gamma": 0.99}
         return BalatroAgent(config)
-    
+
     def test_action_selection_deterministic(
         self, agent: BalatroAgent, mock_game_state: GameState
     ):
         """Test that action selection is deterministic with no exploration."""
         agent.set_exploration(0.0)
-        
+
         actions = [agent.select_action(mock_game_state) for _ in range(10)]
-        
+
         # All actions should be identical
         assert all(a == actions[0] for a in actions)
-    
+
     @pytest.mark.slow
     @pytest.mark.parametrize("num_episodes", [10, 100, 1000])
     def test_training_convergence(self, agent: BalatroAgent, num_episodes: int):
         """Test that agent improves over training episodes."""
         initial_performance = agent.evaluate()
-        
+
         agent.train(num_episodes=num_episodes)
-        
+
         final_performance = agent.evaluate()
         assert final_performance > initial_performance
 ```
@@ -411,30 +417,30 @@ import aiohttp
 
 class MCPClient:
     """Async client for MCP communication."""
-    
+
     def __init__(self, url: str, timeout: float = 5.0):
         self.url = url
         self.timeout = timeout
         self.session: Optional[aiohttp.ClientSession] = None
-    
+
     async def __aenter__(self):
         """Async context manager entry."""
         self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout))
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         if self.session:
             await self.session.close()
-    
+
     async def send_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """Send event to MCP server."""
         if not self.session:
             raise RuntimeError("Client not initialized. Use async with.")
-        
+
         async with self.session.post(f"{self.url}/event", json=event) as resp:
             return await resp.json()
-    
+
     async def batch_send_events(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Send multiple events concurrently."""
         tasks = [self.send_event(event) for event in events]
@@ -446,38 +452,38 @@ class MCPClient:
 ```python
 class EventAggregator:
     """Aggregates events with time-based batching."""
-    
+
     def __init__(self, batch_window_ms: int = 100, max_batch_size: int = 1000):
         self.batch_window_ms = batch_window_ms
         self.max_batch_size = max_batch_size
         self.event_queue: asyncio.Queue = asyncio.Queue()
         self._running = False
-    
+
     async def add_event(self, event: Dict[str, Any]) -> None:
         """Add event to queue for processing."""
         await self.event_queue.put(event)
-    
+
     async def process_batch(self) -> List[Dict[str, Any]]:
         """Collect and process a batch of events."""
         events = []
         deadline = asyncio.get_event_loop().time() + (self.batch_window_ms / 1000)
-        
+
         while len(events) < self.max_batch_size:
             timeout = deadline - asyncio.get_event_loop().time()
             if timeout <= 0:
                 break
-                
+
             try:
                 event = await asyncio.wait_for(
-                    self.event_queue.get(), 
+                    self.event_queue.get(),
                     timeout=timeout
                 )
                 events.append(event)
             except asyncio.TimeoutError:
                 break
-        
+
         return self._aggregate_events(events)
-    
+
     def _aggregate_events(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Aggregate events by type and timestamp."""
         # Implementation details...
@@ -495,34 +501,34 @@ from ray.data import Dataset
 
 class BalatroDataPipeline:
     """Data pipeline for preprocessing game states."""
-    
+
     @staticmethod
     def preprocess_observation(obs: np.ndarray) -> np.ndarray:
         """Normalize and augment observation.
-        
+
         Args:
             obs: Raw observation array of shape (N, 52 + num_jokers).
-        
+
         Returns:
             Processed observation of shape (N, feature_dim).
         """
         # Normalize card values to [0, 1]
         obs = obs.astype(np.float32)
         obs[:, :52] /= 13.0  # Card ranks
-        
+
         # One-hot encode suits
         # Add positional embeddings
         # etc...
-        
+
         return obs
-    
+
     @staticmethod
     def create_training_dataset(
         replay_buffer: List[Tuple[GameState, int, float, GameState]],
         batch_size: int = 32
     ) -> Iterator[Dict[str, np.ndarray]]:
         """Create batched dataset from replay buffer.
-        
+
         Yields:
             Batches with keys: 'obs', 'actions', 'rewards', 'next_obs'.
         """
@@ -539,34 +545,34 @@ from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 
 class BalatroNet(TorchModelV2, nn.Module):
     """Neural network for Balatro agent."""
-    
+
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
-        
+
         # Configuration
         hidden_dim = model_config.get("hidden_dim", 512)
         num_layers = model_config.get("num_layers", 3)
-        
+
         # Build encoder
         self.encoder = self._build_encoder(obs_space.shape[0], hidden_dim)
-        
+
         # Build policy head
         self.policy_head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, num_outputs)
         )
-        
+
         # Build value head
         self.value_head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, 1)
         )
-        
+
         self._features = None
-    
+
     def forward(self, input_dict, state, seq_lens):
         """Forward pass through the network."""
         obs = input_dict["obs"].float()
@@ -574,7 +580,7 @@ class BalatroNet(TorchModelV2, nn.Module):
         logits = self.policy_head(self._features)
         self._value = self.value_head(self._features).squeeze(1)
         return logits, state
-    
+
     def value_function(self):
         """Return value function output."""
         return self._value
@@ -593,12 +599,12 @@ def create_ppo_config(
     framework: str = "torch"
 ) -> PPOConfig:
     """Create PPO configuration for Balatro training.
-    
+
     Args:
         num_workers: Number of parallel workers for sampling.
         num_gpus: Number of GPUs to use for training.
         framework: Deep learning framework ('torch' or 'tf2').
-    
+
     Returns:
         Configured PPOConfig instance.
     """
@@ -644,7 +650,7 @@ def create_ppo_config(
             },
         )
     )
-    
+
     return config
 ```
 
@@ -657,7 +663,7 @@ from typing import Dict, Optional
 
 class BalatroCallbacks(DefaultCallbacks):
     """Custom callbacks for Balatro training."""
-    
+
     def on_episode_start(
         self,
         *,
@@ -671,7 +677,7 @@ class BalatroCallbacks(DefaultCallbacks):
         episode.user_data["jokers_collected"] = []
         episode.user_data["hands_played"] = 0
         episode.user_data["highest_score"] = 0
-    
+
     def on_episode_step(
         self,
         *,
@@ -683,14 +689,14 @@ class BalatroCallbacks(DefaultCallbacks):
     ) -> None:
         """Track step-level metrics."""
         info = episode.last_info_for()
-        
+
         if "hand_score" in info:
             episode.user_data["hands_played"] += 1
             episode.user_data["highest_score"] = max(
                 episode.user_data["highest_score"],
                 info["hand_score"]
             )
-    
+
     def on_episode_end(
         self,
         *,
@@ -708,7 +714,8 @@ class BalatroCallbacks(DefaultCallbacks):
 
 ## Conclusion
 
-This style guide provides a foundation for consistent, maintainable code in the JimBot project. Key takeaways:
+This style guide provides a foundation for consistent, maintainable code in the
+JimBot project. Key takeaways:
 
 1. **Use Black**: Automate formatting to avoid debates
 2. **Type everything**: Use type hints for clarity and tooling support
@@ -718,4 +725,5 @@ This style guide provides a foundation for consistent, maintainable code in the 
 6. **Embrace async**: Use async/await for concurrent operations
 7. **Follow conventions**: Consistency beats personal preferences
 
-Remember: these are guidelines, not rigid rules. Use judgment when exceptions make sense, but document why you're deviating from the standard.
+Remember: these are guidelines, not rigid rules. Use judgment when exceptions
+make sense, but document why you're deviating from the standard.

@@ -1,6 +1,8 @@
 # TypeScript Style Guide
 
-This style guide provides comprehensive conventions for TypeScript development in the JimBot project, building upon the JavaScript style guide with TypeScript-specific patterns for type safety, interfaces, and advanced features.
+This style guide provides comprehensive conventions for TypeScript development
+in the JimBot project, building upon the JavaScript style guide with
+TypeScript-specific patterns for type safety, interfaces, and advanced features.
 
 ## Table of Contents
 
@@ -32,7 +34,7 @@ This style guide provides comprehensive conventions for TypeScript development i
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
-    
+
     // Additional Strictness
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -44,7 +46,7 @@ This style guide provides comprehensive conventions for TypeScript development i
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "noPropertyAccessFromIndexSignature": true,
-    
+
     // Module System
     "target": "ES2022",
     "module": "ES2022",
@@ -54,7 +56,7 @@ This style guide provides comprehensive conventions for TypeScript development i
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    
+
     // Output
     "outDir": "./dist",
     "rootDir": "./src",
@@ -62,7 +64,7 @@ This style guide provides comprehensive conventions for TypeScript development i
     "declarationMap": true,
     "sourceMap": true,
     "removeComments": false,
-    
+
     // Other
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -271,8 +273,14 @@ interface EventHandler<T = unknown> {
 }
 
 interface EventEmitter<TEvents extends Record<string, unknown>> {
-  on<K extends keyof TEvents>(event: K, handler: EventHandler<TEvents[K]>): void;
-  off<K extends keyof TEvents>(event: K, handler: EventHandler<TEvents[K]>): void;
+  on<K extends keyof TEvents>(
+    event: K,
+    handler: EventHandler<TEvents[K]>
+  ): void;
+  off<K extends keyof TEvents>(
+    event: K,
+    handler: EventHandler<TEvents[K]>
+  ): void;
   emit<K extends keyof TEvents>(event: K, data: TEvents[K]): void;
 }
 
@@ -299,10 +307,7 @@ function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
 }
 
 // ✅ Good - Multiple generic parameters
-function merge<T extends object, U extends object>(
-  first: T,
-  second: U
-): T & U {
+function merge<T extends object, U extends object>(first: T, second: U): T & U {
   return { ...first, ...second };
 }
 
@@ -312,8 +317,11 @@ function createArray<T = string>(length: number, value: T): T[] {
 }
 
 // ✅ Good - Conditional types in generics
-type AsyncReturnType<T extends (...args: any[]) => Promise<any>> = 
-  T extends (...args: any[]) => Promise<infer R> ? R : never;
+type AsyncReturnType<T extends (...args: any[]) => Promise<any>> = T extends (
+  ...args: any[]
+) => Promise<infer R>
+  ? R
+  : never;
 
 // Usage
 async function fetchUser(): Promise<User> {
@@ -329,19 +337,19 @@ type UserType = AsyncReturnType<typeof fetchUser>; // User
 // ✅ Good - Generic event queue
 class EventQueue<T> {
   private items: T[] = [];
-  
+
   enqueue(item: T): void {
     this.items.push(item);
   }
-  
+
   dequeue(): T | undefined {
     return this.items.shift();
   }
-  
+
   peek(): T | undefined {
     return this.items[0];
   }
-  
+
   get size(): number {
     return this.items.length;
   }
@@ -351,30 +359,27 @@ class EventQueue<T> {
 class StateManager<TState extends Record<string, unknown>> {
   private state: TState;
   private listeners = new Set<(state: TState) => void>();
-  
+
   constructor(initialState: TState) {
     this.state = { ...initialState };
   }
-  
+
   getState(): Readonly<TState> {
     return Object.freeze({ ...this.state });
   }
-  
-  setState<K extends keyof TState>(
-    key: K,
-    value: TState[K]
-  ): void {
+
+  setState<K extends keyof TState>(key: K, value: TState[K]): void {
     this.state[key] = value;
     this.notifyListeners();
   }
-  
+
   subscribe(listener: (state: TState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
-  
+
   private notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.getState()));
+    this.listeners.forEach((listener) => listener(this.getState()));
   }
 }
 ```
@@ -389,14 +394,14 @@ enum GameEvent {
   Start = 'GAME_START',
   End = 'GAME_END',
   Pause = 'GAME_PAUSE',
-  Resume = 'GAME_RESUME'
+  Resume = 'GAME_RESUME',
 }
 
 enum ErrorCode {
   InvalidMove = 'INVALID_MOVE',
   Unauthorized = 'UNAUTHORIZED',
   GameFull = 'GAME_FULL',
-  ConnectionLost = 'CONNECTION_LOST'
+  ConnectionLost = 'CONNECTION_LOST',
 }
 
 // ✅ Good - Const enums for performance (when not needed at runtime)
@@ -404,7 +409,7 @@ const enum Direction {
   Up = 'UP',
   Down = 'DOWN',
   Left = 'LEFT',
-  Right = 'RIGHT'
+  Right = 'RIGHT',
 }
 ```
 
@@ -416,16 +421,16 @@ const GAME_CONFIG = {
   MAX_PLAYERS: 4,
   MIN_PLAYERS: 2,
   ROUND_TIME: 60,
-  DIFFICULTIES: ['easy', 'medium', 'hard']
+  DIFFICULTIES: ['easy', 'medium', 'hard'],
 } as const;
 
-type Difficulty = typeof GAME_CONFIG.DIFFICULTIES[number]; // 'easy' | 'medium' | 'hard'
+type Difficulty = (typeof GAME_CONFIG.DIFFICULTIES)[number]; // 'easy' | 'medium' | 'hard'
 
 // ✅ Good - Const assertion for literal types
 const createMessage = <T extends string>(type: T) => {
   return {
     type,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   } as const;
 };
 
@@ -442,10 +447,10 @@ class GameSession {
   private readonly id: string;
   private players: Map<string, Player>;
   private _state: GameState;
-  
+
   public readonly maxPlayers: number;
   public readonly createdAt: Date;
-  
+
   constructor(config: GameSessionConfig) {
     this.id = generateId();
     this.players = new Map();
@@ -453,28 +458,28 @@ class GameSession {
     this.maxPlayers = config.maxPlayers;
     this.createdAt = new Date();
   }
-  
+
   // Getter with return type
   public get state(): GameState {
     return this._state;
   }
-  
+
   // Method with explicit return type
   public addPlayer(player: Player): boolean {
     if (this.players.size >= this.maxPlayers) {
       return false;
     }
-    
+
     this.players.set(player.id, player);
     return true;
   }
-  
+
   // Protected method for subclasses
   protected setState(newState: GameState): void {
     this._state = newState;
     this.onStateChange(newState);
   }
-  
+
   // Abstract-like method (override in subclasses)
   protected onStateChange(newState: GameState): void {
     // Default implementation
@@ -486,14 +491,14 @@ class GameSession {
 abstract class BaseGameMode {
   abstract readonly name: string;
   abstract readonly minPlayers: number;
-  
+
   abstract calculateScore(moves: Move[]): number;
-  
+
   // Concrete method
   public validateMove(move: Move): boolean {
     return this.isValidMove(move);
   }
-  
+
   protected abstract isValidMove(move: Move): boolean;
 }
 ```
@@ -509,16 +514,16 @@ function debounce(delay: number) {
     descriptor: PropertyDescriptor
   ): PropertyDescriptor {
     let timeout: NodeJS.Timeout;
-    
+
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = function (...args: any[]) {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
         originalMethod.apply(this, args);
       }, delay);
     };
-    
+
     return descriptor;
   };
 }
@@ -531,19 +536,19 @@ function memoize() {
   ): PropertyDescriptor {
     const cache = new Map();
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = function (...args: any[]) {
       const key = JSON.stringify(args);
-      
+
       if (cache.has(key)) {
         return cache.get(key);
       }
-      
+
       const result = originalMethod.apply(this, args);
       cache.set(key, result);
       return result;
     };
-    
+
     return descriptor;
   };
 }
@@ -554,7 +559,7 @@ class GameAnalytics {
   public trackEvent(event: AnalyticsEvent): void {
     // Will be debounced
   }
-  
+
   @memoize()
   public calculateComplexScore(gameData: GameData): number {
     // Result will be cached
@@ -619,7 +624,7 @@ declare global {
   interface Window {
     gameClient: GameClient;
   }
-  
+
   namespace NodeJS {
     interface ProcessEnv {
       GAME_SERVER_URL: string;
@@ -652,7 +657,7 @@ async function retry<T>(
   } = {}
 ): Promise<T> {
   const { maxAttempts = 3, delay = 1000, onError } = options;
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
@@ -660,23 +665,21 @@ async function retry<T>(
       if (attempt === maxAttempts) {
         throw error;
       }
-      
+
       onError?.(error as Error, attempt);
-      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+      await new Promise((resolve) => setTimeout(resolve, delay * attempt));
     }
   }
-  
+
   throw new Error('Unexpected retry failure');
 }
 
 // ✅ Good - Result type pattern
-type Result<T, E = Error> = 
+type Result<T, E = Error> =
   | { success: true; data: T }
   | { success: false; error: E };
 
-async function safeAsync<T>(
-  fn: () => Promise<T>
-): Promise<Result<T>> {
+async function safeAsync<T>(fn: () => Promise<T>): Promise<Result<T>> {
   try {
     const data = await fn();
     return { success: true, data };
@@ -694,7 +697,7 @@ async function* gameEventStream(
   gameId: string
 ): AsyncGenerator<GameEvent, void, unknown> {
   const eventSource = new EventSource(`/games/${gameId}/events`);
-  
+
   try {
     while (true) {
       const event = await waitForEvent(eventSource);
@@ -763,22 +766,22 @@ type ServerMessageType = keyof ServerMessages;
 // ✅ Good - Type-safe WebSocket client
 class TypedWebSocketClient<
   TSend extends Record<string, unknown>,
-  TReceive extends Record<string, unknown>
+  TReceive extends Record<string, unknown>,
 > {
   private ws: WebSocket;
   private handlers = new Map<keyof TReceive, Set<(data: any) => void>>();
-  
+
   constructor(url: string) {
     this.ws = new WebSocket(url);
     this.setupEventHandlers();
   }
-  
+
   public send<K extends keyof TSend>(type: K, data: TSend[K]): void {
     if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type, data }));
     }
   }
-  
+
   public on<K extends keyof TReceive>(
     type: K,
     handler: (data: TReceive[K]) => void
@@ -788,14 +791,14 @@ class TypedWebSocketClient<
     }
     this.handlers.get(type)!.add(handler);
   }
-  
+
   private setupEventHandlers(): void {
     this.ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
         const handlers = this.handlers.get(message.type);
-        
-        handlers?.forEach(handler => handler(message.data));
+
+        handlers?.forEach((handler) => handler(message.data));
       } catch (error) {
         console.error('Failed to parse message:', error);
       }
@@ -804,7 +807,9 @@ class TypedWebSocketClient<
 }
 
 // Usage
-const client = new TypedWebSocketClient<ClientMessages, ServerMessages>('wss://game.example.com');
+const client = new TypedWebSocketClient<ClientMessages, ServerMessages>(
+  'wss://game.example.com'
+);
 
 client.on('server:joined', (data) => {
   // data is typed as { gameState: GameState; players: Player[] }
@@ -813,7 +818,7 @@ client.on('server:joined', (data) => {
 
 client.send('client:join', {
   playerId: 'player123',
-  gameId: 'game456'
+  gameId: 'game456',
 });
 ```
 
@@ -828,30 +833,28 @@ interface TypedEventEmitter<TEvents extends EventMap> {
     event: K,
     listener: (data: TEvents[K]) => void
   ): this;
-  
+
   once<K extends keyof TEvents>(
     event: K,
     listener: (data: TEvents[K]) => void
   ): this;
-  
-  emit<K extends keyof TEvents>(
-    event: K,
-    data: TEvents[K]
-  ): boolean;
-  
+
+  emit<K extends keyof TEvents>(event: K, data: TEvents[K]): boolean;
+
   off<K extends keyof TEvents>(
     event: K,
     listener: (data: TEvents[K]) => void
   ): this;
-  
+
   removeAllListeners<K extends keyof TEvents>(event?: K): this;
 }
 
 // Implementation
-class GameEventEmitter<TEvents extends EventMap> 
-  implements TypedEventEmitter<TEvents> {
+class GameEventEmitter<TEvents extends EventMap>
+  implements TypedEventEmitter<TEvents>
+{
   private events = new Map<keyof TEvents, Set<Function>>();
-  
+
   on<K extends keyof TEvents>(
     event: K,
     listener: (data: TEvents[K]) => void
@@ -862,14 +865,18 @@ class GameEventEmitter<TEvents extends EventMap>
     this.events.get(event)!.add(listener);
     return this;
   }
-  
+
   // ... other methods
 }
 
 // Usage with specific events
 interface GameEvents {
   'game:start': { gameId: string; timestamp: number };
-  'game:end': { gameId: string; winner: string; finalScores: Record<string, number> };
+  'game:end': {
+    gameId: string;
+    winner: string;
+    finalScores: Record<string, number>;
+  };
   'player:join': { playerId: string; playerName: string };
   'player:leave': { playerId: string; reason: string };
 }
@@ -892,19 +899,19 @@ abstract class BaseError<TCode extends string = string> extends Error {
   public abstract readonly code: TCode;
   public readonly timestamp: Date;
   public readonly context?: unknown;
-  
+
   constructor(message: string, context?: unknown) {
     super(message);
     this.name = this.constructor.name;
     this.timestamp = new Date();
     this.context = context;
-    
+
     // Maintains proper stack trace for where our error was thrown
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
     }
   }
-  
+
   public toJSON(): Record<string, unknown> {
     return {
       name: this.name,
@@ -912,7 +919,7 @@ abstract class BaseError<TCode extends string = string> extends Error {
       message: this.message,
       timestamp: this.timestamp,
       context: this.context,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 }
@@ -924,7 +931,7 @@ class ValidationError extends BaseError<'VALIDATION_ERROR'> {
     field: string;
     message: string;
   }>;
-  
+
   constructor(
     message: string,
     validationErrors: Array<{ field: string; message: string }>
@@ -944,7 +951,7 @@ class GameError extends BaseError<GameErrorCode> {
   }
 }
 
-type GameErrorCode = 
+type GameErrorCode =
   | 'GAME_NOT_FOUND'
   | 'GAME_FULL'
   | 'INVALID_MOVE'
@@ -952,27 +959,21 @@ type GameErrorCode =
 
 // ✅ Good - Error factory pattern
 class ErrorFactory {
-  static validation(
-    field: string,
-    message: string
-  ): ValidationError {
+  static validation(field: string, message: string): ValidationError {
     return new ValidationError('Validation failed', [{ field, message }]);
   }
-  
+
   static gameNotFound(gameId: string): GameError {
-    return new GameError(
-      'GAME_NOT_FOUND',
-      `Game with ID ${gameId} not found`,
-      { gameId }
-    );
+    return new GameError('GAME_NOT_FOUND', `Game with ID ${gameId} not found`, {
+      gameId,
+    });
   }
-  
+
   static invalidMove(move: Move, reason: string): GameError {
-    return new GameError(
-      'INVALID_MOVE',
-      `Invalid move: ${reason}`,
-      { move, reason }
-    );
+    return new GameError('INVALID_MOVE', `Invalid move: ${reason}`, {
+      move,
+      reason,
+    });
   }
 }
 ```
@@ -998,34 +999,34 @@ class ResultWrapper<T, E extends Error = Error> {
     private readonly value: T | null,
     private readonly error: E | null
   ) {}
-  
+
   static ok<T>(value: T): ResultWrapper<T, never> {
     return new ResultWrapper(value, null);
   }
-  
+
   static err<E extends Error>(error: E): ResultWrapper<never, E> {
     return new ResultWrapper(null, error);
   }
-  
+
   isOk(): this is ResultWrapper<T, never> {
     return this.error === null;
   }
-  
+
   isErr(): this is ResultWrapper<never, E> {
     return this.error !== null;
   }
-  
+
   unwrap(): T {
     if (this.error) {
       throw this.error;
     }
     return this.value!;
   }
-  
+
   unwrapOr(defaultValue: T): T {
     return this.error ? defaultValue : this.value!;
   }
-  
+
   map<U>(fn: (value: T) => U): ResultWrapper<U, E> {
     if (this.error) {
       return ResultWrapper.err(this.error);
@@ -1046,9 +1047,7 @@ async function parseGameConfig(
     if (error instanceof ValidationError) {
       return ResultWrapper.err(error);
     }
-    return ResultWrapper.err(
-      new ValidationError('Invalid config format', [])
-    );
+    return ResultWrapper.err(new ValidationError('Invalid config format', []));
   }
 }
 ```
@@ -1064,7 +1063,7 @@ function createMockPlayer(overrides?: Partial<Player>): Player {
     id: 'player_test_123',
     name: 'Test Player',
     score: 0,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -1088,34 +1087,34 @@ function createMockWebSocket(): jest.Mocked<WebSocket> {
     CONNECTING: 0,
     OPEN: 1,
     CLOSING: 2,
-    CLOSED: 3
+    CLOSED: 3,
   };
 }
 
 // ✅ Good - Type-safe test builders
 class GameTestBuilder {
   private game: Partial<Game> = {};
-  
+
   withId(id: string): this {
     this.game.id = id;
     return this;
   }
-  
+
   withPlayers(...players: Player[]): this {
     this.game.players = players;
     return this;
   }
-  
+
   withState(state: GameState): this {
     this.game.state = state;
     return this;
   }
-  
+
   build(): Game {
     return {
       id: this.game.id ?? 'test_game_123',
       players: this.game.players ?? [],
-      state: this.game.state ?? 'waiting'
+      state: this.game.state ?? 'waiting',
     };
   }
 }
@@ -1135,32 +1134,32 @@ const game = new GameTestBuilder()
 describe('GameService', () => {
   let service: GameService;
   let mockClient: jest.Mocked<ApiClient>;
-  
+
   beforeEach(() => {
     mockClient = {
       fetchGame: jest.fn(),
       updateScore: jest.fn(),
-      listGames: jest.fn()
+      listGames: jest.fn(),
     };
-    
+
     service = new GameService(mockClient);
   });
-  
+
   describe('getGame', () => {
     it('should return game when found', async () => {
       const expectedGame = new GameTestBuilder().build();
       mockClient.fetchGame.mockResolvedValue(expectedGame);
-      
+
       const result = await service.getGame('game_123');
-      
+
       expect(result).toEqual(expectedGame);
       expect(mockClient.fetchGame).toHaveBeenCalledWith('game_123');
     });
-    
+
     it('should handle errors correctly', async () => {
       const error = new GameError('GAME_NOT_FOUND', 'Game not found');
       mockClient.fetchGame.mockRejectedValue(error);
-      
+
       await expect(service.getGame('invalid_id')).rejects.toThrow(error);
     });
   });
@@ -1169,21 +1168,21 @@ describe('GameService', () => {
 // ✅ Good - Testing event emitters
 describe('GameEventEmitter', () => {
   let emitter: GameEventEmitter<GameEvents>;
-  
+
   beforeEach(() => {
     emitter = new GameEventEmitter();
   });
-  
+
   it('should emit typed events', (done) => {
     emitter.on('game:start', (data) => {
       expect(data.gameId).toBe('test_123');
       expect(data.timestamp).toBeGreaterThan(0);
       done();
     });
-    
+
     emitter.emit('game:start', {
       gameId: 'test_123',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   });
 });
@@ -1200,39 +1199,48 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
-    project: './tsconfig.json'
+    project: './tsconfig.json',
   },
   plugins: ['@typescript-eslint'],
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking'
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
   ],
   rules: {
     // TypeScript specific rules
-    '@typescript-eslint/explicit-function-return-type': ['error', {
-      allowExpressions: true,
-      allowTypedFunctionExpressions: true
-    }],
+    '@typescript-eslint/explicit-function-return-type': [
+      'error',
+      {
+        allowExpressions: true,
+        allowTypedFunctionExpressions: true,
+      },
+    ],
     '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/no-unused-vars': ['error', {
-      argsIgnorePattern: '^_',
-      varsIgnorePattern: '^_'
-    }],
-    '@typescript-eslint/consistent-type-imports': ['error', {
-      prefer: 'type-imports'
-    }],
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      },
+    ],
+    '@typescript-eslint/consistent-type-imports': [
+      'error',
+      {
+        prefer: 'type-imports',
+      },
+    ],
     '@typescript-eslint/no-floating-promises': 'error',
     '@typescript-eslint/no-misused-promises': 'error',
     '@typescript-eslint/await-thenable': 'error',
     '@typescript-eslint/no-unnecessary-type-assertion': 'error',
     '@typescript-eslint/prefer-nullish-coalescing': 'error',
     '@typescript-eslint/prefer-optional-chain': 'error',
-    
+
     // General rules
     'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'prefer-const': 'error'
-  }
+    'prefer-const': 'error',
+  },
 };
 ```
 
@@ -1265,4 +1273,5 @@ This TypeScript style guide emphasizes:
 7. **Event Systems**: Fully typed event emitters and WebSocket communication
 8. **Testing**: Comprehensive type-safe testing utilities and patterns
 
-Following these patterns ensures type safety, better IDE support, easier refactoring, and more maintainable code in real-time, event-driven applications.
+Following these patterns ensures type safety, better IDE support, easier
+refactoring, and more maintainable code in real-time, event-driven applications.

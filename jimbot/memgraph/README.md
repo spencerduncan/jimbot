@@ -1,10 +1,14 @@
 # Memgraph Knowledge Graph Subsystem
 
-The Memgraph subsystem provides a high-performance graph database for storing and querying Balatro game knowledge, including card relationships, joker synergies, and strategy patterns.
+The Memgraph subsystem provides a high-performance graph database for storing
+and querying Balatro game knowledge, including card relationships, joker
+synergies, and strategy patterns.
 
 ## Overview
 
-Memgraph serves as JimBot's long-term memory and strategic knowledge base, enabling:
+Memgraph serves as JimBot's long-term memory and strategic knowledge base,
+enabling:
+
 - Real-time synergy calculations during gameplay
 - Historical pattern analysis across thousands of games
 - Strategy path optimization based on win rates
@@ -37,7 +41,9 @@ Memgraph serves as JimBot's long-term memory and strategic knowledge base, enabl
 ### Core Node Types
 
 #### Joker
+
 Represents a joker card with its properties and effects.
+
 ```cypher
 (:Joker {
     name: STRING,           // Unique identifier (e.g., "Blueprint")
@@ -51,7 +57,9 @@ Represents a joker card with its properties and effects.
 ```
 
 #### PlayingCard
+
 Represents standard playing cards with enhancements.
+
 ```cypher
 (:PlayingCard {
     suit: STRING,           // Hearts, Diamonds, Clubs, Spades
@@ -62,7 +70,9 @@ Represents standard playing cards with enhancements.
 ```
 
 #### HandType
+
 Represents poker hand types.
+
 ```cypher
 (:HandType {
     name: STRING,           // "Flush", "Full House", etc.
@@ -74,7 +84,9 @@ Represents poker hand types.
 ```
 
 #### Strategy
+
 High-level strategy patterns discovered through gameplay.
+
 ```cypher
 (:Strategy {
     name: STRING,           // "Fibonacci Rush", "Blueprint Engine"
@@ -88,7 +100,9 @@ High-level strategy patterns discovered through gameplay.
 ### Core Relationship Types
 
 #### SYNERGIZES_WITH
+
 Connects jokers that work well together.
+
 ```cypher
 (:Joker)-[:SYNERGIZES_WITH {
     strength: FLOAT,        // Synergy strength (0.0-1.0)
@@ -99,7 +113,9 @@ Connects jokers that work well together.
 ```
 
 #### REQUIRES_CARD
+
 Links jokers to specific card requirements.
+
 ```cypher
 (:Joker)-[:REQUIRES_CARD {
     condition: STRING,      // "in_hand", "scored", "discarded"
@@ -108,7 +124,9 @@ Links jokers to specific card requirements.
 ```
 
 #### COUNTERS
+
 Indicates jokers that counter each other.
+
 ```cypher
 (:Joker)-[:COUNTERS {
     severity: FLOAT        // How badly it counters (0.0-1.0)
@@ -116,7 +134,9 @@ Indicates jokers that counter each other.
 ```
 
 #### ENABLES_STRATEGY
+
 Links jokers to strategies they enable.
+
 ```cypher
 (:Joker)-[:ENABLES_STRATEGY {
     importance: FLOAT      // How critical for strategy (0.0-1.0)
@@ -126,6 +146,7 @@ Links jokers to strategies they enable.
 ## Query Examples
 
 ### 1. Find Best Synergies for Current Jokers
+
 ```cypher
 // Given current jokers, find the best additions
 WITH ['Blueprint', 'Brainstorm'] AS current_jokers
@@ -134,7 +155,7 @@ WHERE j.name IN current_jokers
 MATCH (j)-[s:SYNERGIZES_WITH]->(other:Joker)
 WHERE NOT other.name IN current_jokers
 AND s.strength > 0.7
-RETURN other.name, 
+RETURN other.name,
        AVG(s.strength) as avg_synergy,
        AVG(s.win_rate) as avg_win_rate
 ORDER BY avg_synergy DESC
@@ -142,11 +163,12 @@ LIMIT 5
 ```
 
 ### 2. Analyze Victory Paths
+
 ```cypher
 // Find successful joker progression paths
 MATCH path = (start:Joker {rarity: 'common'})-[:LEADS_TO*1..4]->(end:Joker)
 WHERE ALL(r IN relationships(path) WHERE r.win_rate > 0.6)
-WITH path, 
+WITH path,
      REDUCE(s = 1.0, r IN relationships(path) | s * r.win_rate) as path_success,
      REDUCE(c = 0, n IN nodes(path) | c + n.cost) as total_cost
 WHERE total_cost <= 30  // Early game budget
@@ -156,6 +178,7 @@ LIMIT 10
 ```
 
 ### 3. Card Requirement Analysis
+
 ```cypher
 // Find jokers compatible with current deck composition
 WITH {hearts: 15, spades: 10, diamonds: 8, clubs: 7} AS deck_comp
@@ -167,6 +190,7 @@ ORDER BY j.cost ASC
 ```
 
 ### 4. Counter-Strategy Detection
+
 ```cypher
 // Detect if opponent jokers counter our strategy
 WITH ['DNA', 'Blueprint'] AS our_jokers
@@ -177,6 +201,7 @@ ORDER BY threat_level DESC
 ```
 
 ### 5. Meta-Analysis Queries
+
 ```cypher
 // Find emerging meta strategies
 MATCH (s:Strategy)
@@ -191,6 +216,7 @@ RETURN s.name, s.win_rate, s.avg_score, COLLECT(j.name) as key_jokers
 ## Performance Optimization
 
 ### Indexes
+
 ```cypher
 // Core indexes for sub-50ms query performance
 CREATE INDEX ON :Joker(name);
@@ -204,6 +230,7 @@ CREATE CONSTRAINT ON (h:HandType) ASSERT h.name IS UNIQUE;
 ```
 
 ### Query Optimization Tips
+
 1. Always use parameters instead of string concatenation
 2. Limit traversal depth with explicit bounds
 3. Use `WITH` clauses to pipeline results
@@ -213,6 +240,7 @@ CREATE CONSTRAINT ON (h:HandType) ASSERT h.name IS UNIQUE;
 ## Integration Examples
 
 ### Python Integration
+
 ```python
 from typing import List, Dict
 import asyncio
@@ -221,7 +249,7 @@ from neo4j import AsyncGraphDatabase
 class MemgraphClient:
     def __init__(self, uri="bolt://localhost:7687"):
         self.driver = AsyncGraphDatabase.driver(uri)
-    
+
     async def get_synergies(self, joker_names: List[str]) -> Dict[str, List[Dict]]:
         query = """
         UNWIND $joker_names AS joker_name
@@ -234,10 +262,10 @@ class MemgraphClient:
             win_rate: s.win_rate
         }) as synergies
         """
-        
+
         async with self.driver.session() as session:
             result = await session.run(
-                query, 
+                query,
                 joker_names=joker_names,
                 min_strength=0.5
             )
@@ -245,6 +273,7 @@ class MemgraphClient:
 ```
 
 ### MAGE Module Usage
+
 ```cypher
 // Call custom C++ algorithm for fast synergy calculation
 CALL synergy.calculate_all() YIELD joker1, joker2, score
@@ -265,6 +294,7 @@ RETURN path, success_rate, total_cost;
 ## Development Setup
 
 ### Docker Compose
+
 ```yaml
 # docker-compose.memgraph.yml
 version: '3.8'
@@ -272,21 +302,22 @@ services:
   memgraph:
     image: memgraph/memgraph-platform:latest
     ports:
-      - "7687:7687"  # Bolt protocol
-      - "3000:3000"  # Memgraph Lab (web UI)
+      - '7687:7687' # Bolt protocol
+      - '3000:3000' # Memgraph Lab (web UI)
     volumes:
       - memgraph_data:/var/lib/memgraph
       - ./mage_modules:/usr/lib/memgraph/query_modules
     environment:
       - MEMGRAPH_LOG_LEVEL=INFO
       - MEMGRAPH_QUERY_TIMEOUT=100
-    command: ["--memory-limit=12288", "--query-parallelism=4"]
+    command: ['--memory-limit=12288', '--query-parallelism=4']
 
 volumes:
   memgraph_data:
 ```
 
 ### Initial Schema Setup
+
 ```bash
 # Load initial schema
 mgconsole < schema/init_schema.cypher
@@ -301,12 +332,14 @@ mgconsole -e "SHOW INDEX INFO;"
 ## Monitoring and Maintenance
 
 ### Key Metrics to Track
+
 - Query execution time (target: <50ms)
 - Memory usage (limit: 12GB)
 - Active connections (limit: 20)
 - Cache hit rate (target: >80%)
 
 ### Maintenance Tasks
+
 ```cypher
 // Weekly: Update strategy statistics
 MATCH (s:Strategy)
