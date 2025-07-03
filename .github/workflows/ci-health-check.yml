@@ -1,0 +1,158 @@
+name: CI Health Monitor
+
+on:
+  schedule:
+    # Run every hour to monitor CI health
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual triggering
+  
+env:
+  HEALTH_CHECK_LOOKBACK_HOURS: 24
+
+jobs:
+  ci-health-check:
+    name: CI Health Monitor
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      contents: read
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Check CI Health
+        id: health_check
+        run: |
+          # Get recent workflow runs via GitHub API
+          echo "Checking CI health for last $HEALTH_CHECK_LOOKBACK_HOURS hours..."
+          
+          # Calculate time threshold
+          threshold_time=$(date -d "$HEALTH_CHECK_LOOKBACK_HOURS hours ago" --iso-8601)
+          
+          # Use GitHub CLI to get recent workflow runs
+          echo "Getting workflow runs since $threshold_time"
+          
+          # Get runs for main CI workflows
+          main_runs=$(gh run list --workflow="Main CI/CD Pipeline" --limit 20 --json conclusion,createdAt | jq -r ".[] | select(.createdAt > \"$threshold_time\") | .conclusion")
+          lua_runs=$(gh run list --workflow="Lua CI" --limit 20 --json conclusion,createdAt | jq -r ".[] | select(.createdAt > \"$threshold_time\") | .conclusion")
+          
+          # Calculate success rates
+          total_main=$(echo "$main_runs" | wc -l)
+          success_main=$(echo "$main_runs" | grep -c "success" || echo "0")
+          
+          total_lua=$(echo "$lua_runs" | wc -l)
+          success_lua=$(echo "$lua_runs" | grep -c "success" || echo "0")
+          
+          # Calculate overall metrics
+          total_runs=$((total_main + total_lua))
+          success_runs=$((success_main + success_lua))
+          
+          if [ $total_runs -gt 0 ]; then
+            success_rate=$((success_runs * 100 / total_runs))
+          else
+            success_rate=100
+          fi
+          
+          echo "CI Health Summary:"
+          echo "- Total runs: $total_runs"
+          echo "- Successful runs: $success_runs"
+          echo "- Success rate: $success_rate%"
+          
+          # Set outputs
+          echo "total_runs=$total_runs" >> $GITHUB_OUTPUT
+          echo "success_runs=$success_runs" >> $GITHUB_OUTPUT
+          echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
+          
+          # Determine health status
+          if [ $success_rate -ge 80 ]; then
+            echo "health_status=healthy" >> $GITHUB_OUTPUT
+            echo "health_color=green" >> $GITHUB_OUTPUT
+          elif [ $success_rate -ge 50 ]; then
+            echo "health_status=degraded" >> $GITHUB_OUTPUT
+            echo "health_color=yellow" >> $GITHUB_OUTPUT
+          else
+            echo "health_status=unhealthy" >> $GITHUB_OUTPUT
+            echo "health_color=red" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create CI Health Badge
+        run: |
+          mkdir -p .github/badges
+          
+          # Create a simple badge JSON for shields.io
+          cat > .github/badges/ci-health.json << EOF
+          {
+            "schemaVersion": 1,
+            "label": "CI Health",
+            "message": "${{ steps.health_check.outputs.success_rate }}% (${{ steps.health_check.outputs.health_status }})",
+            "color": "${{ steps.health_check.outputs.health_color }}"
+          }
+          EOF
+          
+          echo "Created CI health badge with ${{ steps.health_check.outputs.success_rate }}% success rate"
+          
+      - name: Check for CI Issues
+        if: steps.health_check.outputs.success_rate < 70
+        run: |
+          echo "::warning::CI success rate (${{ steps.health_check.outputs.success_rate }}%) is below 70%"
+          echo "This indicates potential infrastructure issues that need attention."
+          
+          # Get details of recent failures
+          echo "Recent failed runs:"
+          gh run list --status failure --limit 5 --json workflowName,conclusion,createdAt,url | jq -r '.[] | "- \(.workflowName): \(.conclusion) at \(.createdAt) - \(.url)"'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create Issue for Critical CI Health
+        if: steps.health_check.outputs.success_rate < 50
+        run: |
+          # Check if there's already an open issue about CI health
+          existing_issue=$(gh issue list --label "infrastructure,critical" --state open --search "CI Health Critical" --json number | jq -r '.[0].number // empty')
+          
+          if [ -z "$existing_issue" ]; then
+            # Create new issue
+            gh issue create \
+              --title "🚨 CI Health Critical: ${{ steps.health_check.outputs.success_rate }}% Success Rate" \
+              --body "## CI Health Alert
+
+            **Current Status**: ${{ steps.health_check.outputs.health_status }}
+            **Success Rate**: ${{ steps.health_check.outputs.success_rate }}%
+            **Total Runs (24h)**: ${{ steps.health_check.outputs.total_runs }}
+            **Successful Runs**: ${{ steps.health_check.outputs.success_runs }}
+
+            ## Impact
+            CI success rate has fallen below 50%, indicating critical infrastructure issues.
+
+            ## Immediate Actions Needed
+            - [ ] Investigate recent build failures
+            - [ ] Check for infrastructure dependency issues
+            - [ ] Review workflow configurations
+            - [ ] Monitor for service outages
+
+            ## Recent Failed Runs
+            \`\`\`
+            $(gh run list --status failure --limit 5 --json workflowName,conclusion,createdAt | jq -r '.[] | \"- \(.workflowName): \(.conclusion) at \(.createdAt)\"')
+            \`\`\`
+
+            This issue was automatically created by CI Health Monitor.
+            " \
+              --label "infrastructure,critical,P0,devops" \
+              --assignee spencerduncan
+            
+            echo "Created critical CI health issue"
+          else
+            echo "CI health issue #$existing_issue already exists"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Update Repository Status
+        run: |
+          echo "CI Health Check completed:"
+          echo "- Status: ${{ steps.health_check.outputs.health_status }}"
+          echo "- Success Rate: ${{ steps.health_check.outputs.success_rate }}%"
+          echo "- Badge updated in .github/badges/ci-health.json"
