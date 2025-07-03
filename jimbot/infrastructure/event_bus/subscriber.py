@@ -3,7 +3,7 @@
 Provides subscriber interface for components.
 """
 
-from typing import Callable, List
+from typing import List
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,12 +11,12 @@ logger = logging.getLogger(__name__)
 
 class Subscriber:
     """Subscriber interface for event bus"""
-    
+
     def __init__(self, event_bus, component_name: str):
         self.event_bus = event_bus
         self.component_name = component_name
         self.subscriptions: List[str] = []
-        
+
     def subscribe(self, pattern: str):
         """Subscribe to event pattern"""
         self.subscriptions.append(pattern)

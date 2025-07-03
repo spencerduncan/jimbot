@@ -239,9 +239,9 @@ def get_prompt_for_decision(decision_type: str) -> str:
         "optimization": OPTIMIZATION_PROMPT,
         "quick_shop": QUICK_SHOP_PROMPT,
         "quick_hand": QUICK_HAND_PROMPT,
-        "quick_sell": QUICK_SELL_PROMPT
+        "quick_sell": QUICK_SELL_PROMPT,
     }
-    
+
     return prompt_map.get(decision_type, STRATEGY_PROMPT)
 
 

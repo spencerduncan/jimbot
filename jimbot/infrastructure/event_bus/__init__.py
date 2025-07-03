@@ -8,4 +8,4 @@ from .aggregator import EventAggregator
 from .publisher import Publisher
 from .subscriber import Subscriber
 
-__all__ = ['EventBus', 'EventAggregator', 'Publisher', 'Subscriber']
+__all__ = ["EventBus", "EventAggregator", "Publisher", "Subscriber"]
