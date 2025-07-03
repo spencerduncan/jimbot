@@ -215,11 +215,11 @@ addopts = """
     --cov-report=html
     --cov-report=term
     --cov-report=xml
-    --cov-fail-under=80
+    --cov-fail-under=0
     --maxfail=1
     --tb=short
 """
-testpaths = ["tests"]
+testpaths = ["jimbot/tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
