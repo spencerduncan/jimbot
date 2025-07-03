@@ -49,7 +49,7 @@ jobs:
           luacov-console
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./luacov.report.out
           flags: lua
