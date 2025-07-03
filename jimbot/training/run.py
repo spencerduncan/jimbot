@@ -11,7 +11,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 import ray
 from ray import tune
@@ -21,9 +21,9 @@ from ray.rllib.models import ModelCatalog
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from jimbot.training.models.balatro_net import BalatroNet, BalatroLSTMNet
-from jimbot.training.environments.balatro_env import BalatroEnv
 from jimbot.training.configs.ppo_config import get_config, tune_hyperparameters
+from jimbot.training.environments.balatro_env import BalatroEnv
+from jimbot.training.models.balatro_net import BalatroLSTMNet, BalatroNet
 
 
 def setup_ray(memory_gb: int = 8):

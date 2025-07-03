@@ -6,14 +6,14 @@ game history, replay capability, and advanced analysis.
 """
 
 import asyncio
-import uuid
-from datetime import datetime
-from typing import Dict, List, Any, AsyncIterator
-from dataclasses import dataclass
-from enum import Enum
 import logging
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any, AsyncIterator, Dict, List
 
-from jimbot.shared.event_bus import EventBus, Event
+from jimbot.shared.event_bus import Event, EventBus
 
 logger = logging.getLogger(__name__)
 

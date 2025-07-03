@@ -21,7 +21,7 @@ jobs:
     name: Format Check
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jimbot/ci-tools:1.0.0
+      image: ubuntu:22.04
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

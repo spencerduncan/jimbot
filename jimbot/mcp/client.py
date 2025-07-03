@@ -8,10 +8,10 @@ and sending test events. Useful for development and testing.
 import asyncio
 import json
 import logging
-import time
 import random
-from typing import Dict, List, Optional
+import time
 from contextlib import asynccontextmanager
+from typing import Dict, List, Optional
 
 import websockets
 

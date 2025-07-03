@@ -5,10 +5,11 @@ This module provides a Gym-compatible environment that interfaces with the Balat
 game through MCP and enriches observations with Memgraph knowledge embeddings.
 """
 
+from typing import Any, Dict, Tuple
+
 import gym
 import numpy as np
 from gym import spaces
-from typing import Dict, Any, Tuple
 
 from jimbot.mcp.client import MCPClient
 from jimbot.memgraph.client import MemgraphClient

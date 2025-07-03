@@ -8,11 +8,11 @@ import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-import pytest
 import numpy as np
+import pytest
 
-from jimbot.analytics.metrics import MetricsCollector, PerformanceTracker
 from jimbot.analytics.aggregator import MetricAggregator
+from jimbot.analytics.metrics import MetricsCollector, PerformanceTracker
 from jimbot.analytics.queries import MetricQueryEngine
 
 

@@ -1,7 +1,8 @@
 """Tests for JSON-Protobuf compatibility layer"""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from jimbot.infrastructure.serialization.json_compatibility import (
     JsonCompatibilityLayer,

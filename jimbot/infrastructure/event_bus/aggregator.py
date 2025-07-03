@@ -3,8 +3,9 @@
 Aggregates high-frequency events into summary events.
 """
 
-from typing import List
 from collections import defaultdict
+from typing import List
+
 from .event_bus import Event
 
 

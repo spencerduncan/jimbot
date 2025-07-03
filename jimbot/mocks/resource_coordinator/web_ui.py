@@ -4,18 +4,15 @@ Simple web UI for monitoring the mock Resource Coordinator.
 """
 
 import logging
+import sys
 from datetime import datetime
 from typing import Dict
 
 import grpc
 from flask import Flask, jsonify, render_template_string
 
-import sys
-
 sys.path.append("/home/spduncan/jimbot")
-from jimbot.proto import resource_coordinator_pb2
-from jimbot.proto import resource_coordinator_pb2_grpc
-
+from jimbot.proto import resource_coordinator_pb2, resource_coordinator_pb2_grpc
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False

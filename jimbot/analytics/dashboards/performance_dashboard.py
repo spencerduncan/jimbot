@@ -6,11 +6,11 @@ learning progress, and game statistics.
 """
 
 import json
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Tuple
-from dataclasses import dataclass
-from enum import Enum
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 

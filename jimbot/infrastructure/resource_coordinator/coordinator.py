@@ -3,10 +3,11 @@
 Coordinates all resource allocation across components.
 """
 
+from typing import Any, Dict
+
 from .gpu_allocator import GPUAllocator
 from .rate_limiter import ClaudeRateLimiter
 from .redis_coordinator import RedisCoordinator
-from typing import Dict, Any
 
 
 class ResourceCoordinator:

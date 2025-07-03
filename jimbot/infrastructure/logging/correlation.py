@@ -7,7 +7,6 @@ import contextvars
 import uuid
 from typing import Optional
 
-
 # Context variable for correlation ID
 _correlation_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
     "correlation_id", default=None

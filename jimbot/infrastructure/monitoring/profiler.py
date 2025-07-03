@@ -3,11 +3,11 @@
 Performance profiling utilities.
 """
 
-import time
 import asyncio
+import logging
+import time
 from functools import wraps
 from typing import Callable
-import logging
 
 logger = logging.getLogger(__name__)
 

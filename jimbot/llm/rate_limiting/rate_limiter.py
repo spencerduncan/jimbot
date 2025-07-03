@@ -6,11 +6,11 @@ monitoring capabilities.
 """
 
 import asyncio
-import time
 import logging
-from typing import Optional, Dict, Any
-from dataclasses import dataclass, field
+import time
 from collections import deque
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

@@ -3,16 +3,17 @@
 Hierarchical configuration with hot reload support.
 """
 
-import os
-import yaml
-import json
-from typing import Dict, Any, Optional, List, Callable
-from pathlib import Path
 import asyncio
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+import json
 import logging
+import os
 from collections import defaultdict
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
+import yaml
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 logger = logging.getLogger(__name__)
 

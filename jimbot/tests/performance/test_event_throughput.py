@@ -5,10 +5,11 @@ Benchmarks the system's ability to handle high-volume event streams.
 """
 
 import asyncio
-import time
 import json
 import statistics
+import time
 from typing import List
+
 import pytest
 import websockets
 
@@ -167,8 +168,9 @@ class TestEventThroughput:
     @pytest.mark.asyncio
     async def test_memory_efficiency(self):
         """Test memory usage under sustained load."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB

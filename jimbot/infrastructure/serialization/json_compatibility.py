@@ -6,8 +6,9 @@ to maintain backward compatibility with existing BalatroMCP JSON format.
 
 import json
 import logging
-from typing import Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, Optional
+
 from google.protobuf import json_format, struct_pb2
 from google.protobuf.message import Message
 

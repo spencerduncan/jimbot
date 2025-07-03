@@ -7,10 +7,10 @@ Tests graph queries, schema operations, and performance.
 import pytest
 
 from jimbot.memgraph.queries import (
-    JokerSynergyQuery,
     GameStateStore,
-    StrategyAnalyzer,
     GraphOptimizer,
+    JokerSynergyQuery,
+    StrategyAnalyzer,
 )
 
 

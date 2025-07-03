@@ -6,12 +6,12 @@ joker configurations, and knowledge graph embeddings to produce action distribut
 and value estimates for PPO training.
 """
 
-import torch
-import torch.nn as nn
 from typing import Dict, List, Tuple
 
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
+import torch
+import torch.nn as nn
 from ray.rllib.models.torch.misc import SlimFC, normc_initializer
+from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.annotations import override
 from ray.rllib.utils.typing import ModelConfigDict, TensorType
 

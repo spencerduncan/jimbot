@@ -3,16 +3,14 @@
 Client library for the Resource Coordinator service.
 """
 
+import sys
 import uuid
 from typing import Dict, Optional, Tuple
 
 import grpc
 
-import sys
-
 sys.path.append("/home/spduncan/jimbot")
-from jimbot.proto import resource_coordinator_pb2
-from jimbot.proto import resource_coordinator_pb2_grpc
+from jimbot.proto import resource_coordinator_pb2, resource_coordinator_pb2_grpc
 
 
 class ResourceCoordinatorClient:
@@ -300,8 +298,8 @@ class ResourceCoordinatorClient:
 
 # Example usage
 if __name__ == "__main__":
-    import time
     import json
+    import time
 
     # Create client
     with ResourceCoordinatorClient() as client:

@@ -3,11 +3,11 @@
 Collects and exports metrics for all components.
 """
 
-import time
-from typing import Dict, List
-from collections import defaultdict
 import asyncio
 import logging
+import time
+from collections import defaultdict
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 

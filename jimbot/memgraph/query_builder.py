@@ -1,8 +1,8 @@
 """Query builder for constructing optimized Cypher queries."""
 
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class MatchType(Enum):

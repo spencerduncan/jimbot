@@ -4,9 +4,9 @@ Manages exclusive GPU access for training and inference.
 """
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from typing import Optional
-import logging
 
 logger = logging.getLogger(__name__)
 

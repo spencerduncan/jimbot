@@ -3,10 +3,10 @@
 Handles serialization/deserialization of events with JSON compatibility.
 """
 
-from typing import Any, Type, Optional
-import logging
 import json
+import logging
 from enum import Enum
+from typing import Any, Optional, Type
 
 from .json_compatibility import JsonCompatibilityLayer
 

@@ -6,10 +6,10 @@ and decision types.
 """
 
 from .prompt_templates import (
-    SYSTEM_PROMPT,
-    STRATEGY_PROMPT,
-    META_ANALYSIS_PROMPT,
     BATCH_DECISION_PROMPT,
+    META_ANALYSIS_PROMPT,
+    STRATEGY_PROMPT,
+    SYSTEM_PROMPT,
 )
 
 __all__ = [

@@ -10,8 +10,8 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
-from unittest.mock import Mock, AsyncMock
+from typing import Any, Dict, List
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from faker import Faker

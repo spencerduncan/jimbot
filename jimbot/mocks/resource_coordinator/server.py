@@ -11,6 +11,9 @@ A simple mock implementation of the Resource Coordinator service that:
 import asyncio
 import json
 import logging
+
+# These will be generated from the proto file
+import sys
 import time
 import uuid
 from concurrent import futures
@@ -20,12 +23,8 @@ from typing import Dict, List, Optional
 import grpc
 from google.protobuf.timestamp_pb2 import Timestamp
 
-# These will be generated from the proto file
-import sys
-
 sys.path.append("/home/spduncan/jimbot")
-from jimbot.proto import resource_coordinator_pb2
-from jimbot.proto import resource_coordinator_pb2_grpc
+from jimbot.proto import resource_coordinator_pb2, resource_coordinator_pb2_grpc
 
 
 class MockResourceCoordinator(

@@ -5,8 +5,7 @@ This module contains the PPO algorithm configuration optimized for training
 on Balatro with 8GB memory allocation and RTX 3090 GPU.
 """
 
-from typing import Dict, Any
-
+from typing import Any, Dict
 
 # Base PPO configuration
 PPO_CONFIG: Dict[str, Any] = {

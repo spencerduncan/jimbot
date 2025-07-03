@@ -3,11 +3,11 @@
 Provides health checking for all components.
 """
 
-from typing import Dict, Callable
-from dataclasses import dataclass
-from enum import Enum
 import asyncio
 import time
+from dataclasses import dataclass
+from enum import Enum
+from typing import Callable, Dict
 
 
 class HealthStatus(Enum):

@@ -1,10 +1,11 @@
 """Feature extraction from Memgraph for machine learning models."""
 
-import numpy as np
-from typing import List, Dict, Optional
 import asyncio
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+import numpy as np
 
 from .client import MemgraphClient
 from .query_builder import SynergyQueryBuilder

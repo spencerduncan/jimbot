@@ -3,8 +3,8 @@
 Manages Protocol Buffer schema versions and evolution.
 """
 
-from typing import Dict, Any
 import logging
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 

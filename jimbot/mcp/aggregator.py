@@ -8,9 +8,9 @@ incoming events in 100ms windows for efficient processing.
 import asyncio
 import logging
 import time
-from typing import List, Dict, Callable, Optional
 from collections import deque
 from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

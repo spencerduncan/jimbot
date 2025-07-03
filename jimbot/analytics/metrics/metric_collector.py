@@ -7,13 +7,13 @@ metrics for analysis.
 """
 
 import asyncio
-import time
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
 import logging
+import time
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from jimbot.shared.event_bus import EventBus, Event
+from jimbot.shared.event_bus import Event, EventBus
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,10 @@ Tests the full flow from game events to training updates.
 import asyncio
 import json
 import time
-import websockets
+
 import pytest
 import ray
+import websockets
 
 from jimbot.mcp.server import MCPServer
 from jimbot.training.environment import BalatroEnv

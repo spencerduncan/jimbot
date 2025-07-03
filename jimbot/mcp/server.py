@@ -15,7 +15,7 @@ import websockets
 from websockets.server import WebSocketServerProtocol
 
 from jimbot.mcp.aggregator import EventAggregator
-from jimbot.mcp.utils import validate_event, MetricsCollector
+from jimbot.mcp.utils import MetricsCollector, validate_event
 
 logger = logging.getLogger(__name__)
 
