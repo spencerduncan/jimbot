@@ -18,7 +18,7 @@ jobs:
       run: |
         # Build the Docker image
         echo "Building Docker CI image..."
-        docker build -f Dockerfile.ci --target ci -t jimbot-ci:latest .
+        docker build -f Dockerfile.ci.simple -t jimbot-ci:latest .
         
         # Run all tests
         echo "Running all CI tests in Docker..."
