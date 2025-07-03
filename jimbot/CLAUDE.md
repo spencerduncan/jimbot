@@ -1,6 +1,7 @@
 # JimBot Root Directory
 
-This directory contains all components of the JimBot sequential learning system for Balatro.
+This directory contains all components of the JimBot sequential learning system
+for Balatro.
 
 ## Directory Structure
 
@@ -20,16 +21,22 @@ jimbot/
 
 ## Development Principles
 
-1. **Sequential Thinking**: Take time to think through problems thoroughly before implementation
-2. **Parallel Development**: Each component can be developed independently via clean interfaces
-3. **Event-Driven Architecture**: All components communicate through the central Event Bus
-4. **Resource Awareness**: Respect memory allocations (32GB total) and GPU coordination
+1. **Sequential Thinking**: Take time to think through problems thoroughly
+   before implementation
+2. **Parallel Development**: Each component can be developed independently via
+   clean interfaces
+3. **Event-Driven Architecture**: All components communicate through the central
+   Event Bus
+4. **Resource Awareness**: Respect memory allocations (32GB total) and GPU
+   coordination
 
 ## Quick Component Overview
 
 - **MCP** (Weeks 1-3): Handles game state aggregation with <100ms latency
-- **Memgraph** (Weeks 1-8): Stores strategies and synergies with <50ms query time
-- **Training** (Weeks 2-8): Ray RLlib PPO implementation targeting >1000 games/hour
+- **Memgraph** (Weeks 1-8): Stores strategies and synergies with <50ms query
+  time
+- **Training** (Weeks 2-8): Ray RLlib PPO implementation targeting >1000
+  games/hour
 - **LLM** (Weeks 4-7): Claude consultation for <5% of decisions
 - **Analytics** (Weeks 5-10): Real-time metrics and event persistence
 
@@ -41,7 +48,8 @@ jimbot/
 
 ## Getting Started
 
-Each subdirectory contains its own CLAUDE.md and README.md with specific instructions. Start with the component most relevant to your current task.
+Each subdirectory contains its own CLAUDE.md and README.md with specific
+instructions. Start with the component most relevant to your current task.
 
 ## Resource Allocation
 

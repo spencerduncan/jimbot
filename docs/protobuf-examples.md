@@ -1,6 +1,8 @@
 # Protocol Buffers Examples for JimBot
 
-This document provides concrete examples of well-designed Protocol Buffer messages for the JimBot project, focusing on game state management and event streaming patterns.
+This document provides concrete examples of well-designed Protocol Buffer
+messages for the JimBot project, focusing on game state management and event
+streaming patterns.
 
 ## Complete MCP Event Schema
 
@@ -24,27 +26,27 @@ message MCPEvent {
   google.protobuf.Timestamp timestamp = 2;
   string source_component = 3;
   int64 sequence_number = 4;
-  
+
   // Event routing information
   EventRouting routing = 5;
-  
+
   // The actual event payload
   oneof payload {
     // Game state events (10-29)
     GameStateUpdate game_state_update = 10;
     PlayerActionRequest player_action = 11;
     ScoreCalculationEvent score_calculation = 12;
-    
+
     // System events (30-49)
     ComponentHealthCheck health_check = 30;
     PerformanceMetrics performance = 31;
     ErrorEvent error = 32;
-    
+
     // Control events (50-69)
     StreamControlEvent stream_control = 50;
     ConfigurationUpdate config_update = 51;
   }
-  
+
   // Extended metadata (100+ for less frequent fields)
   map<string, string> metadata = 100;
   google.protobuf.Duration processing_duration = 101;
@@ -65,24 +67,24 @@ message EventRouting {
 message GameStateSnapshot {
   // Snapshot identification
   SnapshotHeader header = 1;
-  
+
   // Current game phase and round info
   GamePhase phase = 2;
   int32 ante = 3;
   int32 round = 4;
-  
+
   // Player state (optimized for frequent access)
   PlayerState player = 5;
-  
+
   // Board state
   BoardState board = 6;
-  
+
   // Shop state (only populated during shop phase)
   ShopState shop = 7;
-  
+
   // Active effects (sorted by priority)
   repeated ActiveEffect effects = 8 [packed=true];
-  
+
   // Delta compression support
   DeltaInfo delta = 100;
 }
@@ -114,20 +116,20 @@ message PlayerState {
   int32 hand_size = 2;
   int32 hands_remaining = 3;
   int32 discards_remaining = 4;
-  
+
   // Score tracking
   int64 current_score = 5;
   int64 blind_requirement = 6;
-  
+
   // Inventory (11-20)
   repeated JokerState jokers = 11;
   repeated ConsumableState consumables = 12;
   repeated VoucherState vouchers = 13;
-  
+
   // Deck state (21-30)
   DeckState deck = 21;
   repeated Card hand = 22;
-  
+
   // Stats tracking (100+)
   PlayerStats stats = 100;
 }
@@ -139,13 +141,13 @@ message PlayerState {
 // Efficient event batching for 100ms aggregation window
 message EventBatch {
   BatchHeader header = 1;
-  
+
   // Events grouped by type for better compression
   repeated GameStateUpdate state_updates = 2;
   repeated PlayerActionRequest player_actions = 3;
   repeated ScoreCalculationEvent score_events = 4;
   repeated PerformanceMetrics metrics = 5;
-  
+
   // Compression info
   CompressionInfo compression = 100;
 }
@@ -173,10 +175,10 @@ message CompressionInfo {
 message JokerSynergyGraph {
   // All jokers in the graph
   repeated JokerNode jokers = 1;
-  
+
   // All synergy edges
   repeated SynergyEdge synergies = 2;
-  
+
   // Precomputed synergy clusters
   repeated SynergyCluster clusters = 3;
 }
@@ -185,10 +187,10 @@ message JokerNode {
   string joker_id = 1;
   string name = 2;
   JokerRarity rarity = 3;
-  
+
   // Compact property storage
   repeated JokerProperty properties = 4;
-  
+
   // Graph metrics
   float centrality_score = 10;
   int32 synergy_count = 11;
@@ -230,13 +232,13 @@ message TrainingObservation {
   bytes encoded_state = 1;        // Numpy array as bytes
   float reward = 2;
   bool is_terminal = 3;
-  
+
   // Action mask for valid actions
   repeated bool action_mask = 4 [packed=true];
-  
+
   // Additional features
   repeated float custom_features = 5 [packed=true];
-  
+
   // Metadata for debugging (100+)
   ObservationMetadata metadata = 100;
 }
@@ -254,7 +256,7 @@ message TrainingBatch {
   repeated TrainingAction actions = 2;
   repeated float rewards = 3 [packed=true];
   repeated float advantages = 4 [packed=true];
-  
+
   // Batch metadata
   string batch_id = 10;
   int32 batch_size = 11;
@@ -272,13 +274,13 @@ message StrategyConsultationRequest {
   string request_id = 1;
   google.protobuf.Timestamp requested_at = 2;
   int32 priority = 3;
-  
+
   // Game context (compressed)
   GameContext context = 4;
-  
+
   // Specific question or decision point
   DecisionPoint decision = 5;
-  
+
   // Rate limiting info
   RateLimitInfo rate_limit = 6;
 }
@@ -289,10 +291,10 @@ message GameContext {
   int32 ante = 2;
   repeated string active_jokers = 3;
   repeated string available_actions = 4;
-  
+
   // Recent history (last N events)
   repeated GameEvent recent_events = 5;
-  
+
   // Performance metrics
   float win_rate = 10;
   float average_score = 11;
@@ -300,14 +302,14 @@ message GameContext {
 
 message StrategyConsultationResponse {
   string request_id = 1;
-  
+
   // LLM recommendation
   StrategyRecommendation recommendation = 2;
-  
+
   // Processing info
   google.protobuf.Duration processing_time = 3;
   int32 tokens_used = 4;
-  
+
   // Cache info
   bool from_cache = 5;
   google.protobuf.Timestamp cache_expires_at = 6;
@@ -328,17 +330,17 @@ message StrategyRecommendation {
 message PerformanceMetrics {
   // Timestamp is the primary key
   google.protobuf.Timestamp timestamp = 1;
-  
+
   // Component identification
   string component_id = 2;
   string component_type = 3;
-  
+
   // Core metrics (packed for efficiency)
   repeated MetricPoint cpu_usage = 4;
   repeated MetricPoint memory_usage = 5;
   repeated MetricPoint latency_ms = 6;
   repeated MetricPoint throughput = 7;
-  
+
   // Custom metrics
   map<string, MetricSeries> custom_metrics = 10;
 }
@@ -373,14 +375,14 @@ service JimBotGameService {
       get: "/v1/game/{game_id}/state"
     };
   }
-  
+
   // Server streaming - Real-time events
   rpc StreamGameEvents(StreamEventsRequest) returns (stream MCPEvent) {
     option (google.api.http) = {
       get: "/v1/game/{game_id}/events/stream"
     };
   }
-  
+
   // Client streaming - Batch metrics upload
   rpc UploadMetrics(stream PerformanceMetrics) returns (MetricsUploadResponse) {
     option (google.api.http) = {
@@ -388,7 +390,7 @@ service JimBotGameService {
       body: "*"
     };
   }
-  
+
   // Bidirectional streaming - Interactive gameplay
   rpc PlayInteractive(stream PlayerCommand) returns (stream GameUpdate) {
     option (google.api.http) = {
@@ -408,13 +410,13 @@ message GetGameStateRequest {
 message StreamEventsRequest {
   string game_id = 1;
   repeated EventType event_types = 2;
-  
+
   oneof start_point {
     int64 from_sequence = 3;
     google.protobuf.Timestamp from_timestamp = 4;
     string from_snapshot = 5;
   }
-  
+
   StreamOptions options = 10;
 }
 
@@ -436,15 +438,15 @@ message ErrorInfo {
   ErrorCode code = 2;
   string message = 3;
   google.protobuf.Timestamp occurred_at = 4;
-  
+
   // Context
   string component = 5;
   string operation = 6;
-  
+
   // Debugging info
   repeated StackFrame stack_trace = 10;
   map<string, string> context = 11;
-  
+
   // Recovery info
   bool is_retryable = 20;
   google.protobuf.Duration retry_after = 21;
@@ -481,11 +483,12 @@ message StackFrame {
 2. **Packed Encoding**: Used for all repeated numeric fields
 3. **Oneof Usage**: For mutually exclusive fields and polymorphic messages
 4. **Clear Naming**: PascalCase for messages, snake_case for fields
-5. **Enum Design**: Zero values with _UNSPECIFIED suffix
+5. **Enum Design**: Zero values with \_UNSPECIFIED suffix
 6. **Versioning**: Package includes version (v1)
 7. **Documentation**: Comments explain field purposes
 8. **Performance**: Appropriate types chosen for each use case
 9. **Streaming Patterns**: All four gRPC patterns demonstrated
 10. **Error Handling**: Comprehensive error information with recovery hints
 
-These examples provide templates for implementing efficient, well-designed Protocol Buffer messages throughout the JimBot system.
+These examples provide templates for implementing efficient, well-designed
+Protocol Buffer messages throughout the JimBot system.

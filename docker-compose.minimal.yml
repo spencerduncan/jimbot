@@ -6,8 +6,8 @@ services:
     image: memgraph/memgraph-platform:latest
     container_name: jimbot-memgraph
     ports:
-      - "${MEMGRAPH_PORT:-7687}:7687"
-      - "${MEMGRAPH_LAB_PORT:-3000}:3000"
+      - '${MEMGRAPH_PORT:-7687}:7687'
+      - '${MEMGRAPH_LAB_PORT:-3000}:3000'
     volumes:
       - memgraph_data:/var/lib/memgraph
       - memgraph_logs:/var/log/memgraph
@@ -16,11 +16,22 @@ services:
     deploy:
       resources:
         limits:
-          memory: 10G  # 12GB allocation with 2GB safety margin
+          memory: 10G # 12GB allocation with 2GB safety margin
         reservations:
           memory: 8G
     healthcheck:
-      test: ["CMD", "mg_client", "-h", "localhost", "-p", "7687", "--use-ssl=false", "-q", "MATCH (n) RETURN n LIMIT 1;"]
+      test:
+        [
+          'CMD',
+          'mg_client',
+          '-h',
+          'localhost',
+          '-p',
+          '7687',
+          '--use-ssl=false',
+          '-q',
+          'MATCH (n) RETURN n LIMIT 1;',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -33,9 +44,9 @@ services:
     image: questdb/questdb:latest
     container_name: jimbot-questdb
     ports:
-      - "${QUESTDB_HTTP_PORT:-9000}:9000"
-      - "${QUESTDB_PG_PORT:-8812}:8812"
-      - "${QUESTDB_ILP_PORT:-9009}:9009"
+      - '${QUESTDB_HTTP_PORT:-9000}:9000'
+      - '${QUESTDB_PG_PORT:-8812}:8812'
+      - '${QUESTDB_ILP_PORT:-9009}:9009'
     volumes:
       - questdb_data:/var/lib/questdb
     environment:
@@ -47,7 +58,7 @@ services:
         reservations:
           memory: 2G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -60,8 +71,8 @@ services:
     image: eventstore/eventstore:latest
     container_name: jimbot-eventstore
     ports:
-      - "${EVENTSTORE_TCP_PORT:-1113}:1113"
-      - "${EVENTSTORE_HTTP_PORT:-2113}:2113"
+      - '${EVENTSTORE_TCP_PORT:-1113}:1113'
+      - '${EVENTSTORE_HTTP_PORT:-2113}:2113'
     volumes:
       - eventstore_data:/var/lib/eventstore
       - eventstore_logs:/var/log/eventstore
@@ -69,7 +80,7 @@ services:
       - EVENTSTORE_CLUSTER_SIZE=1
       - EVENTSTORE_RUN_PROJECTIONS=All
       - EVENTSTORE_START_STANDARD_PROJECTIONS=true
-      - EVENTSTORE_INSECURE=true  # For development only
+      - EVENTSTORE_INSECURE=true # For development only
       - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
     deploy:
       resources:
@@ -78,7 +89,7 @@ services:
         reservations:
           memory: 2G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:2113/health/live']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -91,7 +102,7 @@ services:
     image: redis:7-alpine
     container_name: jimbot-redis
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --maxmemory 2g --maxmemory-policy allkeys-lru
@@ -102,7 +113,7 @@ services:
         reservations:
           memory: 1G
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -116,7 +127,7 @@ services:
       dockerfile: Dockerfile
     container_name: jimbot-test-receiver
     ports:
-      - "${TEST_RECEIVER_PORT:-8080}:8080"
+      - '${TEST_RECEIVER_PORT:-8080}:8080'
     environment:
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -130,7 +141,7 @@ services:
         reservations:
           memory: 256M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
       interval: 30s
       timeout: 10s
       retries: 3

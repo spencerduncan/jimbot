@@ -2,7 +2,13 @@
 
 ## Executive Overview
 
-The Analytics and Persistence component establishes the data foundation for the Balatro Sequential Learning System, to be developed during Weeks 5-10 of the project timeline. The system consumes events from the Event Bus, storing time-series metrics in QuestDB and complete game histories in EventStoreDB, while providing real-time insights through Grafana dashboards. Operating within a 5GB memory allocation, the system captures game events at microsecond granularity and enables sophisticated strategy analysis.
+The Analytics and Persistence component establishes the data foundation for the
+Balatro Sequential Learning System, to be developed during Weeks 5-10 of the
+project timeline. The system consumes events from the Event Bus, storing
+time-series metrics in QuestDB and complete game histories in EventStoreDB,
+while providing real-time insights through Grafana dashboards. Operating within
+a 5GB memory allocation, the system captures game events at microsecond
+granularity and enables sophisticated strategy analysis.
 
 ## Technical Architecture
 
@@ -21,18 +27,18 @@ class AnalyticsEventConsumer:
         self.event_bus = EventBusClient()
         self.questdb = qi.Sender('localhost', 9009)
         self.eventstore = EventStoreDBClient("esdb://localhost:2113")
-        
+
     async def start(self):
         await self.event_bus.subscribe(
             topics=['game.state', 'metrics.*', 'learning.decision'],
             handler=self.process_event
         )
-        
+
     async def process_event(self, event: Event):
         # Route to appropriate storage
         if event.type in [EventType.METRIC, EventType.GAME_STATE]:
             await self.store_timeseries(event)
-        
+
         # All events go to EventStore for complete history
         await self.store_event(event)
 ```
@@ -74,17 +80,20 @@ Event Bus → Analytics Consumer → [QuestDB | EventStoreDB]
 **Objective**: Implement Balatro-specific data schemas
 
 Core QuestDB tables:
+
 - `game_metrics`: Per-hand performance with microsecond timestamps
 - `decision_points`: All player choices with context and outcomes
 - `joker_synergies`: Joker combination effectiveness tracking
 - `economic_flow`: Money generation and spending patterns
 
 EventStore streams:
+
 - `game-{id}`: Complete game event sequences
 - `strategy-{id}`: Strategy discovery events
 - `learning-metrics`: Model performance tracking
 
 Implementation example:
+
 ```sql
 CREATE TABLE game_metrics (
   timestamp TIMESTAMP,
@@ -121,21 +130,24 @@ CREATE TABLE game_metrics (
 **Objective**: Create comprehensive monitoring and analytics dashboards
 
 Real-time dashboards:
+
 - System health and performance metrics
 - Active game monitoring
 - Strategy diversity tracking
 - Learning progress visualization
 
 Analytics dashboards:
+
 - Joker synergy heatmaps
 - Win rate progression curves
 - Economic efficiency analysis
 - Decision quality metrics
 
 Implementation using QuestDB SQL:
+
 ```sql
 -- Real-time win rate calculation
-SELECT 
+SELECT
   ante,
   COUNT(*) FILTER (WHERE outcome = 'win') * 100.0 / COUNT(*) as win_rate,
   AVG(final_score) as avg_score
@@ -149,33 +161,37 @@ SAMPLE BY 1h
 **Objective**: Implement sophisticated analysis capabilities
 
 EventStore projections for strategy analysis:
+
 ```javascript
-fromStream('game-*')
-  .when({
-    $init: function() {
-      return {
-        jokerCombos: {},
-        winningStrategies: []
-      };
-    },
-    HandPlayed: function(state, event) {
-      if (event.data.finalScore > 10000) {
-        var combo = event.data.jokerEffects.map(j => j.name).sort().join('+');
-        state.jokerCombos[combo] = (state.jokerCombos[combo] || 0) + 1;
-      }
-    },
-    GameCompleted: function(state, event) {
-      if (event.data.outcome === 'win') {
-        state.winningStrategies.push({
-          jokers: event.data.finalJokers,
-          score: event.data.finalScore
-        });
-      }
+fromStream('game-*').when({
+  $init: function () {
+    return {
+      jokerCombos: {},
+      winningStrategies: [],
+    };
+  },
+  HandPlayed: function (state, event) {
+    if (event.data.finalScore > 10000) {
+      var combo = event.data.jokerEffects
+        .map((j) => j.name)
+        .sort()
+        .join('+');
+      state.jokerCombos[combo] = (state.jokerCombos[combo] || 0) + 1;
     }
-  });
+  },
+  GameCompleted: function (state, event) {
+    if (event.data.outcome === 'win') {
+      state.winningStrategies.push({
+        jokers: event.data.finalJokers,
+        score: event.data.finalScore,
+      });
+    }
+  },
+});
 ```
 
 Advanced QuestDB analytics:
+
 - Joker synergy correlation matrices
 - Ante progression analysis
 - Economic efficiency metrics
@@ -206,29 +222,29 @@ class EventProcessor:
             await self.process_game_state(event)
         elif event.type == EventType.METRIC:
             await self.process_metric(event)
-            
+
     async def process_game_state(self, event: Event):
         # Extract to QuestDB line protocol
         game_state = GameStateEvent()
         event.payload.Unpack(game_state)
-        
+
         line = f"game_metrics,session_id={game_state.game_id}"
         line += f",ante={game_state.ante}"
         line += f" hand_score={game_state.chips}i"
         line += f",mult={game_state.mult}i"
         line += f",money={game_state.money}i"
         line += f" {event.timestamp.ToNanoseconds()}"
-        
+
         await self.questdb.send(line)
 ```
 
 ### Query Interface for Other Components
 
-```python
+````python
 class AnalyticsQueryService:
     async def get_joker_synergies(self, min_games: int = 100):
         query = """
-        SELECT 
+        SELECT
             joker_combo,
             AVG(final_score) as avg_score,
             COUNT(*) as games,
@@ -289,7 +305,7 @@ CREATE TABLE joker_synergies (
   total_score_contribution LONG,
   average_multiplier DOUBLE
 ) timestamp(timestamp) PARTITION BY DAY;
-```
+````
 
 ### EventStoreDB Event Types
 
@@ -321,7 +337,7 @@ type HandPlayed = BalatroEvent & {
     scoring: {
       baseChips: number;
       baseMult: number;
-      jokerEffects: Array<{name: string; effect: string; value: number}>;
+      jokerEffects: Array<{ name: string; effect: string; value: number }>;
       finalScore: number;
     };
   };
@@ -331,7 +347,12 @@ type ShopEntered = BalatroEvent & {
   eventType: 'ShopEntered';
   data: {
     money: number;
-    shopItems: Array<{slot: number; type: string; name: string; cost: number}>;
+    shopItems: Array<{
+      slot: number;
+      type: string;
+      name: string;
+      cost: number;
+    }>;
     rerollCost: number;
   };
 };
@@ -350,16 +371,19 @@ The system must maintain these Balatro-specific performance targets:
 ## Testing Strategy
 
 ### Unit Testing
+
 - Schema validation for all event types
 - Query performance benchmarks
 - Data rotation and archival processes
 
-### Integration Testing  
+### Integration Testing
+
 - End-to-end data flow from MCP to dashboards
 - Concurrent game simulation (100+ simultaneous games)
 - Failure recovery scenarios
 
 ### Performance Testing
+
 - Sustained ingestion at 50,000 events/second
 - Complex analytical queries under load
 - Memory usage within 6GB allocation
@@ -368,17 +392,23 @@ The system must maintain these Balatro-specific performance targets:
 
 ### Technical Risks
 
-**Memory Exhaustion**: Automatic data rotation policies move older games to compressed storage. QuestDB's age-based partitioning ensures only recent data remains in memory.
+**Memory Exhaustion**: Automatic data rotation policies move older games to
+compressed storage. QuestDB's age-based partitioning ensures only recent data
+remains in memory.
 
-**Ingestion Bottlenecks**: Batching and connection pooling prevent overwhelming the database. Circuit breakers provide graceful degradation under extreme load.
+**Ingestion Bottlenecks**: Batching and connection pooling prevent overwhelming
+the database. Circuit breakers provide graceful degradation under extreme load.
 
-**Query Performance Degradation**: Materialized views and strategic indexing maintain query speed. Regular VACUUM operations prevent index bloat.
+**Query Performance Degradation**: Materialized views and strategic indexing
+maintain query speed. Regular VACUUM operations prevent index bloat.
 
 ### Operational Risks
 
-**Data Loss**: EventStoreDB's append-only model prevents data corruption. Automated backups capture both databases hourly.
+**Data Loss**: EventStoreDB's append-only model prevents data corruption.
+Automated backups capture both databases hourly.
 
-**Integration Delays**: Stub interfaces allow independent development. Weekly integration tests catch issues early.
+**Integration Delays**: Stub interfaces allow independent development. Weekly
+integration tests catch issues early.
 
 ## Dependencies
 
@@ -423,15 +453,19 @@ The system must maintain these Balatro-specific performance targets:
 ## Resource Requirements
 
 ### Development Approach
-This component is designed for implementation by a single developer or small team with experience in time-series databases and event sourcing.
+
+This component is designed for implementation by a single developer or small
+team with experience in time-series databases and event sourcing.
 
 ### Technical Skills
+
 - **TypeScript/Node.js**: Event processing and routing
 - **SQL**: Complex analytical queries
 - **Event Sourcing**: EventStoreDB projections
 - **Data Visualization**: Grafana dashboard creation
 
 ### Memory Allocation
+
 - **Total**: 5GB RAM
 - **QuestDB**: 3GB (time-series data)
 - **EventStoreDB**: 2GB (event history)
@@ -448,6 +482,7 @@ This component is designed for implementation by a single developer or small tea
 ## Key Deliverables
 
 By Week 10:
+
 - Event Bus consumer for analytics events
 - QuestDB with optimized schemas and indexes
 - EventStoreDB with game replay capability
@@ -456,4 +491,6 @@ By Week 10:
 - SQL query interface for other components
 - Complete documentation and runbooks
 
-This plan provides a comprehensive analytics foundation for the Balatro Sequential Learning System, enabling deep insights into strategy evolution and system performance.
+This plan provides a comprehensive analytics foundation for the Balatro
+Sequential Learning System, enabling deep insights into strategy evolution and
+system performance.

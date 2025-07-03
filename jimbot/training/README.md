@@ -2,7 +2,10 @@
 
 ## Overview
 
-The JimBot training pipeline uses Ray RLlib with PPO (Proximal Policy Optimization) to train a neural network policy for playing Balatro. The system is designed to achieve >1000 games/hour throughput while operating within an 8GB memory allocation.
+The JimBot training pipeline uses Ray RLlib with PPO (Proximal Policy
+Optimization) to train a neural network policy for playing Balatro. The system
+is designed to achieve >1000 games/hour throughput while operating within an 8GB
+memory allocation.
 
 ## Architecture
 
@@ -46,22 +49,26 @@ python -m jimbot.training.run --checkpoint checkpoints/best_model.pt
 ## Training Pipeline Stages
 
 ### 1. Environment Initialization
+
 - Connect to MCP server for game communication
 - Initialize Memgraph client for knowledge queries
 - Create vectorized environments for parallel simulation
 
 ### 2. Model Construction
+
 - Build BalatroNet with card/joker encoders
 - Integrate Memgraph embeddings
 - Configure for GPU acceleration
 
 ### 3. Training Loop
+
 - Collect rollouts from parallel environments
 - Compute advantages using GAE
 - Update policy using PPO algorithm
 - Save checkpoints based on performance
 
 ### 4. Evaluation
+
 - Run evaluation episodes without exploration
 - Track win rate and average score
 - Generate performance reports
@@ -70,47 +77,47 @@ python -m jimbot.training.run --checkpoint checkpoints/best_model.pt
 
 ### Core PPO Parameters
 
-| Parameter | Default | Description | Tuning Guide |
-|-----------|---------|-------------|--------------|
-| `lr` | 5e-5 | Learning rate | Decrease if training unstable |
-| `train_batch_size` | 4000 | Total batch size per iteration | Limited by 8GB memory |
-| `sgd_minibatch_size` | 128 | Mini-batch for SGD | Increase for stability |
-| `num_sgd_iter` | 30 | SGD iterations per batch | More iterations = better sample efficiency |
-| `clip_param` | 0.2 | PPO clipping parameter | Decrease for more conservative updates |
-| `entropy_coeff` | 0.01 | Entropy bonus | Increase for more exploration |
-| `gamma` | 0.99 | Discount factor | Lower for shorter-horizon tasks |
-| `lambda` | 0.95 | GAE lambda | Trade-off bias vs variance |
+| Parameter            | Default | Description                    | Tuning Guide                               |
+| -------------------- | ------- | ------------------------------ | ------------------------------------------ |
+| `lr`                 | 5e-5    | Learning rate                  | Decrease if training unstable              |
+| `train_batch_size`   | 4000    | Total batch size per iteration | Limited by 8GB memory                      |
+| `sgd_minibatch_size` | 128     | Mini-batch for SGD             | Increase for stability                     |
+| `num_sgd_iter`       | 30      | SGD iterations per batch       | More iterations = better sample efficiency |
+| `clip_param`         | 0.2     | PPO clipping parameter         | Decrease for more conservative updates     |
+| `entropy_coeff`      | 0.01    | Entropy bonus                  | Increase for more exploration              |
+| `gamma`              | 0.99    | Discount factor                | Lower for shorter-horizon tasks            |
+| `lambda`             | 0.95    | GAE lambda                     | Trade-off bias vs variance                 |
 
 ### Environment Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `num_workers` | 2 | Parallel rollout workers |
-| `num_envs_per_worker` | 4 | Environments per worker |
-| `rollout_fragment_length` | 200 | Steps per rollout |
-| `batch_mode` | "truncate_episodes" | How to create batches |
+| Parameter                 | Default             | Description              |
+| ------------------------- | ------------------- | ------------------------ |
+| `num_workers`             | 2                   | Parallel rollout workers |
+| `num_envs_per_worker`     | 4                   | Environments per worker  |
+| `rollout_fragment_length` | 200                 | Steps per rollout        |
+| `batch_mode`              | "truncate_episodes" | How to create batches    |
 
 ### Model Architecture
 
-| Component | Configuration | Purpose |
-|-----------|---------------|---------|
-| Card Encoder | 52×4 → 256 → 128 | Process card states |
+| Component     | Configuration     | Purpose                   |
+| ------------- | ----------------- | ------------------------- |
+| Card Encoder  | 52×4 → 256 → 128  | Process card states       |
 | Joker Encoder | 150×8 → 512 → 256 | Process joker information |
-| Shared Layers | 512 → 512 → 512 | Combined processing |
-| Policy Head | 512 → 1000 | Action logits |
-| Value Head | 512 → 1 | State value estimate |
+| Shared Layers | 512 → 512 → 512   | Combined processing       |
+| Policy Head   | 512 → 1000        | Action logits             |
+| Value Head    | 512 → 1           | State value estimate      |
 
 ## Benchmark Results
 
 ### Performance Metrics (RTX 3090, 32GB RAM)
 
-| Metric | Target | Current | Notes |
-|--------|--------|---------|-------|
-| Games/Hour | >1000 | 1250 | With 8 parallel environments |
-| GPU Utilization | >80% | 85% | During training steps |
-| Memory Usage | <8GB | 7.2GB | Including replay buffer |
-| Mean Episode Length | - | 450 steps | Average game duration |
-| Win Rate | >50% | 62% | After 1M timesteps |
+| Metric              | Target | Current   | Notes                        |
+| ------------------- | ------ | --------- | ---------------------------- |
+| Games/Hour          | >1000  | 1250      | With 8 parallel environments |
+| GPU Utilization     | >80%   | 85%       | During training steps        |
+| Memory Usage        | <8GB   | 7.2GB     | Including replay buffer      |
+| Mean Episode Length | -      | 450 steps | Average game duration        |
+| Win Rate            | >50%   | 62%       | After 1M timesteps           |
 
 ### Training Curves
 
@@ -131,6 +138,7 @@ Training Speed
 ## Configuration Files
 
 ### configs/default_ppo.yaml
+
 ```yaml
 algorithm: PPO
 env: BalatroEnv
@@ -147,29 +155,31 @@ model:
 ```
 
 ### configs/experimental_ppo.yaml
+
 ```yaml
 # Experimental config for faster training
 algorithm: PPO
 env: BalatroEnv
 framework: torch
-num_workers: 4  # More workers
+num_workers: 4 # More workers
 num_gpus: 1
-train_batch_size: 8000  # Larger batches
+train_batch_size: 8000 # Larger batches
 sgd_minibatch_size: 256
-lr: 0.0001  # Higher learning rate
-entropy_coeff: 0.02  # More exploration
+lr: 0.0001 # Higher learning rate
+entropy_coeff: 0.02 # More exploration
 ```
 
 ## Monitoring and Debugging
 
 ### TensorBoard Integration
+
 ```bash
 # Start TensorBoard
 tensorboard --logdir ~/ray_results
 
 # Key metrics to monitor:
 # - episode_reward_mean
-# - episode_len_mean  
+# - episode_len_mean
 # - policy_loss
 # - value_loss
 # - entropy
@@ -201,6 +211,7 @@ tensorboard --logdir ~/ray_results
 ## Advanced Features
 
 ### Custom Callbacks
+
 ```python
 from jimbot.training.callbacks import BalatroCallbacks
 
@@ -208,6 +219,7 @@ config["callbacks"] = BalatroCallbacks
 ```
 
 ### Curriculum Learning
+
 ```python
 config["env_config"] = {
     "difficulty_schedule": {
@@ -219,6 +231,7 @@ config["env_config"] = {
 ```
 
 ### Multi-GPU Training
+
 ```python
 config["num_gpus"] = 2
 config["num_gpus_per_worker"] = 0.5
@@ -227,21 +240,24 @@ config["num_gpus_per_worker"] = 0.5
 ## Development Workflow
 
 1. **Implement New Features**
+
    ```bash
    # Edit model architecture
    vim models/balatro_net.py
-   
+
    # Test changes
    pytest tests/training/test_model.py
    ```
 
 2. **Run Experiments**
+
    ```bash
    # Start experiment with wandb tracking
    python -m jimbot.training.run --experiment my_experiment --track
    ```
 
 3. **Analyze Results**
+
    ```bash
    # Generate performance report
    python -m jimbot.training.analyze --checkpoint checkpoints/best_model.pt

@@ -2,7 +2,10 @@
 
 ## Overview
 
-This directory contains the Ray RLlib training pipeline for JimBot's reinforcement learning system. The subsystem is allocated 8GB RAM and must achieve >1000 games/hour training throughput while managing GPU resources efficiently.
+This directory contains the Ray RLlib training pipeline for JimBot's
+reinforcement learning system. The subsystem is allocated 8GB RAM and must
+achieve >1000 games/hour training throughput while managing GPU resources
+efficiently.
 
 ## Directory Structure
 
@@ -21,6 +24,7 @@ training/
 ## PPO Configuration
 
 ### Core Settings
+
 ```python
 PPO_CONFIG = {
     "framework": "torch",
@@ -42,6 +46,7 @@ PPO_CONFIG = {
 ```
 
 ### GPU Configuration
+
 ```python
 GPU_CONFIG = {
     "num_gpus": 1,  # RTX 3090
@@ -54,27 +59,28 @@ GPU_CONFIG = {
 ## Custom Model Architecture
 
 ### BalatroNet
+
 ```python
 class BalatroNet(TorchModelV2):
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
-        
+
         # Memgraph embedding integration
         self.memgraph_embedding_dim = model_config["custom_model_config"]["memgraph_embedding_dim"]
-        
+
         # Feature extraction layers
         self.card_encoder = nn.Sequential(
             nn.Linear(52 * 4, 256),  # 52 cards * 4 features
             nn.ReLU(),
             nn.Linear(256, 128)
         )
-        
+
         self.joker_encoder = nn.Sequential(
             nn.Linear(150 * 8, 512),  # 150 jokers * 8 features
             nn.ReLU(),
             nn.Linear(512, 256)
         )
-        
+
         # Combined processing
         self.shared_layers = nn.Sequential(
             nn.Linear(128 + 256 + self.memgraph_embedding_dim, 512),
@@ -82,7 +88,7 @@ class BalatroNet(TorchModelV2):
             nn.Linear(512, 512),
             nn.ReLU()
         )
-        
+
         # Policy and value heads
         self.policy_head = nn.Linear(512, num_outputs)
         self.value_head = nn.Linear(512, 1)
@@ -91,6 +97,7 @@ class BalatroNet(TorchModelV2):
 ## Memory Management Patterns
 
 ### Worker Memory Allocation
+
 ```python
 def configure_ray_memory():
     """Configure Ray for 8GB training allocation"""
@@ -110,18 +117,19 @@ def configure_ray_memory():
 ```
 
 ### Batch Processing Optimization
+
 ```python
 class MemoryEfficientSampler:
     def __init__(self, buffer_size=100000):
         self.buffer = ReplayBuffer(buffer_size)
         self.batch_size = 4000
-        
+
     def sample_efficient(self):
         """Sample with minimal memory allocation"""
         # Reuse tensors to avoid allocation
         if not hasattr(self, '_sample_buffer'):
             self._sample_buffer = torch.zeros((self.batch_size,), dtype=torch.float32)
-        
+
         # In-place operations
         indices = torch.randint(0, len(self.buffer), (self.batch_size,))
         self._sample_buffer.index_copy_(0, indices, self.buffer.data)
@@ -131,12 +139,14 @@ class MemoryEfficientSampler:
 ## Performance Optimization
 
 ### Achieving >1000 Games/Hour
+
 1. **Vectorized Environments**: Run 8 environments in parallel
 2. **Async Rollouts**: Overlap GPU training with CPU simulation
 3. **Optimized Observations**: Compact game state representation
 4. **Fast Action Sampling**: Cached probability distributions
 
 ### Profiling Code
+
 ```python
 import torch.profiler
 
@@ -151,17 +161,18 @@ def profile_training_step():
         with_stack=True
     ) as prof:
         trainer.train()
-    
+
     print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
 ```
 
 ## Environment Wrapper Requirements
 
 ### BalatroEnv Interface
+
 ```python
 class BalatroEnv(gym.Env):
     """Balatro environment wrapper for Ray RLlib"""
-    
+
     def __init__(self, config):
         self.mcp_client = config.get("mcp_client")
         self.memgraph_client = config.get("memgraph_client")
@@ -177,13 +188,14 @@ class BalatroEnv(gym.Env):
 ## Checkpoint Management
 
 ### Checkpoint Strategy
+
 ```python
 class BalatroCheckpointCallback(DefaultCallbacks):
     def on_train_result(self, *, algorithm, result, **kwargs):
         if result["episode_reward_mean"] > algorithm.best_reward:
             algorithm.best_reward = result["episode_reward_mean"]
             checkpoint = algorithm.save_checkpoint(self.checkpoint_dir)
-            
+
             # Save additional metadata
             metadata = {
                 "reward": result["episode_reward_mean"],
@@ -198,21 +210,25 @@ class BalatroCheckpointCallback(DefaultCallbacks):
 ## Integration Points
 
 ### Week 2-3: Environment Development
+
 - Implement BalatroEnv with MCP integration
 - Create observation/action space mappings
 - Test with random policy baseline
 
 ### Week 4-5: Neural Network Architecture
+
 - Implement BalatroNet with Memgraph embeddings
 - Optimize for GPU memory constraints
 - Profile and benchmark performance
 
 ### Week 6-7: Training Pipeline
+
 - Configure PPO for optimal performance
 - Implement custom callbacks for monitoring
 - Integrate with Claude for strategic decisions
 
 ### Week 8: Performance Optimization
+
 - Achieve >1000 games/hour target
 - Implement distributed training if needed
 - Final checkpoint management system

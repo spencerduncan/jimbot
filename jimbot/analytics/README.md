@@ -2,7 +2,10 @@
 
 ## Overview
 
-The Analytics & Monitoring subsystem provides comprehensive observability for JimBot's learning process and game performance. It captures real-time metrics, stores complete game histories, and provides dashboards for analysis and debugging.
+The Analytics & Monitoring subsystem provides comprehensive observability for
+JimBot's learning process and game performance. It captures real-time metrics,
+stores complete game histories, and provides dashboards for analysis and
+debugging.
 
 ## Architecture
 
@@ -27,24 +30,28 @@ The Analytics & Monitoring subsystem provides comprehensive observability for Ji
 ### Performance Metrics (QuestDB)
 
 #### System Metrics
+
 - **CPU Usage**: Per-component CPU utilization
 - **Memory Usage**: Heap and RSS memory per service
 - **GPU Utilization**: Training and inference GPU usage
 - **Network I/O**: Inter-component communication volume
 
 #### Game Performance
+
 - **Win Rate**: Rolling average over last N games
 - **Average Score**: Score distribution and trends
 - **Decision Latency**: Time from game state to action
 - **Strategy Distribution**: Which strategies are being used
 
 #### Learning Metrics
+
 - **Loss Curves**: PPO loss, value loss, entropy
 - **Exploration Rate**: Epsilon or entropy-based exploration
 - **Reward Trends**: Episode rewards over time
 - **Q-Value Estimates**: Action value predictions
 
 #### Integration Metrics
+
 - **API Call Rates**: Claude, Memgraph query rates
 - **Cache Hit Rates**: Strategy and embedding caches
 - **Error Rates**: Component failures and retries
@@ -53,6 +60,7 @@ The Analytics & Monitoring subsystem provides comprehensive observability for Ji
 ### Event Types (EventStoreDB)
 
 #### Game Events
+
 - `GameStarted`: Initial game configuration
 - `RoundStarted`: Round number, blind, available actions
 - `DecisionMade`: State, action taken, reasoning
@@ -62,6 +70,7 @@ The Analytics & Monitoring subsystem provides comprehensive observability for Ji
 - `GameEnded`: Final score, rounds survived, win/loss
 
 #### System Events
+
 - `ModelCheckpoint`: Model version, performance metrics
 - `StrategyChanged`: Old strategy, new strategy, reason
 - `ComponentError`: Error details, recovery action
@@ -70,6 +79,7 @@ The Analytics & Monitoring subsystem provides comprehensive observability for Ji
 ## Dashboard Setup
 
 ### Prerequisites
+
 ```bash
 # Install Grafana (for dashboards)
 docker run -d -p 3000:3000 --name grafana grafana/grafana
@@ -109,6 +119,7 @@ docker run -d -p 2113:2113 -p 1113:1113 \
 ## Usage Examples
 
 ### Recording Metrics
+
 ```python
 from jimbot.analytics.metrics import MetricCollector
 
@@ -131,6 +142,7 @@ await collector.record_metric_at(
 ```
 
 ### Processing Events
+
 ```python
 from jimbot.analytics.eventstore import EventProcessor
 
@@ -153,6 +165,7 @@ events = await processor.read_stream("game-123")
 ```
 
 ### Querying Metrics
+
 ```python
 from jimbot.analytics.questdb import QuestDBClient
 
@@ -168,7 +181,7 @@ results = await client.query("""
 
 # Get win rate trend
 win_rate = await client.query("""
-    SELECT timestamp, 
+    SELECT timestamp,
            count(*) as total_games,
            sum(CASE WHEN outcome = 'win' THEN 1 ELSE 0 END) as wins,
            avg(final_score) as avg_score
@@ -181,10 +194,10 @@ win_rate = await client.query("""
 ## Metric Definitions
 
 ### Latency Metrics
+
 - **Decision Latency**: Time from receiving game state to returning action
   - Target: <100ms
   - Critical: >500ms
-  
 - **Query Latency**: Time for Memgraph queries
   - Target: <50ms
   - Critical: >200ms
@@ -194,6 +207,7 @@ win_rate = await client.query("""
   - Critical: >5s
 
 ### Rate Metrics
+
 - **Games Per Hour**: Number of complete games
   - Target: >1000
   - Minimum: >500
@@ -203,6 +217,7 @@ win_rate = await client.query("""
   - Minimum: >10
 
 ### Quality Metrics
+
 - **Win Rate**: Percentage of games reaching ante 8+
   - Target: >10%
   - Baseline: >5%
@@ -214,34 +229,36 @@ win_rate = await client.query("""
 ## Alert Configuration
 
 ### Critical Alerts
+
 ```yaml
 alerts:
   - name: HighMemoryUsage
-    condition: memory_usage > 5.5GB  # 90% of 6GB allocation
+    condition: memory_usage > 5.5GB # 90% of 6GB allocation
     severity: critical
     action: notify_and_scale_down
-    
+
   - name: ComponentDisconnected
     condition: component_heartbeat_missing > 30s
     severity: critical
     action: notify_and_restart
-    
+
   - name: HighErrorRate
-    condition: error_rate > 0.05  # 5% errors
+    condition: error_rate > 0.05 # 5% errors
     severity: critical
     action: notify_and_investigate
 ```
 
 ### Warning Alerts
+
 ```yaml
 alerts:
   - name: ElevatedLatency
     condition: p95_latency > 200ms
     severity: warning
     action: notify
-    
+
   - name: LowCacheHitRate
-    condition: cache_hit_rate < 0.7  # 70% hits
+    condition: cache_hit_rate < 0.7 # 70% hits
     severity: warning
     action: notify_and_analyze
 ```
@@ -249,9 +266,10 @@ alerts:
 ## Data Retention
 
 ### QuestDB Retention Policy
+
 ```sql
 -- Automated cleanup (run daily)
-ALTER TABLE decision_latency DROP PARTITION 
+ALTER TABLE decision_latency DROP PARTITION
 WHERE timestamp < dateadd('d', -7, now());
 
 -- Aggregate old data before deletion
@@ -268,6 +286,7 @@ GROUP BY day, component;
 ```
 
 ### EventStoreDB Retention
+
 ```javascript
 // Scavenge old events (configure in EventStore)
 {
@@ -288,18 +307,21 @@ GROUP BY day, component;
 ## Development Guide
 
 ### Adding New Metrics
+
 1. Define metric in `metrics/definitions.py`
 2. Add collector in appropriate component
 3. Create dashboard panel in Grafana
 4. Set up alerts if needed
 
 ### Adding New Events
+
 1. Define event schema in `eventstore/schemas.py`
 2. Add event handler in `event_processor.py`
 3. Update replay logic if needed
 4. Document in this README
 
 ### Creating New Dashboards
+
 1. Design in Grafana UI
 2. Export as JSON
 3. Save in `dashboards/` directory
@@ -324,18 +346,21 @@ pytest tests/analytics/test_dashboards.py -v
 ## Performance Tuning
 
 ### QuestDB Optimization
+
 - Use proper timestamp indexing
 - Batch inserts (1000+ rows)
 - Partition by day for large tables
 - Use SAMPLE BY for aggregations
 
 ### EventStoreDB Optimization
+
 - Use projections for complex queries
 - Category streams for related events
 - Proper stream naming conventions
 - Regular scavenging
 
 ### Service Optimization
+
 - Batch metric writes (1-second windows)
 - Async processing where possible
 - Connection pooling

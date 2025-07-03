@@ -2,33 +2,40 @@
 
 ## Overview
 
-This document defines the comprehensive interface strategy for all JimBot components, resolving integration conflicts and establishing clear contracts between services.
+This document defines the comprehensive interface strategy for all JimBot
+components, resolving integration conflicts and establishing clear contracts
+between services.
 
 ## Architecture Pattern: Event-Driven Service Mesh
 
 ### Core Principles
-1. **Event Bus Architecture**: All components communicate through a central event bus
-2. **Language Agnostic**: Protocol Buffers for serialization, gRPC/REST for transport
+
+1. **Event Bus Architecture**: All components communicate through a central
+   event bus
+2. **Language Agnostic**: Protocol Buffers for serialization, gRPC/REST for
+   transport
 3. **Fault Tolerance**: Circuit breakers, retries, and dead letter queues
 4. **Observable**: Built-in metrics, tracing, and logging
 
 ### Component Registry
 
-| Component | Language | Primary Interface | Secondary Interface | Status |
-|-----------|----------|------------------|-------------------|---------|
-| BalatroMCP | **Lua** | REST Event Producer | File I/O for Actions | **Implemented** |
-| Event Bus | **Rust** | REST API (for BalatroMCP) | gRPC Streaming | Planned |
-| Memgraph | Python/Cypher | GraphQL Query | gRPC Mutations | Planned |
-| Ray RLlib | Python | gRPC Model Serving | REST Job Management | Planned |
-| Claude/LangChain | Python | Async Queue | REST Cache Management | Planned |
-| Analytics | **Rust** | Event Consumer | SQL Query Interface | Planned |
-| Resource Coordinator | **Rust** | gRPC Service | Prometheus Metrics | Planned |
-| MAGE Modules | **Rust** | Cypher Procedures | N/A | Planned |
+| Component            | Language      | Primary Interface         | Secondary Interface   | Status          |
+| -------------------- | ------------- | ------------------------- | --------------------- | --------------- |
+| BalatroMCP           | **Lua**       | REST Event Producer       | File I/O for Actions  | **Implemented** |
+| Event Bus            | **Rust**      | REST API (for BalatroMCP) | gRPC Streaming        | Planned         |
+| Memgraph             | Python/Cypher | GraphQL Query             | gRPC Mutations        | Planned         |
+| Ray RLlib            | Python        | gRPC Model Serving        | REST Job Management   | Planned         |
+| Claude/LangChain     | Python        | Async Queue               | REST Cache Management | Planned         |
+| Analytics            | **Rust**      | Event Consumer            | SQL Query Interface   | Planned         |
+| Resource Coordinator | **Rust**      | gRPC Service              | Prometheus Metrics    | Planned         |
+| MAGE Modules         | **Rust**      | Cypher Procedures         | N/A                   | Planned         |
 
 ## Canonical Event Schema
 
 ### Current BalatroMCP JSON Format
+
 The existing BalatroMCP implementation sends events in JSON format:
+
 ```json
 {
   "type": "GAME_STATE",
@@ -50,7 +57,8 @@ The existing BalatroMCP implementation sends events in JSON format:
 }
 ```
 
-The Event Bus will accept this JSON format and internally convert to Protocol Buffers.
+The Event Bus will accept this JSON format and internally convert to Protocol
+Buffers.
 
 ### Base Event Structure (Protocol Buffers v3)
 
@@ -93,14 +101,14 @@ message GameStateEvent {
   int32 ante = 2;
   int32 round = 3;
   int32 hand_number = 4;
-  
+
   message Joker {
     string name = 1;
     string rarity = 2;
     int32 position = 3;
     map<string, string> properties = 4;
   }
-  
+
   message Card {
     string suit = 1;
     string rank = 2;
@@ -108,18 +116,18 @@ message GameStateEvent {
     string seal = 4;
     string edition = 5;
   }
-  
+
   repeated Joker jokers = 5;
   repeated Card hand = 6;
   repeated Card deck = 7;
-  
+
   int32 chips = 8;
   int32 mult = 9;
   int32 money = 10;
   int32 hand_size = 11;
   int32 hands_remaining = 12;
   int32 discards_remaining = 13;
-  
+
   map<string, int32> shop_items = 14;
   map<string, float> score_history = 15;
 }
@@ -165,22 +173,22 @@ endpoints:
     type: gRPC unary
     request: Event
     response: PublishResponse
-    
-  - name: SubscribeEvents  
+
+  - name: SubscribeEvents
     type: gRPC streaming
     request: SubscribeRequest
     response: stream Event
-    
+
   - name: GetEventHistory
     type: REST GET
     path: /api/v1/events
     query: ?from={timestamp}&to={timestamp}&type={type}
-    
+
 configuration:
   max_message_size: 10MB
   retention_period: 7d
   partitions: 8
-  replication_factor: 1  # Single node deployment
+  replication_factor: 1 # Single node deployment
 ```
 
 ### 2. Knowledge Graph Interface
@@ -202,16 +210,16 @@ endpoints:
           }
         }
       }
-      
+
   - name: UpdateKnowledge
     type: gRPC unary
     request: KnowledgeUpdate
     response: UpdateResponse
-    
+
   - name: SubscribeToChanges
     type: WebSocket
     path: /ws/knowledge
-    
+
 performance:
   query_timeout: 50ms
   mutation_timeout: 200ms
@@ -229,21 +237,21 @@ endpoints:
     request: LearningDecisionRequest
     response: LearningDecisionResponse
     sla: 95% < 100ms
-    
+
   - name: SubmitTrainingJob
     type: REST POST
     path: /api/v1/training/jobs
     body: TrainingJobSpec
-    
+
   - name: GetModelMetrics
     type: REST GET
     path: /api/v1/models/{model_id}/metrics
-    
+
   - name: StreamDecisions
     type: gRPC streaming
     request: stream LearningDecisionRequest
     response: stream LearningDecisionResponse
-    
+
 resource_limits:
   max_concurrent_decisions: 1000
   max_memory_per_job: 6GB
@@ -262,15 +270,15 @@ endpoints:
     request: StrategyRequest
     response: StrategyResponse
     timeout: 5s
-    
+
   - name: GetCachedStrategies
     type: REST GET
     path: /api/v1/strategies/cache
-    
+
   - name: UpdateRateLimits
     type: REST PUT
     path: /api/v1/config/rate_limits
-    
+
 rate_limiting:
   strategy: token_bucket
   capacity: 100
@@ -286,17 +294,17 @@ protocol: Event Consumer + SQL
 endpoints:
   - name: IngestEvents
     type: Event Bus Subscription
-    topics: ["metrics.*", "game.state", "learning.decision"]
-    
+    topics: ['metrics.*', 'game.state', 'learning.decision']
+
   - name: QueryMetrics
     type: REST POST
     path: /api/v1/query
     body: SQL query
-    
+
   - name: StreamMetrics
     type: WebSocket
     path: /ws/metrics
-    
+
 storage:
   questdb:
     retention: 30d
@@ -309,6 +317,7 @@ storage:
 ## Resource Coordination Service
 
 ### Purpose
+
 Manages shared resources (GPU, memory, API quotas) across all components.
 
 ### Interface
@@ -374,10 +383,10 @@ circuit_breaker:
   failure_threshold: 5
   timeout: 30s
   half_open_requests: 3
-  
+
 per_component:
   claude_advisor:
-    failure_threshold: 3  # More sensitive due to cost
+    failure_threshold: 3 # More sensitive due to cost
     timeout: 60s
   memgraph:
     failure_threshold: 10
@@ -393,15 +402,15 @@ common_metrics:
   - name: jimbot_event_bus_messages_total
     type: counter
     labels: [source, destination, event_type]
-    
+
   - name: jimbot_request_duration_seconds
     type: histogram
     labels: [service, method, status]
-    
+
   - name: jimbot_resource_usage_ratio
     type: gauge
     labels: [resource_type, component]
-    
+
   - name: jimbot_error_rate
     type: counter
     labels: [component, severity, error_type]
@@ -410,6 +419,7 @@ common_metrics:
 ### Distributed Tracing
 
 All services must propagate OpenTelemetry trace context:
+
 - `traceparent` header for HTTP
 - Metadata for gRPC
 - Message properties for async queues
@@ -417,6 +427,7 @@ All services must propagate OpenTelemetry trace context:
 ### Logging
 
 Structured JSON logs with required fields:
+
 ```json
 {
   "timestamp": "2024-01-15T10:30:00Z",
@@ -433,21 +444,25 @@ Structured JSON logs with required fields:
 ## Integration Timeline
 
 ### Week 0-1: Foundation
+
 - Define all Protocol Buffer schemas
 - Set up Event Bus infrastructure
 - Implement Resource Coordinator
 
 ### Week 2: Core Services
+
 - MCP publishes to Event Bus
 - Knowledge Graph GraphQL endpoint
 - Basic monitoring infrastructure
 
 ### Week 3: Integration Checkpoint
+
 - End-to-end event flow test
 - Resource coordination validation
 - Performance baseline
 
 ### Weeks 4-10: Progressive Integration
+
 - Add components following dependency order
 - Continuous integration testing
 - Performance optimization
@@ -457,11 +472,13 @@ Structured JSON logs with required fields:
 Total: 32GB
 
 ### Infrastructure (5GB)
+
 - Event Bus: 2GB
 - Resource Coordinator: 1GB
 - Redis Cache: 2GB
 
 ### Components (26GB)
+
 - Memgraph: 10GB (reduced from 12GB)
 - Ray RLlib: 8GB
 - Analytics (QuestDB + EventStore): 5GB
@@ -469,6 +486,7 @@ Total: 32GB
 - Claude/LangChain: 1GB
 
 ### Buffer (1GB)
+
 - OS and burst capacity
 
 ## Configuration Management
@@ -480,7 +498,7 @@ All components use environment variables with defaults:
 EVENT_BUS_URL=grpc://localhost:50051
 EVENT_BUS_TOPIC_PREFIX=jimbot
 
-# Resource Coordinator  
+# Resource Coordinator
 RESOURCE_COORDINATOR_URL=grpc://localhost:50052
 RESOURCE_REQUEST_TIMEOUT=5s
 
@@ -504,12 +522,15 @@ LOG_LEVEL=INFO
 ## Testing Strategy
 
 ### Interface Contract Tests
+
 Each component must provide:
+
 - OpenAPI/gRPC service definitions
 - Example requests/responses
 - Performance benchmarks
 
 ### Integration Test Scenarios
+
 1. End-to-end game play with all components
 2. Failover testing (component failures)
 3. Resource contention scenarios
@@ -523,4 +544,5 @@ Each component must provide:
 4. **Resource Usage**: Stay within allocated memory limits
 5. **Integration**: All components communicate successfully
 
-This specification provides the foundation for consistent, reliable integration across all JimBot components.
+This specification provides the foundation for consistent, reliable integration
+across all JimBot components.

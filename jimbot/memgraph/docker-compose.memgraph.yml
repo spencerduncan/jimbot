@@ -6,54 +6,54 @@ version: '3.8'
 
 services:
   memgraph:
-    image: memgraph/memgraph-platform:2.14.0  # Platform includes MAGE and Lab
+    image: memgraph/memgraph-platform:2.14.0 # Platform includes MAGE and Lab
     container_name: jimbot-memgraph
     restart: unless-stopped
     ports:
-      - "7687:7687"  # Bolt protocol for database connections
-      - "3000:3000"  # Memgraph Lab web interface
-      - "7444:7444"  # Monitoring (Prometheus metrics)
+      - '7687:7687' # Bolt protocol for database connections
+      - '3000:3000' # Memgraph Lab web interface
+      - '7444:7444' # Monitoring (Prometheus metrics)
     volumes:
       # Data persistence
       - memgraph_data:/var/lib/memgraph
       - memgraph_logs:/var/log/memgraph
-      
+
       # Custom MAGE modules
       - ./mage_modules:/usr/lib/memgraph/query_modules/custom:ro
-      
+
       # Configuration
       - ./config/memgraph.conf:/etc/memgraph/memgraph.conf:ro
-      
+
       # Initial schema and data
       - ./schema:/docker-entrypoint-initdb.d:ro
     environment:
       # Memory configuration (12GB allocation)
-      MEMGRAPH_MEMORY_LIMIT: "12288"  # MB
-      MEMGRAPH_QUERY_MEMORY_LIMIT: "2048"  # MB per query
-      
+      MEMGRAPH_MEMORY_LIMIT: '12288' # MB
+      MEMGRAPH_QUERY_MEMORY_LIMIT: '2048' # MB per query
+
       # Performance tuning
-      MEMGRAPH_STORAGE_PROPERTIES_ON_EDGES: "true"
-      MEMGRAPH_STORAGE_SNAPSHOT_INTERVAL_SEC: "300"  # 5 minutes
-      MEMGRAPH_STORAGE_WAL_ENABLED: "true"
-      MEMGRAPH_STORAGE_SNAPSHOT_ON_EXIT: "true"
-      
+      MEMGRAPH_STORAGE_PROPERTIES_ON_EDGES: 'true'
+      MEMGRAPH_STORAGE_SNAPSHOT_INTERVAL_SEC: '300' # 5 minutes
+      MEMGRAPH_STORAGE_WAL_ENABLED: 'true'
+      MEMGRAPH_STORAGE_SNAPSHOT_ON_EXIT: 'true'
+
       # Query settings
-      MEMGRAPH_QUERY_TIMEOUT: "100"  # ms
-      MEMGRAPH_QUERY_PARALLELISM: "4"
-      MEMGRAPH_QUERY_PLAN_CACHE_TTL: "3600"  # 1 hour
-      
+      MEMGRAPH_QUERY_TIMEOUT: '100' # ms
+      MEMGRAPH_QUERY_PARALLELISM: '4'
+      MEMGRAPH_QUERY_PLAN_CACHE_TTL: '3600' # 1 hour
+
       # Logging
-      MEMGRAPH_LOG_LEVEL: "INFO"
-      MEMGRAPH_ALSO_LOG_TO_STDERR: "true"
-      
+      MEMGRAPH_LOG_LEVEL: 'INFO'
+      MEMGRAPH_ALSO_LOG_TO_STDERR: 'true'
+
       # Telemetry
-      MEMGRAPH_TELEMETRY_ENABLED: "false"
-      
+      MEMGRAPH_TELEMETRY_ENABLED: 'false'
+
       # MAGE modules
-      MEMGRAPH_QUERY_MODULES_DIRECTORY: "/usr/lib/memgraph/query_modules"
-    command: ["--also-log-to-stderr"]
+      MEMGRAPH_QUERY_MODULES_DIRECTORY: '/usr/lib/memgraph/query_modules'
+    command: ['--also-log-to-stderr']
     healthcheck:
-      test: ["CMD", "mgconsole", "-e", "MATCH (n) RETURN count(n) LIMIT 1;"]
+      test: ['CMD', 'mgconsole', '-e', 'MATCH (n) RETURN count(n) LIMIT 1;']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,7 +63,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 14G  # 12GB + 2GB buffer
+          memory: 14G # 12GB + 2GB buffer
         reservations:
           memory: 12G
 
@@ -71,11 +71,11 @@ services:
   memgraph-mage-dev:
     image: memgraph/memgraph-mage:2.14.0
     container_name: jimbot-mage-dev
-    profiles: ["development"]  # Only start with --profile development
+    profiles: ['development'] # Only start with --profile development
     volumes:
       - ./mage_modules:/mage/cpp:rw
     working_dir: /mage/cpp
-    command: ["tail", "-f", "/dev/null"]  # Keep container running
+    command: ['tail', '-f', '/dev/null'] # Keep container running
     networks:
       - jimbot-network
 
@@ -83,7 +83,7 @@ services:
   memgraph-backup:
     image: memgraph/mgconsole:latest
     container_name: jimbot-memgraph-backup
-    profiles: ["backup"]
+    profiles: ['backup']
     depends_on:
       - memgraph
     volumes:
@@ -92,7 +92,7 @@ services:
     environment:
       MEMGRAPH_HOST: memgraph
       MEMGRAPH_PORT: 7687
-    command: ["/bin/bash", "/backup.sh"]
+    command: ['/bin/bash', '/backup.sh']
     networks:
       - jimbot-network
 
@@ -103,14 +103,14 @@ volumes:
       type: none
       device: ${MEMGRAPH_DATA_PATH:-./data/memgraph}
       o: bind
-  
+
   memgraph_logs:
     driver: local
     driver_opts:
       type: none
       device: ${MEMGRAPH_LOGS_PATH:-./logs/memgraph}
       o: bind
-  
+
   memgraph_backups:
     driver: local
     driver_opts:
@@ -122,7 +122,6 @@ networks:
   jimbot-network:
     external: true
     name: jimbot-network
-
 # Configuration file template (save as config/memgraph.conf)
 # --data-directory=/var/lib/memgraph
 # --log-file=/var/log/memgraph/memgraph.log

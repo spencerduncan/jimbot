@@ -1,10 +1,14 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository.
 
 ## Project Overview
 
-JimBot is a sequential learning system designed to master the card game Balatro by combining knowledge graphs, reinforcement learning, and Claude AI integration. The system runs on a single workstation with 32GB RAM and RTX 3090 GPU.
+JimBot is a sequential learning system designed to master the card game Balatro
+by combining knowledge graphs, reinforcement learning, and Claude AI
+integration. The system runs on a single workstation with 32GB RAM and RTX 3090
+GPU.
 
 ## System Architecture
 
@@ -37,6 +41,7 @@ JimBot is a sequential learning system designed to master the card game Balatro 
 ## Development Commands
 
 ### Environment Setup
+
 ```bash
 # Create Python virtual environment
 python -m venv venv
@@ -49,6 +54,7 @@ pip install -r requirements.txt
 ```
 
 ### Docker Services
+
 ```bash
 # Start Memgraph
 docker run -p 7687:7687 -p 3000:3000 -v memgraph_data:/var/lib/memgraph memgraph/memgraph-platform
@@ -61,6 +67,7 @@ docker run -p 2113:2113 -p 1113:1113 eventstore/eventstore --insecure
 ```
 
 ### Development Workflow
+
 ```bash
 # Run MCP server (once implemented)
 python -m jimbot.mcp.server
@@ -80,20 +87,21 @@ pytest tests/integration/ -v  # Integration tests only
 ## Key Development Patterns
 
 ### MCP Event Aggregation
+
 ```python
 # jimbot/mcp/aggregator.py
 class EventAggregator:
     def __init__(self, batch_window_ms=100):
         self.batch_window = batch_window_ms
         self.event_queue = asyncio.Queue()
-    
+
     async def process_batch(self):
         events = []
         deadline = time.time() + (self.batch_window / 1000)
         while time.time() < deadline:
             try:
                 event = await asyncio.wait_for(
-                    self.event_queue.get(), 
+                    self.event_queue.get(),
                     timeout=deadline - time.time()
                 )
                 events.append(event)
@@ -103,6 +111,7 @@ class EventAggregator:
 ```
 
 ### Memgraph Schema
+
 ```cypher
 // Core game entities
 CREATE (:Joker {name: STRING, rarity: STRING, cost: INTEGER});
@@ -115,21 +124,23 @@ CREATE (j:Joker)-[:REQUIRES]->(c:Card);
 ```
 
 ### Claude Integration Pattern
+
 ```python
 # jimbot/llm/claude_strategy.py
 class ClaudeStrategyAdvisor:
     def __init__(self, hourly_limit=100):
         self.rate_limiter = RateLimiter(hourly_limit)
-        
+
     async def get_strategic_advice(self, game_state, knowledge_graph):
         if not self.rate_limiter.can_request():
             return self.get_cached_strategy(game_state)
-        
+
         context = self.build_context(game_state, knowledge_graph)
         return await self.query_claude(context)
 ```
 
 ### Ray RLlib Configuration
+
 ```python
 # jimbot/training/config.py
 PPO_CONFIG = {
@@ -181,15 +192,18 @@ pytest tests/performance/ -v --benchmark
 
 The project follows a 10-week timeline with 5 parallel development streams:
 
-1. **MCP Development** (Weeks 1-3): Communication framework and event aggregation
+1. **MCP Development** (Weeks 1-3): Communication framework and event
+   aggregation
 2. **Memgraph Development** (Weeks 1-8): Knowledge graph and query optimization
 3. **Ray RLlib Development** (Weeks 2-8): RL training pipeline
 4. **LangChain Integration** (Weeks 4-7): Claude AI strategy advisor
-5. **Monitoring & Analytics** (Weeks 5-10): QuestDB metrics and EventStoreDB persistence
+5. **Monitoring & Analytics** (Weeks 5-10): QuestDB metrics and EventStoreDB
+   persistence
 
 ## Memory Allocation Strategy
 
 Total: 32GB RAM
+
 - System/Buffer: 6GB
 - Memgraph: 12GB (with 2GB safety margin)
 - Ray/RLlib: 8GB
@@ -214,23 +228,28 @@ Total: 32GB RAM
 All planning documents have been updated to address initial inconsistencies:
 
 ### Resolved Issues
-✓ **Timeline Alignment**: All components now follow unified 10-week timeline with Week 0 foundation
-✓ **Memory Allocation**: Fixed conflicts, total 32GB properly allocated with Event Bus infrastructure
-✓ **Interface Specification**: Created comprehensive `interface_specification.md` with Protocol Buffers
-✓ **Event Schema**: Defined canonical schemas in interface specification
-✓ **Resource Coordination**: Added Resource Coordinator for GPU/API management
-✓ **Headless Integration**: Updated headless plan with Week 1-2 timeline
+
+✓ **Timeline Alignment**: All components now follow unified 10-week timeline
+with Week 0 foundation ✓ **Memory Allocation**: Fixed conflicts, total 32GB
+properly allocated with Event Bus infrastructure ✓ **Interface Specification**:
+Created comprehensive `interface_specification.md` with Protocol Buffers ✓
+**Event Schema**: Defined canonical schemas in interface specification ✓
+**Resource Coordination**: Added Resource Coordinator for GPU/API management ✓
+**Headless Integration**: Updated headless plan with Week 1-2 timeline
 
 ### Key Architecture Decisions
+
 - **Event Bus Pattern**: All components communicate via central Event Bus
 - **Protocol Buffers**: Language-agnostic serialization for all events
 - **Async Patterns**: Claude uses async queue, others use gRPC/REST
 - **Shared Resources**: Redis shared between Claude/Analytics, GPU coordinated
 
 ### Development Approach
+
 - Single developer or small team per component
 - Parallel development enabled by clean interfaces
 - Progressive integration at Weeks 3, 7, and 10
 - Mock implementations for early testing
 
-See `planning/interface_specification.md` for complete technical details and `planning/timeline_reconciliation.md` for unified timeline.
+See `planning/interface_specification.md` for complete technical details and
+`planning/timeline_reconciliation.md` for unified timeline.

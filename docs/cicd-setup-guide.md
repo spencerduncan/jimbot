@@ -1,22 +1,26 @@
 # CI/CD Setup Guide
 
-This guide provides instructions for setting up and using the CI/CD pipeline for the JimBot project.
+This guide provides instructions for setting up and using the CI/CD pipeline for
+the JimBot project.
 
 ## Quick Start
 
 ### Local Development Setup
 
 1. **Run the setup script**:
+
    ```bash
    ./scripts/setup-dev-env.sh
    ```
 
 2. **Activate the Python virtual environment**:
+
    ```bash
    source venv/bin/activate
    ```
 
 3. **Install pre-commit hooks**:
+
    ```bash
    pre-commit install
    ```
@@ -53,7 +57,8 @@ docker-compose -f docker-compose.dev.yml exec dev-env bash
 2. **Language-Specific Workflows**
    - **Lua CI** (`.github/workflows/lua-ci.yml`): Lua-specific checks
    - **C++ CI** (`.github/workflows/cpp-ci.yml`): C++ compilation and tests
-   - **GPU Tests** (`.github/workflows/gpu-tests.yml`): GPU-accelerated code testing
+   - **GPU Tests** (`.github/workflows/gpu-tests.yml`): GPU-accelerated code
+     testing
 
 3. **Code Quality** (`.github/workflows/code-quality.yml`)
    - SonarQube analysis
@@ -148,6 +153,7 @@ docker-compose -f jimbot/deployment/docker-compose.yml build
 Access the local SonarQube instance:
 
 1. Start SonarQube:
+
    ```bash
    docker-compose -f docker-compose.dev.yml up -d sonarqube
    ```
@@ -206,6 +212,7 @@ pytest jimbot/tests/unit/training/ -m gpu
 ### Prometheus & Grafana
 
 1. Start monitoring stack:
+
    ```bash
    docker-compose -f docker-compose.dev.yml up -d prometheus grafana
    ```
@@ -221,40 +228,44 @@ pytest jimbot/tests/unit/training/ -m gpu
 ### Common Issues
 
 1. **Pre-commit hook failures**
+
    ```bash
    # Skip hooks temporarily
    git commit --no-verify
-   
+
    # Fix issues and re-run
    pre-commit run --all-files
    ```
 
 2. **Docker build failures**
+
    ```bash
    # Clear Docker cache
    docker system prune -a
-   
+
    # Rebuild without cache
    docker-compose build --no-cache
    ```
 
 3. **Test failures**
+
    ```bash
    # Run specific test with verbose output
    pytest path/to/test.py::test_function -vvs
-   
+
    # Debug with pdb
    pytest --pdb
    ```
 
 4. **GPU not detected**
+
    ```bash
    # Check NVIDIA drivers
    nvidia-smi
-   
+
    # Verify CUDA installation
    nvcc --version
-   
+
    # Check PyTorch CUDA
    python -c "import torch; print(torch.cuda.is_available())"
    ```
@@ -262,6 +273,7 @@ pytest jimbot/tests/unit/training/ -m gpu
 ## Best Practices
 
 1. **Commit Messages**: Use conventional commits
+
    ```
    feat: add new feature
    fix: resolve bug

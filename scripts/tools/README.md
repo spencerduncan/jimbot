@@ -15,12 +15,14 @@ This directory contains utility scripts for development and debugging.
 ## Usage
 
 Most Python scripts can be run directly:
+
 ```bash
 python monitor_events.py
 python send_command.py <command>
 ```
 
 The shell script can be executed:
+
 ```bash
 ./test_event_bus.sh
 ```

@@ -72,7 +72,8 @@ end
 function TestHelper.mock_function(name, return_value)
     TestHelper.mock_calls[name] = 0
     TestHelper.mocks[name] = function(...)
-        TestHelper.mock_calls[name] = TestHelper.mock_calls[name] + 1
+        -- Ensure mock_calls[name] exists before incrementing
+        TestHelper.mock_calls[name] = (TestHelper.mock_calls[name] or 0) + 1
         if type(return_value) == "function" then
             return return_value(...)
         else

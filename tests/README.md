@@ -2,7 +2,9 @@
 
 ## Overview
 
-This test suite provides comprehensive testing for the BalatroMCP mod, with a specific focus on Issue #59 - the shop navigation bug where the "score at least" message incorrectly reappears when navigating to the shop after winning a blind.
+This test suite provides comprehensive testing for the BalatroMCP mod, with a
+specific focus on Issue #59 - the shop navigation bug where the "score at least"
+message incorrectly reappears when navigating to the shop after winning a blind.
 
 ## Test Structure
 
@@ -19,11 +21,13 @@ tests/
 ## Running Tests
 
 ### Run All Tests
+
 ```bash
 lua tests/run_tests.lua
 ```
 
 ### Run Individual Test Suite
+
 ```bash
 # Run unit tests only
 lua tests/unit/test_action_executor_shop_navigation.lua
@@ -35,9 +39,11 @@ lua tests/integration/test_round_eval_to_shop_flow.lua
 ## Test Coverage for Issue #59
 
 ### Unit Tests (10 tests)
+
 1. **navigate_menu does not call evaluate_round** - Verifies the main bug fix
 2. **Shop function priority order** - Tests go_to_shop → to_shop → skip_to_shop
-3. **Fallback mechanisms** - Tests graceful degradation when functions unavailable
+3. **Fallback mechanisms** - Tests graceful degradation when functions
+   unavailable
 4. **Continue button usage** - Tests non-shop navigation in ROUND_EVAL
 5. **go_to_shop direct navigation** - Tests the primary shop navigation function
 6. **navigate_menu fallback** - Tests when direct functions unavailable
@@ -47,6 +53,7 @@ lua tests/integration/test_round_eval_to_shop_flow.lua
 10. **Multiple navigation attempts** - Tests rapid clicking scenarios
 
 ### Integration Tests (8 tests)
+
 1. **Complete win-to-shop flow** - Full game flow without UI bug
 2. **Multiple navigation attempts** - Simulates user clicking multiple times
 3. **Queued actions** - Tests asynchronous action processing
@@ -59,7 +66,9 @@ lua tests/integration/test_round_eval_to_shop_flow.lua
 ## Key Test Assertions
 
 The tests verify that:
-- `G.FUNCS.evaluate_round()` is NEVER called when navigating to shop from ROUND_EVAL
+
+- `G.FUNCS.evaluate_round()` is NEVER called when navigating to shop from
+  ROUND_EVAL
 - The shop is reached successfully through various navigation paths
 - UI elements behave correctly (no "score at least" message reappearing)
 - The fix works in both manual and auto-play modes
@@ -68,6 +77,7 @@ The tests verify that:
 ## Mock Framework
 
 The test helper provides:
+
 - Function mocking with call tracking
 - Global state mocking (G, love, BalatroMCP)
 - Assertion helpers (assert_equal, assert_called, assert_not_called, etc.)
@@ -81,6 +91,7 @@ The test helper provides:
 4. Add the test file path to `test_suites` in run_tests.lua
 
 Example:
+
 ```lua
 local TestHelper = require("tests.test_helper")
 local test = TestHelper.test
@@ -90,10 +101,10 @@ TestHelper.run_suite("My New Test Suite")
 test("my new test", function()
     -- Arrange
     local ActionExecutor = load_action_executor()
-    
+
     -- Act
     ActionExecutor:some_function()
-    
+
     -- Assert
     TestHelper.assert_equal(result, expected)
 end)
@@ -104,6 +115,7 @@ TestHelper.report()
 ## Continuous Integration
 
 These tests should be run:
+
 - Before committing changes to action_executor.lua
 - As part of PR checks
 - After merging PRs that affect game navigation
@@ -112,6 +124,7 @@ These tests should be run:
 ## Test Maintenance
 
 When modifying action_executor.lua:
+
 1. Run existing tests to ensure no regressions
 2. Add new tests for new functionality
 3. Update tests if behavior intentionally changes

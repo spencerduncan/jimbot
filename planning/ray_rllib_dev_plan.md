@@ -2,19 +2,35 @@
 
 ## Executive Summary
 
-This development plan outlines the implementation of the learning orchestration system using Ray RLlib for the Balatro sequential learning project, to be developed during Weeks 2-8 of the overall project timeline. Operating within an 8GB memory allocation, the system will consume game state events from the Event Bus, make learning decisions, and publish decision responses while integrating with the Knowledge Graph and Claude advisory systems.
+This development plan outlines the implementation of the learning orchestration
+system using Ray RLlib for the Balatro sequential learning project, to be
+developed during Weeks 2-8 of the overall project timeline. Operating within an
+8GB memory allocation, the system will consume game state events from the Event
+Bus, make learning decisions, and publish decision responses while integrating
+with the Knowledge Graph and Claude advisory systems.
 
 ## System Overview and Constraints
 
-The learning orchestration system serves as the central coordinator for all reinforcement learning activities within the Balatro project. Given the strict memory constraint of 8GB for Ray operations, the architecture prioritizes efficiency over raw parallelism. The system must seamlessly integrate with the Memgraph knowledge graph (12GB allocation), QuestDB/EventStore persistence layer (6GB allocation), and Claude integration layer while maintaining stable performance.
+The learning orchestration system serves as the central coordinator for all
+reinforcement learning activities within the Balatro project. Given the strict
+memory constraint of 8GB for Ray operations, the architecture prioritizes
+efficiency over raw parallelism. The system must seamlessly integrate with the
+Memgraph knowledge graph (12GB allocation), QuestDB/EventStore persistence layer
+(6GB allocation), and Claude integration layer while maintaining stable
+performance.
 
-The technical approach leverages Ray version 2.47.1 with its new efficient API stack, PettingZoo for game environment management, and PyTorch 2.1.2 for neural network operations. The available RTX 3090 GPU with 24GB VRAM serves as a computational accelerator for training while respecting the 8GB system RAM constraint.
+The technical approach leverages Ray version 2.47.1 with its new efficient API
+stack, PettingZoo for game environment management, and PyTorch 2.1.2 for neural
+network operations. The available RTX 3090 GPU with 24GB VRAM serves as a
+computational accelerator for training while respecting the 8GB system RAM
+constraint.
 
 ## Technical Architecture
 
 ### Event Bus Integration
 
-Ray RLlib operates as both event consumer and producer in the JimBot architecture:
+Ray RLlib operates as both event consumer and producer in the JimBot
+architecture:
 
 ```python
 from jimbot.proto.events_pb2 import Event, LearningDecisionRequest, LearningDecisionResponse
@@ -24,21 +40,21 @@ class RayLearningOrchestrator:
     def __init__(self):
         self.event_bus = EventBusClient()
         self.ray_server = self._init_ray_server()
-        
+
     async def start(self):
         # Subscribe to learning decision requests
         await self.event_bus.subscribe(
             topics=['learning.decision.request'],
             handler=self.handle_decision_request
         )
-        
+
     async def handle_decision_request(self, event: Event):
         request = LearningDecisionRequest()
         event.payload.Unpack(request)
-        
+
         # Get decision from Ray model
         decision = await self.ray_server.get_decision(request)
-        
+
         # Publish response
         response_event = self._create_response_event(decision)
         await self.event_bus.publish(response_event)
@@ -55,7 +71,7 @@ class RayDecisionService(DecisionServicer):
         with self.inference_lock:
             obs = self._convert_game_state(request.game_state)
             action, info = self.policy.compute_single_action(obs)
-            
+
         return LearningDecisionResponse(
             request_id=request.request_id,
             selected_action=self._decode_action(action),
@@ -67,7 +83,8 @@ class RayDecisionService(DecisionServicer):
 
 ## Development Approach
 
-This component is designed for implementation by a single developer or small team, focusing on memory-efficient RL algorithms and clean integration patterns.
+This component is designed for implementation by a single developer or small
+team, focusing on memory-efficient RL algorithms and clean integration patterns.
 
 ## Development Timeline (Weeks 2-8)
 
@@ -191,7 +208,7 @@ async def allocate_training_resources(self):
         'amount': 100,  # 100ms time slice
         'component': 'ray_training'
     })
-    
+
     if gpu_grant.approved:
         with gpu_grant:
             await self.run_training_step()
@@ -202,16 +219,19 @@ async def allocate_training_resources(self):
 ### Technical Risks
 
 **Memory Exhaustion** (High probability)
+
 - Continuous monitoring with alerts at 80% usage
 - Automatic checkpoint and restart mechanisms
 - Graceful degradation to smaller batch sizes
 
 **Event Bus Latency** (Medium probability)
+
 - Local caching of recent decisions
 - Fallback to direct gRPC for critical paths
 - Adaptive timeout management
 
 **GPU Contention** (Low probability)
+
 - Cooperative scheduling via Resource Coordinator
 - CPU-only fallback for inference
 - Priority queue for training vs inference
@@ -219,18 +239,21 @@ async def allocate_training_resources(self):
 ## Success Metrics
 
 ### Performance Targets
+
 - **Throughput**: 10,000+ environment steps/second sustained
 - **Latency**: <100ms decision response (95th percentile)
 - **Memory**: Stable operation within 8GB allocation
 - **Integration**: <10ms Event Bus publish/subscribe overhead
 
 ### Learning Effectiveness
+
 - Progress from random to competent play within 1000 games
 - Successful discovery of documented joker synergies
 - Novel strategy generation validated by Knowledge Graph
 - <5% of decisions require Claude consultation
 
 ### System Reliability
+
 - 99.9% uptime during 8-hour training sessions
 - Automatic recovery from Event Bus disconnections
 - Graceful handling of memory pressure
@@ -239,12 +262,14 @@ async def allocate_training_resources(self):
 ## Memory Management Strategy
 
 ### Allocation Breakdown (8GB Total)
+
 - Ray Object Store: 2.5GB
 - Worker Processes: 3.5GB
 - Model Checkpoints: 1GB
 - Operating Buffer: 1GB
 
 ### Optimization Techniques
+
 - Compressed state representations (4:1 ratio)
 - Gradient accumulation for small batches
 - Automatic object eviction policies
@@ -253,6 +278,7 @@ async def allocate_training_resources(self):
 ## Key Deliverables
 
 By Week 8:
+
 - Fully integrated Ray RLlib system
 - Event Bus consumer and producer implementation
 - gRPC service for synchronous decisions
@@ -261,4 +287,6 @@ By Week 8:
 - Performance meeting all targets
 - Comprehensive documentation
 
-This plan provides a practical approach to building the learning orchestration system as part of the larger JimBot project, with clear integration points and realistic resource constraints.
+This plan provides a practical approach to building the learning orchestration
+system as part of the larger JimBot project, with clear integration points and
+realistic resource constraints.

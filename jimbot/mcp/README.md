@@ -1,10 +1,13 @@
 # MCP (Model-Context-Protocol) Subsystem
 
-The MCP subsystem provides real-time communication between the BalatroMCP mod and the JimBot learning system, enabling efficient game state capture and event processing.
+The MCP subsystem provides real-time communication between the BalatroMCP mod
+and the JimBot learning system, enabling efficient game state capture and event
+processing.
 
 ## Overview
 
-MCP serves as the critical bridge between the game client and the AI learning infrastructure:
+MCP serves as the critical bridge between the game client and the AI learning
+infrastructure:
 
 - **WebSocket Server**: Receives real-time events from BalatroMCP mod
 - **Event Aggregator**: Batches events in 100ms windows for efficient processing
@@ -80,6 +83,7 @@ The MCP server exposes a WebSocket endpoint for event streaming:
 **Endpoint**: `ws://localhost:8765/events`
 
 **Message Format**:
+
 ```json
 {
   "type": "hand_played",
@@ -96,15 +100,15 @@ The MCP server exposes a WebSocket endpoint for event streaming:
 
 ### Event Types
 
-| Event Type | Description | Required Fields |
-|------------|-------------|-----------------|
-| `game_start` | New game session started | `game_id`, `seed`, `stake`, `deck` |
-| `hand_played` | Player played a hand | `hand_type`, `cards`, `score` |
-| `joker_triggered` | Joker effect activated | `joker_id`, `trigger_type`, `effect` |
-| `blind_defeated` | Blind successfully beaten | `blind_type`, `score`, `required_score` |
-| `shop_entered` | Player entered shop | `round`, `money`, `available_items` |
-| `card_purchased` | Card bought from shop | `card_type`, `card_id`, `cost` |
-| `game_over` | Game ended | `final_score`, `round_reached`, `reason` |
+| Event Type        | Description               | Required Fields                          |
+| ----------------- | ------------------------- | ---------------------------------------- |
+| `game_start`      | New game session started  | `game_id`, `seed`, `stake`, `deck`       |
+| `hand_played`     | Player played a hand      | `hand_type`, `cards`, `score`            |
+| `joker_triggered` | Joker effect activated    | `joker_id`, `trigger_type`, `effect`     |
+| `blind_defeated`  | Blind successfully beaten | `blind_type`, `score`, `required_score`  |
+| `shop_entered`    | Player entered shop       | `round`, `money`, `available_items`      |
+| `card_purchased`  | Card bought from shop     | `card_type`, `card_id`, `cost`           |
+| `game_over`       | Game ended                | `final_score`, `round_reached`, `reason` |
 
 ### Python Client API
 
@@ -197,12 +201,14 @@ export MCP_ENABLE_PROFILING=false
 ### Achieving <100ms Latency
 
 1. **Optimize Batch Window**
+
    ```python
    # Adjust based on event rate
    aggregator = EventAggregator(batch_window_ms=50)  # For high-rate events
    ```
 
 2. **Configure Queue Size**
+
    ```python
    # Prevent memory overflow
    event_queue = asyncio.Queue(maxsize=5000)  # Adjust based on memory

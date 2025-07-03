@@ -1,6 +1,7 @@
 # Documentation
 
-This directory contains documentation for setting up and running the JimBot system.
+This directory contains documentation for setting up and running the JimBot
+system.
 
 ## Documents
 
@@ -9,7 +10,9 @@ This directory contains documentation for setting up and running the JimBot syst
 
 ## Overview
 
-These documents provide detailed setup instructions for different deployment scenarios:
+These documents provide detailed setup instructions for different deployment
+scenarios:
 
 1. **Docker Setup** - For containerized deployment of JimBot components
-2. **Windows Integration** - For running Balatro with the BalatroMCP mod on Windows systems
+2. **Windows Integration** - For running Balatro with the BalatroMCP mod on
+   Windows systems

@@ -8,7 +8,7 @@ lint:
   use:
     - DEFAULT
   except:
-    - PACKAGE_VERSION_SUFFIX  # We handle versioning differently
+    - PACKAGE_VERSION_SUFFIX # We handle versioning differently
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: false
   rpc_allow_google_protobuf_empty_requests: true

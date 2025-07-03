@@ -2,9 +2,9 @@ name: Main CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, 'feature/**' ]
+    branches: [main, develop, 'feature/**']
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   schedule:
     # Run nightly for security updates
     - cron: '0 2 * * *'
@@ -23,51 +23,51 @@ jobs:
     name: Format Check
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Full history for better diffing
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better diffing
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install formatters
-      run: |
-        # Python formatters
-        pip install black isort
-        
-        # Lua formatter
-        wget https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux.zip
-        unzip stylua-linux.zip
-        chmod +x stylua
-        sudo mv stylua /usr/local/bin/
-        
-        # C++ formatter
-        sudo apt-get update
-        sudo apt-get install -y clang-format-15
-        
-        # Protocol Buffers formatter
-        go install github.com/bufbuild/buf/cmd/buf@latest
-        echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
+      - name: Install formatters
+        run: |
+          # Python formatters
+          pip install black isort
 
-    - name: Check Python formatting
-      run: |
-        black --check jimbot tests scripts
-        isort --check-only jimbot tests scripts
+          # Lua formatter
+          wget https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux.zip
+          unzip stylua-linux.zip
+          chmod +x stylua
+          sudo mv stylua /usr/local/bin/
 
-    - name: Check Lua formatting
-      run: |
-        find . -name "*.lua" -type f | xargs stylua --check
+          # C++ formatter
+          sudo apt-get update
+          sudo apt-get install -y clang-format-15
 
-    - name: Check C++ formatting
-      run: |
-        find . -name "*.cpp" -o -name "*.h" | xargs clang-format-15 --dry-run --Werror
+          # Protocol Buffers formatter
+          go install github.com/bufbuild/buf/cmd/buf@latest
+          echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
 
-    - name: Check Protocol Buffers formatting
-      run: |
-        buf format --diff
+      - name: Check Python formatting
+        run: |
+          black --check jimbot tests scripts
+          isort --check-only jimbot tests scripts
+
+      - name: Check Lua formatting
+        run: |
+          find . -name "*.lua" -type f | xargs stylua --check
+
+      - name: Check C++ formatting
+        run: |
+          find . -name "*.cpp" -o -name "*.h" | xargs clang-format-15 --dry-run --Werror
+
+      - name: Check Protocol Buffers formatting
+        run: |
+          buf format --diff
 
   # Job 2: Linting for all languages
   lint:
@@ -85,68 +85,68 @@ jobs:
             files: 'jimbot/memgraph/mage_modules'
           - language: protobuf
             files: 'jimbot/proto'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/pip
-          ~/.luarocks
-          ~/.cache/buf
-        key: ${{ runner.os }}-lint-${{ matrix.language }}-${{ hashFiles('**/requirements*.txt', '**/rockspec', '**/buf.yaml') }}
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.luarocks
+            ~/.cache/buf
+          key: ${{ runner.os }}-lint-${{ matrix.language }}-${{ hashFiles('**/requirements*.txt', '**/rockspec', '**/buf.yaml') }}
 
-    - name: Install linters
-      run: |
-        case "${{ matrix.language }}" in
-          python)
-            pip install flake8 mypy pylint bandit safety
-            pip install -r jimbot/infrastructure/requirements.txt
-            ;;
-          lua)
-            sudo apt-get update
-            sudo apt-get install -y lua5.4 luarocks
-            sudo luarocks install luacheck
-            ;;
-          cpp)
-            sudo apt-get update
-            sudo apt-get install -y clang-tidy-15 cppcheck
-            ;;
-          protobuf)
-            go install github.com/bufbuild/buf/cmd/buf@latest
-            echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
-            ;;
-        esac
+      - name: Install linters
+        run: |
+          case "${{ matrix.language }}" in
+            python)
+              pip install flake8 mypy pylint bandit safety
+              pip install -r jimbot/infrastructure/requirements.txt
+              ;;
+            lua)
+              sudo apt-get update
+              sudo apt-get install -y lua5.4 luarocks
+              sudo luarocks install luacheck
+              ;;
+            cpp)
+              sudo apt-get update
+              sudo apt-get install -y clang-tidy-15 cppcheck
+              ;;
+            protobuf)
+              go install github.com/bufbuild/buf/cmd/buf@latest
+              echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
+              ;;
+          esac
 
-    - name: Run linters
-      run: |
-        case "${{ matrix.language }}" in
-          python)
-            flake8 ${{ matrix.files }} --config=.flake8
-            mypy ${{ matrix.files }} --config-file=mypy.ini
-            pylint ${{ matrix.files }} --rcfile=.pylintrc
-            bandit -r ${{ matrix.files }} -ll
-            safety check
-            ;;
-          lua)
-            luacheck ${{ matrix.files }} --config .luacheckrc
-            ;;
-          cpp)
-            find ${{ matrix.files }} -name "*.cpp" -o -name "*.h" | xargs clang-tidy-15
-            cppcheck --enable=all --error-exitcode=1 ${{ matrix.files }}
-            ;;
-          protobuf)
-            cd ${{ matrix.files }} && buf lint
-            ;;
-        esac
+      - name: Run linters
+        run: |
+          case "${{ matrix.language }}" in
+            python)
+              flake8 ${{ matrix.files }} --config=.flake8
+              mypy ${{ matrix.files }} --config-file=mypy.ini
+              pylint ${{ matrix.files }} --rcfile=.pylintrc
+              bandit -r ${{ matrix.files }} -ll
+              safety check
+              ;;
+            lua)
+              luacheck ${{ matrix.files }} --config .luacheckrc
+              ;;
+            cpp)
+              find ${{ matrix.files }} -name "*.cpp" -o -name "*.h" | xargs clang-tidy-15
+              cppcheck --enable=all --error-exitcode=1 ${{ matrix.files }}
+              ;;
+            protobuf)
+              cd ${{ matrix.files }} && buf lint
+              ;;
+          esac
 
   # Job 3: Unit tests with coverage
   test-unit:
@@ -156,103 +156,103 @@ jobs:
     strategy:
       matrix:
         component: [mcp, memgraph, training, llm, analytics, infrastructure]
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.component }}-${{ hashFiles('**/requirements*.txt') }}
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.component }}-${{ hashFiles('**/requirements*.txt') }}
 
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip setuptools wheel
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-cov pytest-asyncio pytest-benchmark pytest-timeout
-        if [ -f "jimbot/${{ matrix.component }}/requirements.txt" ]; then
-          pip install -r jimbot/${{ matrix.component }}/requirements.txt
-        fi
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install -r jimbot/infrastructure/requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-benchmark pytest-timeout
+          if [ -f "jimbot/${{ matrix.component }}/requirements.txt" ]; then
+            pip install -r jimbot/${{ matrix.component }}/requirements.txt
+          fi
 
-    - name: Run unit tests
-      run: |
-        pytest jimbot/tests/unit/${{ matrix.component }}/ \
-          -v \
-          --cov=jimbot.${{ matrix.component }} \
-          --cov-report=xml \
-          --cov-report=term-missing \
-          --cov-fail-under=80 \
-          --benchmark-skip \
-          --timeout=300
+      - name: Run unit tests
+        run: |
+          pytest jimbot/tests/unit/${{ matrix.component }}/ \
+            -v \
+            --cov=jimbot.${{ matrix.component }} \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80 \
+            --benchmark-skip \
+            --timeout=300
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unit-${{ matrix.component }}
-        name: unit-${{ matrix.component }}-coverage
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unit-${{ matrix.component }}
+          name: unit-${{ matrix.component }}-coverage
 
   # Job 4: Integration tests
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: test-unit
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Start test services
-      run: |
-        docker-compose -f docker-compose.minimal.yml up -d
-        docker-compose -f jimbot/deployment/docker-compose.yml up -d test-services
-        
-        # Wait for services to be healthy
-        timeout 300s bash -c 'until docker ps | grep -E "healthy|running" | wc -l | grep -q "$(docker ps -q | wc -l)"; do sleep 5; done'
+      - name: Start test services
+        run: |
+          docker-compose -f docker-compose.minimal.yml up -d
+          docker-compose -f jimbot/deployment/docker-compose.yml up -d test-services
 
-    - name: Run integration tests
-      run: |
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-asyncio pytest-timeout requests
-        
-        pytest jimbot/tests/integration/ \
-          -v \
-          --timeout=600 \
-          --tb=short
+          # Wait for services to be healthy
+          timeout 300s bash -c 'until docker ps | grep -E "healthy|running" | wc -l | grep -q "$(docker ps -q | wc -l)"; do sleep 5; done'
 
-    - name: Collect service logs
-      if: failure()
-      run: |
-        docker-compose logs > docker-logs.txt
-        docker ps -a
+      - name: Run integration tests
+        run: |
+          pip install -r jimbot/infrastructure/requirements.txt
+          pip install pytest pytest-asyncio pytest-timeout requests
 
-    - name: Upload logs
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: integration-test-logs
-        path: docker-logs.txt
+          pytest jimbot/tests/integration/ \
+            -v \
+            --timeout=600 \
+            --tb=short
 
-    - name: Stop services
-      if: always()
-      run: |
-        docker-compose -f docker-compose.minimal.yml down -v
-        docker-compose -f jimbot/deployment/docker-compose.yml down -v
+      - name: Collect service logs
+        if: failure()
+        run: |
+          docker-compose logs > docker-logs.txt
+          docker ps -a
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-logs
+          path: docker-logs.txt
+
+      - name: Stop services
+        if: always()
+        run: |
+          docker-compose -f docker-compose.minimal.yml down -v
+          docker-compose -f jimbot/deployment/docker-compose.yml down -v
 
   # Job 5: GPU tests (self-hosted runner required)
   test-gpu:
@@ -260,37 +260,37 @@ jobs:
     runs-on: [self-hosted, gpu]
     needs: test-unit
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python with CUDA
-      run: |
-        # Assuming CUDA is pre-installed on self-hosted runner
-        python -m venv venv-gpu
-        source venv-gpu/bin/activate
-        pip install --upgrade pip
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-        pip install -r jimbot/training/requirements.txt
+      - name: Set up Python with CUDA
+        run: |
+          # Assuming CUDA is pre-installed on self-hosted runner
+          python -m venv venv-gpu
+          source venv-gpu/bin/activate
+          pip install --upgrade pip
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+          pip install -r jimbot/training/requirements.txt
 
-    - name: Verify GPU availability
-      run: |
-        source venv-gpu/bin/activate
-        python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
+      - name: Verify GPU availability
+        run: |
+          source venv-gpu/bin/activate
+          python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
 
-    - name: Run GPU tests
-      run: |
-        source venv-gpu/bin/activate
-        pytest jimbot/tests/unit/training/ \
-          -v \
-          -m gpu \
-          --timeout=1800
+      - name: Run GPU tests
+        run: |
+          source venv-gpu/bin/activate
+          pytest jimbot/tests/unit/training/ \
+            -v \
+            -m gpu \
+            --timeout=1800
 
-    - name: Run training smoke test
-      run: |
-        source venv-gpu/bin/activate
-        python -m jimbot.training.run --test-mode --max-iterations=10
+      - name: Run training smoke test
+        run: |
+          source venv-gpu/bin/activate
+          python -m jimbot.training.run --test-mode --max-iterations=10
 
   # Job 6: Build and test Docker images
   build-docker:
@@ -300,61 +300,61 @@ jobs:
     strategy:
       matrix:
         service: [mcp, ray, claude, analytics, memgraph]
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Docker Hub
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
-    - name: Build and test image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
-        target: test
-        load: true
-        tags: jimbot/${{ matrix.service }}:test
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and test image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
+          target: test
+          load: true
+          tags: jimbot/${{ matrix.service }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Run container tests
-      run: |
-        docker run --rm jimbot/${{ matrix.service }}:test pytest /app/tests/
+      - name: Run container tests
+        run: |
+          docker run --rm jimbot/${{ matrix.service }}:test pytest /app/tests/
 
-    - name: Security scan with Trivy
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: jimbot/${{ matrix.service }}:test
-        format: 'sarif'
-        output: 'trivy-${{ matrix.service }}.sarif'
-        severity: 'CRITICAL,HIGH'
+      - name: Security scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: jimbot/${{ matrix.service }}:test
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
 
-    - name: Upload Trivy results
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: 'trivy-${{ matrix.service }}.sarif'
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-${{ matrix.service }}.sarif'
 
-    - name: Build and push production image
-      if: github.event_name != 'pull_request'
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
-        push: true
-        tags: |
-          jimbot/${{ matrix.service }}:latest
-          jimbot/${{ matrix.service }}:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push production image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
+          push: true
+          tags: |
+            jimbot/${{ matrix.service }}:latest
+            jimbot/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # Job 7: Performance benchmarks
   benchmark:
@@ -362,69 +362,69 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-docker
     if: github.event_name == 'push'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install dependencies
-      run: |
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-benchmark
+      - name: Install dependencies
+        run: |
+          pip install -r jimbot/infrastructure/requirements.txt
+          pip install pytest pytest-benchmark
 
-    - name: Run benchmarks
-      run: |
-        pytest jimbot/tests/performance/ \
-          --benchmark-only \
-          --benchmark-json=benchmark.json \
-          --benchmark-autosave
+      - name: Run benchmarks
+        run: |
+          pytest jimbot/tests/performance/ \
+            --benchmark-only \
+            --benchmark-json=benchmark.json \
+            --benchmark-autosave
 
-    - name: Store benchmark results
-      uses: benchmark-action/github-action-benchmark@v1
-      with:
-        tool: 'pytest'
-        output-file-path: benchmark.json
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: true
-        comment-on-alert: true
-        alert-threshold: '150%'
-        fail-on-alert: true
+      - name: Store benchmark results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'pytest'
+          output-file-path: benchmark.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          comment-on-alert: true
+          alert-threshold: '150%'
+          fail-on-alert: true
 
   # Job 8: Documentation build
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
     needs: format-check
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install documentation tools
-      run: |
-        pip install sphinx sphinx-rtd-theme myst-parser autodoc
+      - name: Install documentation tools
+        run: |
+          pip install sphinx sphinx-rtd-theme myst-parser autodoc
 
-    - name: Build documentation
-      run: |
-        cd docs
-        make clean
-        make html
+      - name: Build documentation
+        run: |
+          cd docs
+          make clean
+          make html
 
-    - name: Upload documentation
-      uses: actions/upload-artifact@v4
-      with:
-        name: documentation
-        path: docs/_build/html/
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/_build/html/
 
   # Job 9: Release
   release:
@@ -432,35 +432,35 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-docker, test-integration, benchmark]
     if: startsWith(github.ref, 'refs/tags/v')
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Generate changelog
-      id: changelog
-      run: |
-        # Generate changelog from commits
-        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-        git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from commits
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-    - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          ## Changes in this release
-          ${{ steps.changelog.outputs.CHANGELOG }}
-          
-          ## Docker Images
-          - `jimbot/mcp:${{ github.ref_name }}`
-          - `jimbot/ray:${{ github.ref_name }}`
-          - `jimbot/claude:${{ github.ref_name }}`
-          - `jimbot/analytics:${{ github.ref_name }}`
-          - `jimbot/memgraph:${{ github.ref_name }}`
-        draft: false
-        prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') }}
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## Changes in this release
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ## Docker Images
+            - `jimbot/mcp:${{ github.ref_name }}`
+            - `jimbot/ray:${{ github.ref_name }}`
+            - `jimbot/claude:${{ github.ref_name }}`
+            - `jimbot/analytics:${{ github.ref_name }}`
+            - `jimbot/memgraph:${{ github.ref_name }}`
+          draft: false
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') }}

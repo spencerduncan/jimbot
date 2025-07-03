@@ -2,29 +2,45 @@
 
 ## Overview
 
-This guide provides technical implementation details for creating a headless version of Balatro that integrates with the JimBot system architecture. The headless implementation must be completed by Week 2 to support MCP integration and shares a 2GB memory allocation with the MCP server.
+This guide provides technical implementation details for creating a headless
+version of Balatro that integrates with the JimBot system architecture. The
+headless implementation must be completed by Week 2 to support MCP integration
+and shares a 2GB memory allocation with the MCP server.
 
 ## Integration with JimBot Architecture
 
-The headless Balatro implementation serves as the game engine interface, working in conjunction with the MCP server to publish game events to the Event Bus. The architecture follows:
+The headless Balatro implementation serves as the game engine interface, working
+in conjunction with the MCP server to publish game events to the Event Bus. The
+architecture follows:
 
 ```
 Headless Balatro → MCP Server → Event Bus → All Components
 ```
 
-This design maintains clean separation between game logic and the learning system while enabling high-frequency event capture.
+This design maintains clean separation between game logic and the learning
+system while enabling high-frequency event capture.
 
 ## Technical foundation and architecture
 
-Balatro runs on the LÖVE 2D v11.5 framework, with approximately 30,000 lines of Lua code accessible by extracting the executable. The game's modding ecosystem centers around **Steamodded**, a comprehensive framework that provides APIs for content creation, and **Lovely Injector**, which enables runtime code modification without altering the executable. Understanding these systems is crucial for implementing a headless mod that maintains compatibility with existing modifications.
+Balatro runs on the LÖVE 2D v11.5 framework, with approximately 30,000 lines of
+Lua code accessible by extracting the executable. The game's modding ecosystem
+centers around **Steamodded**, a comprehensive framework that provides APIs for
+content creation, and **Lovely Injector**, which enables runtime code
+modification without altering the executable. Understanding these systems is
+crucial for implementing a headless mod that maintains compatibility with
+existing modifications.
 
-The core challenge lies in Love2D's graphics module architecture, which requires an OpenGL context through the window module. For headless operation, we must either completely disable these modules or implement comprehensive mocking strategies that intercept graphics calls while maintaining game logic integrity.
+The core challenge lies in Love2D's graphics module architecture, which requires
+an OpenGL context through the window module. For headless operation, we must
+either completely disable these modules or implement comprehensive mocking
+strategies that intercept graphics calls while maintaining game logic integrity.
 
 ## Implementation approach for headless rendering
 
 ### Configuration-based headless mode
 
-The simplest approach leverages Love2D's configuration system to disable graphics entirely:
+The simplest approach leverages Love2D's configuration system to disable
+graphics entirely:
 
 ```lua
 -- conf.lua modification via Lovely patch
@@ -38,11 +54,14 @@ function love.conf(t)
 end
 ```
 
-However, this approach breaks any code that references `love.graphics.*` functions, requiring extensive modifications to Balatro's codebase.
+However, this approach breaks any code that references `love.graphics.*`
+functions, requiring extensive modifications to Balatro's codebase.
 
 ### Comprehensive graphics mocking strategy
 
-A more robust solution implements a complete mock of Love2D's graphics API. This approach maintains compatibility with existing code while bypassing actual rendering:
+A more robust solution implements a complete mock of Love2D's graphics API. This
+approach maintains compatibility with existing code while bypassing actual
+rendering:
 
 ```lua
 -- headless_graphics_mock.lua
@@ -50,7 +69,7 @@ local mock = {}
 
 -- Mock all graphics functions with no-ops
 local graphics_functions = {
-    'draw', 'print', 'rectangle', 'circle', 'line', 
+    'draw', 'print', 'rectangle', 'circle', 'line',
     'setColor', 'clear', 'push', 'pop', 'translate'
 }
 
@@ -77,7 +96,7 @@ mock.newCanvas = function(width, height)
             imageData[y][x] = {0, 0, 0, 0}
         end
     end
-    
+
     return {
         getWidth = function() return width end,
         getHeight = function() return height end,
@@ -89,7 +108,8 @@ end
 
 ### Virtual framebuffer alternative
 
-For maximum compatibility, especially during development, using Xvfb provides a virtual display:
+For maximum compatibility, especially during development, using Xvfb provides a
+virtual display:
 
 ```bash
 #!/bin/bash
@@ -161,7 +181,8 @@ target = "http_server"
 
 ### Server architecture using lua-http
 
-The lua-http library provides the most comprehensive solution for non-blocking HTTP/WebSocket support:
+The lua-http library provides the most comprehensive solution for non-blocking
+HTTP/WebSocket support:
 
 ```lua
 -- http_server.lua
@@ -180,7 +201,7 @@ function debug_server:new(port)
             self:handle_request(stream)
         end
     }
-    
+
     -- WebSocket endpoint for real-time updates
     server:add_route("/ws/gamestate", function(stream)
         local ws = websocket.new_from_stream(stream, stream:get_headers())
@@ -188,30 +209,30 @@ function debug_server:new(port)
             self:handle_websocket(ws)
         end
     end)
-    
+
     return server
 end
 
 function debug_server:handle_request(stream)
     local headers = stream:get_headers()
     local path = headers:get(":path")
-    
+
     -- REST API endpoints
     local routes = {
-        ["/api/game/state"] = function() 
-            return self:get_game_state() 
+        ["/api/game/state"] = function()
+            return self:get_game_state()
         end,
-        ["/api/game/cards"] = function() 
-            return self:get_card_state() 
+        ["/api/game/cards"] = function()
+            return self:get_card_state()
         end,
-        ["/api/game/jokers"] = function() 
-            return self:get_joker_state() 
+        ["/api/game/jokers"] = function()
+            return self:get_joker_state()
         end,
-        ["/api/debug/eval"] = function(body) 
-            return self:evaluate_lua(body) 
+        ["/api/debug/eval"] = function(body)
+            return self:evaluate_lua(body)
         end
     }
-    
+
     local handler = routes[path]
     if handler then
         local response = handler(stream:get_body_as_string())
@@ -247,12 +268,12 @@ end
 function debug_server:handle_websocket(ws)
     -- Subscribe to game events
     local update_queue = {}
-    
+
     -- Hook into Balatro's update cycle
     local old_update = Game.update
     function Game:update(dt)
         old_update(self, dt)
-        
+
         -- Capture state changes
         if self.STATE ~= ws.last_state then
             table.insert(update_queue, {
@@ -263,7 +284,7 @@ function debug_server:handle_websocket(ws)
             ws.last_state = self.STATE
         end
     end
-    
+
     -- Send updates at controlled rate
     while ws:get_state() == "open" do
         if #update_queue > 0 then
@@ -279,7 +300,9 @@ end
 
 ### Memory management in headless mode
 
-Headless operation typically reduces memory usage by 40-60% by eliminating texture storage and OpenGL buffers. However, careful management is still required:
+Headless operation typically reduces memory usage by 40-60% by eliminating
+texture storage and OpenGL buffers. However, careful management is still
+required:
 
 ```lua
 -- Resource pooling for frequently created objects
@@ -314,7 +337,7 @@ function adaptive_update()
     elseif headless_mode then
         target_fps = 30  -- Balance performance/responsiveness
     end
-    
+
     love.timer.sleep(1/target_fps - love.timer.getDelta())
 end
 ```
@@ -357,23 +380,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Install Love2D
         run: |
           sudo add-apt-repository ppa:bartbes/love-stable
           sudo apt-get update
           sudo apt-get install love
-      
+
       - name: Install dependencies
         run: |
           sudo apt-get install -y xvfb
           luarocks install http
           luarocks install cjson
-      
+
       - name: Run headless tests
         run: |
           xvfb-run -a love . --headless --cute-headless
-          
+
       - name: Performance benchmark
         run: |
           xvfb-run -a love . --headless --benchmark
@@ -387,22 +410,22 @@ local security = {}
 
 function security:check_request(stream)
     local headers = stream:get_headers()
-    local client_ip = headers:get("x-forwarded-for") or 
+    local client_ip = headers:get("x-forwarded-for") or
                      stream:get_peer():ip()
-    
+
     -- IP whitelist for debug interface
     local whitelist = {"127.0.0.1", "::1"}
     if not table.contains(whitelist, client_ip) then
         stream:write_head(403)
         return false
     end
-    
+
     -- Rate limiting
     if self:is_rate_limited(client_ip) then
         stream:write_head(429)
         return false
     end
-    
+
     return true
 end
 
@@ -421,58 +444,63 @@ Create a web dashboard for monitoring game state:
 <!-- dashboard.html -->
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Balatro Debug Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="gameState"></div>
     <canvas id="performanceChart"></canvas>
-    
+
     <script>
-    const ws = new WebSocket('ws://localhost:8080/ws/gamestate');
-    const perfChart = new Chart(document.getElementById('performanceChart'), {
+      const ws = new WebSocket('ws://localhost:8080/ws/gamestate');
+      const perfChart = new Chart(document.getElementById('performanceChart'), {
         type: 'line',
         data: {
-            labels: [],
-            datasets: [{
-                label: 'FPS',
-                data: [],
-                borderColor: 'rgb(75, 192, 192)'
-            }]
+          labels: [],
+          datasets: [
+            {
+              label: 'FPS',
+              data: [],
+              borderColor: 'rgb(75, 192, 192)',
+            },
+          ],
         },
         options: {
-            scales: {
-                y: { beginAtZero: true, max: 60 }
-            }
-        }
-    });
-    
-    ws.onmessage = (event) => {
+          scales: {
+            y: { beginAtZero: true, max: 60 },
+          },
+        },
+      });
+
+      ws.onmessage = (event) => {
         const updates = JSON.parse(event.data);
-        updates.forEach(update => {
-            updateGameStateDisplay(update.data);
-            if (update.data.performance) {
-                addPerformanceData(update.data.performance);
-            }
+        updates.forEach((update) => {
+          updateGameStateDisplay(update.data);
+          if (update.data.performance) {
+            addPerformanceData(update.data.performance);
+          }
         });
-    };
+      };
     </script>
-</body>
+  </body>
 </html>
 ```
 
 ## Development Timeline
 
-The headless Balatro implementation follows a parallel track with MCP development:
+The headless Balatro implementation follows a parallel track with MCP
+development:
 
 ### Week 1: Core Headless Implementation
+
 - Implement graphics mocking strategy
 - Create Steamodded-compatible mod structure
 - Basic game loop without rendering
 - Memory usage optimization
 
 ### Week 2: MCP Integration
+
 - Implement game state extraction
 - Create event publishing interface
 - Integrate with MCP server
@@ -481,12 +509,14 @@ The headless Balatro implementation follows a parallel track with MCP developmen
 ## Resource Requirements
 
 ### Memory Allocation
+
 - Shared 2GB with MCP server
 - ~500MB for headless game instance
 - ~100MB for HTTP debug server
 - Remaining for MCP communication layer
 
 ### Development Skills
+
 - Lua programming
 - Love2D framework knowledge
 - Balatro modding experience
@@ -495,7 +525,9 @@ The headless Balatro implementation follows a parallel track with MCP developmen
 ## Integration Points
 
 ### MCP Communication
-The headless implementation must expose game state through a local interface that MCP can efficiently poll or receive callbacks from:
+
+The headless implementation must expose game state through a local interface
+that MCP can efficiently poll or receive callbacks from:
 
 ```lua
 -- Exposed interface for MCP
@@ -503,16 +535,17 @@ _G.HeadlessBalatro = {
     getGameState = function()
         return serialize_game_state(G.GAME)
     end,
-    
+
     executeAction = function(action)
         return execute_game_action(action)
     end,
-    
+
     onStateChange = nil  -- Callback set by MCP
 }
 ```
 
 ### Performance Requirements
+
 - Game state extraction: <1ms
 - Action execution: <5ms
 - Memory usage: <600MB per instance
@@ -520,6 +553,13 @@ _G.HeadlessBalatro = {
 
 ## Conclusion
 
-Creating a production-ready headless Balatro mod requires careful integration of Love2D's headless capabilities with Balatro's modding architecture. The comprehensive graphics mocking approach provides the best balance of compatibility and performance, while lua-http enables sophisticated debugging interfaces. 
+Creating a production-ready headless Balatro mod requires careful integration of
+Love2D's headless capabilities with Balatro's modding architecture. The
+comprehensive graphics mocking approach provides the best balance of
+compatibility and performance, while lua-http enables sophisticated debugging
+interfaces.
 
-The implementation must be completed by Week 2 to support MCP integration, sharing a 2GB memory allocation. Key success factors include proper separation of rendering logic, efficient state serialization, and seamless integration with the JimBot Event Bus architecture through the MCP server.
+The implementation must be completed by Week 2 to support MCP integration,
+sharing a 2GB memory allocation. Key success factors include proper separation
+of rendering logic, efficient state serialization, and seamless integration with
+the JimBot Event Bus architecture through the MCP server.
