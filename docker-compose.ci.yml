@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # Main CI test runner
+  ci-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+      target: ci
+    image: jimbot-ci:latest
+    container_name: jimbot-ci-tests
+    volumes:
+      - .:/app
+      - /app/.venv  # Exclude venv from volume mount
+      - /app/__pycache__  # Exclude cache
+      - /app/.pytest_cache  # Exclude pytest cache
+    environment:
+      - PYTHONPATH=/app
+      - CI=true
+    command: /run_all_tests.sh
+
+  # Python-specific tests
+  python-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+      target: python-test
+    image: jimbot-python-test:latest
+    container_name: jimbot-python-tests
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - PYTHONPATH=/app
+      - CI=true
+    command: /run_tests.sh
+
+  # Format checker
+  format-check:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+      target: python-test
+    image: jimbot-python-test:latest
+    container_name: jimbot-format-check
+    volumes:
+      - .:/app:ro  # Read-only mount
+    command: |
+      bash -c "
+        echo 'Checking Python formatting...'
+        black --check jimbot/ scripts/ services/ &&
+        isort --check-only jimbot/ scripts/ services/ &&
+        echo 'Format check passed!'
+      "
+
+  # Linter
+  lint:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+      target: python-test
+    image: jimbot-python-test:latest
+    container_name: jimbot-lint
+    volumes:
+      - .:/app:ro
+    command: |
+      bash -c "
+        echo 'Running linters...'
+        flake8 jimbot/ &&
+        pylint jimbot/ &&
+        mypy jimbot/ &&
+        echo 'Lint check passed!'
+      "
+
+  # Unit tests only
+  unit-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+      target: python-test
+    image: jimbot-python-test:latest
+    container_name: jimbot-unit-tests
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - PYTHONPATH=/app
+    command: pytest jimbot/tests/unit/ -v --cov=jimbot --cov-report=xml
+
+  # Integration tests with dependencies
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+      target: python-test
+    image: jimbot-python-test:latest
+    container_name: jimbot-integration-tests
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - PYTHONPATH=/app
+      - MEMGRAPH_HOST=memgraph
+      - QUESTDB_HOST=questdb
+      - EVENTSTORE_HOST=eventstore
+    depends_on:
+      - memgraph
+      - questdb
+      - eventstore
+    command: pytest jimbot/tests/integration/ -v
+
+  # Test dependencies
+  memgraph:
+    image: memgraph/memgraph-platform:latest
+    container_name: jimbot-test-memgraph
+    ports:
+      - "7687:7687"
+      - "3000:3000"
+    environment:
+      - MEMGRAPH_TELEMETRY_ENABLED=false
+
+  questdb:
+    image: questdb/questdb:latest
+    container_name: jimbot-test-questdb
+    ports:
+      - "9000:9000"
+      - "8812:8812"
+
+  eventstore:
+    image: eventstore/eventstore:latest
+    container_name: jimbot-test-eventstore
+    ports:
+      - "2113:2113"
+      - "1113:1113"
+    environment:
+      - EVENTSTORE_INSECURE=true
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+
+  # Development container for debugging
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+      target: dev
+    image: jimbot-dev:latest
+    container_name: jimbot-dev
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+# Networks
+networks:
+  default:
+    name: jimbot-ci-network
