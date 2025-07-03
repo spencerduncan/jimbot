@@ -1,6 +1,7 @@
 # JimBot Deployment
 
-This directory contains all deployment configurations and scripts for the JimBot system.
+This directory contains all deployment configurations and scripts for the JimBot
+system.
 
 ## Directory Structure
 
@@ -40,6 +41,7 @@ deployment/
 ### Local Development Deployment
 
 1. **Clone and setup environment**
+
 ```bash
 cd jimbot/deployment
 cp .env.example .env
@@ -47,6 +49,7 @@ cp .env.example .env
 ```
 
 2. **Build and start services**
+
 ```bash
 # Build all images
 docker-compose build
@@ -65,6 +68,7 @@ docker-compose ps
 ```
 
 3. **Initialize the system**
+
 ```bash
 # Create database schemas
 docker-compose exec jimbot-cli init-db
@@ -77,6 +81,7 @@ docker-compose exec jimbot-cli load-knowledge-graph
 ```
 
 4. **Access services**
+
 - MCP WebSocket: `ws://localhost:8765`
 - Memgraph Lab: `http://localhost:3000`
 - QuestDB Console: `http://localhost:9000`
@@ -125,16 +130,16 @@ ENVIRONMENT=production ./scripts/deploy.sh
 
 Default resource allocations (customizable in `.env`):
 
-| Service | Memory Limit | CPU Limit | GPU |
-|---------|-------------|-----------|-----|
-| memgraph | 12GB | 2 cores | No |
-| ray-head | 4GB | 2 cores | No |
-| ray-worker | 4GB | 2 cores | Yes |
-| mcp | 1GB | 1 core | No |
-| claude-gateway | 512MB | 0.5 cores | No |
-| analytics | 1GB | 1 core | No |
-| questdb | 3GB | 1 core | No |
-| eventstore | 3GB | 1 core | No |
+| Service        | Memory Limit | CPU Limit | GPU |
+| -------------- | ------------ | --------- | --- |
+| memgraph       | 12GB         | 2 cores   | No  |
+| ray-head       | 4GB          | 2 cores   | No  |
+| ray-worker     | 4GB          | 2 cores   | Yes |
+| mcp            | 1GB          | 1 core    | No  |
+| claude-gateway | 512MB        | 0.5 cores | No  |
+| analytics      | 1GB          | 1 core    | No  |
+| questdb        | 3GB          | 1 core    | No  |
+| eventstore     | 3GB          | 1 core    | No  |
 
 ### Environment Variables
 
@@ -234,6 +239,7 @@ docker stats
 ### Automated Backups
 
 Backups run automatically via cron:
+
 ```bash
 # Install backup cron job
 ./scripts/install-backup-cron.sh
@@ -263,6 +269,7 @@ Backups run automatically via cron:
 ### Common Issues
 
 **Services won't start**
+
 ```bash
 # Check logs
 docker-compose logs jimbot-mcp
@@ -277,6 +284,7 @@ docker system prune -a
 ```
 
 **GPU not available**
+
 ```bash
 # Check NVIDIA runtime
 docker run --rm --gpus all nvidia/cuda:11.8.0-base nvidia-smi
@@ -289,6 +297,7 @@ sudo systemctl restart docker
 ```
 
 **Memory issues**
+
 ```bash
 # Check memory usage
 docker stats --no-stream
@@ -301,6 +310,7 @@ sudo swapon /swapfile
 ```
 
 **Network issues**
+
 ```bash
 # Test internal communication
 docker-compose exec jimbot-mcp ping memgraph
@@ -317,6 +327,7 @@ docker-compose up -d
 ### Debug Mode
 
 Enable debug mode for verbose logging:
+
 ```bash
 # Set debug environment
 export JIMBOT_DEBUG=true
@@ -331,6 +342,7 @@ docker-compose up jimbot-mcp
 ### Docker Configuration
 
 Optimize Docker daemon (`/etc/docker/daemon.json`):
+
 ```json
 {
   "storage-driver": "overlay2",
@@ -398,6 +410,7 @@ curl http://localhost:8080/metrics/mcp/latency
 ### Grafana Dashboards
 
 Import provided dashboards:
+
 1. System Overview: `dashboards/system-overview.json`
 2. Game Performance: `dashboards/game-performance.json`
 3. Training Progress: `dashboards/training-progress.json`
@@ -405,6 +418,7 @@ Import provided dashboards:
 ### Alerts
 
 Configure alerts in `monitoring/alerts.yml`:
+
 - High memory usage
 - Service failures
 - Training stalls
@@ -415,17 +429,20 @@ Configure alerts in `monitoring/alerts.yml`:
 ### Regular Tasks
 
 **Daily**
+
 - Check service health
 - Review error logs
 - Monitor resource usage
 
 **Weekly**
+
 - Update base images
 - Clean unused containers/images
 - Review metrics trends
 - Test backups
 
 **Monthly**
+
 - Security updates
 - Performance analysis
 - Capacity planning
@@ -450,6 +467,7 @@ Configure alerts in `monitoring/alerts.yml`:
 ## Support
 
 For deployment issues:
+
 1. Check service logs
 2. Review troubleshooting guide
 3. Consult CLAUDE.md for architectural guidance

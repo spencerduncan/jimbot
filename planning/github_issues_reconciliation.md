@@ -2,14 +2,17 @@
 
 ## Overview
 
-This document reconciles the existing 51 GitHub issues (created before the Rust migration decision) with our new Rust-focused architecture plan.
+This document reconciles the existing 51 GitHub issues (created before the Rust
+migration decision) with our new Rust-focused architecture plan.
 
 ## Summary of Findings
 
 ### Existing Issues Status
+
 - **Total Open Issues**: 51
 - **Epics**: 3 (#1 Knowledge Graph, #2 Claude Integration, #8 Analytics)
-- **Missing Core Components**: Event Bus implementation, Resource Coordinator implementation
+- **Missing Core Components**: Event Bus implementation, Resource Coordinator
+  implementation
 - **Language Updates Needed**: Analytics (to Rust), MAGE modules (to Rust)
 
 ### Key Gaps Identified
@@ -34,6 +37,7 @@ This document reconciles the existing 51 GitHub issues (created before the Rust 
 #### Critical Infrastructure (P0)
 
 **Issue: Implement Rust Event Bus with REST API Compatibility**
+
 - Milestone: Week 0-1
 - Labels: `infrastructure`, `rust`, `critical`, `new`
 - Description: Production Event Bus replacing Python test server
@@ -44,6 +48,7 @@ This document reconciles the existing 51 GitHub issues (created before the Rust 
   - Docker deployment
 
 **Issue: Implement Resource Coordinator in Rust**
+
 - Milestone: Week 1-2
 - Labels: `infrastructure`, `rust`, `critical`, `new`
 - Description: Central resource management service
@@ -54,6 +59,7 @@ This document reconciles the existing 51 GitHub issues (created before the Rust 
   - Prometheus metrics
 
 **Issue: Protocol Buffer Schema Definitions**
+
 - Milestone: Week 0
 - Labels: `infrastructure`, `protobuf`, `critical`, `new`
 - Description: Define all event schemas in Protocol Buffers
@@ -67,11 +73,13 @@ This document reconciles the existing 51 GitHub issues (created before the Rust 
 #### Analytics Epic (#8) and Children
 
 **Updates Needed**:
+
 - Specify Rust as implementation language
 - Add Protocol Buffer support details
 - Update performance targets for Rust
 
 **Affected Issues**:
+
 - #17: Event Bus Consumer for Analytics → Specify Rust implementation
 - #22: QuestDB Analytics Tables → Add Rust client details
 - #24: EventStore Streams → Add Rust integration
@@ -80,11 +88,13 @@ This document reconciles the existing 51 GitHub issues (created before the Rust 
 #### MAGE Algorithms (#31)
 
 **Updates Needed**:
+
 - Change from Python to Rust implementation
 - Update code examples to Rust
 - Add Rust-specific performance targets
 
 **New Description Section**:
+
 ```rust
 // Example Rust MAGE module
 use memgraph_rust::*;
@@ -105,16 +115,19 @@ mod balatro_algorithms {
 ### 3. Issues That Remain Valid
 
 #### Knowledge Graph Epic (#1) and Most Children
+
 - Core Memgraph functionality unchanged
 - GraphQL interface still appropriate
 - Only MAGE modules affected by Rust migration
 
 #### Claude/LangChain Epic (#2) and All Children
+
 - Remains Python implementation
 - No changes needed
 - Integration patterns still valid
 
 #### General Features
+
 - Most feature issues remain valid
 - Implementation details may change
 - Interfaces remain consistent
@@ -126,10 +139,10 @@ graph TD
     NewEventBus[New: Event Bus Implementation]
     NewResourceCoord[New: Resource Coordinator]
     NewProtobuf[New: Protocol Buffers]
-    
+
     ExistingConsumers[#7, #9, #17: Event Consumers]
     ExistingIntegration[#13: Resource Coordinator Integration]
-    
+
     NewEventBus --> ExistingConsumers
     NewResourceCoord --> ExistingIntegration
     NewProtobuf --> NewEventBus
@@ -141,6 +154,7 @@ graph TD
 ### Immediate Actions (Week 0)
 
 1. **Create New Infrastructure Issues**
+
    ```bash
    gh issue create --title "[Infrastructure]: Implement Rust Event Bus with REST API" \
      --body "See planning/github_issues_reconciliation.md" \
@@ -183,16 +197,16 @@ graph TD
 
 ## Issue Mapping Table
 
-| Original Issue | Status | Action Required | Priority |
-|----------------|--------|-----------------|----------|
-| Event Bus (missing) | Create New | Create implementation issue | P0 |
-| Resource Coordinator (missing) | Create New | Create implementation issue | P0 |
-| #8: Analytics Epic | Update | Add Rust specification | P0 |
-| #31: MAGE Algorithms | Update | Change to Rust | P1 |
-| #17: Analytics Consumer | Update | Specify Rust | P1 |
-| #13: Resource Coord Integration | Valid | Update after coordinator exists | P1 |
-| #1: Knowledge Graph Epic | Valid | No changes | - |
-| #2: Claude Epic | Valid | No changes | - |
+| Original Issue                  | Status     | Action Required                 | Priority |
+| ------------------------------- | ---------- | ------------------------------- | -------- |
+| Event Bus (missing)             | Create New | Create implementation issue     | P0       |
+| Resource Coordinator (missing)  | Create New | Create implementation issue     | P0       |
+| #8: Analytics Epic              | Update     | Add Rust specification          | P0       |
+| #31: MAGE Algorithms            | Update     | Change to Rust                  | P1       |
+| #17: Analytics Consumer         | Update     | Specify Rust                    | P1       |
+| #13: Resource Coord Integration | Valid      | Update after coordinator exists | P1       |
+| #1: Knowledge Graph Epic        | Valid      | No changes                      | -        |
+| #2: Claude Epic                 | Valid      | No changes                      | -        |
 
 ## Benefits of Reconciliation
 
@@ -214,14 +228,18 @@ graph TD
 
 ```markdown
 ## Description
-Implement production-ready Event Bus in Rust to replace Python test server and serve as central message router for all JimBot components.
+
+Implement production-ready Event Bus in Rust to replace Python test server and
+serve as central message router for all JimBot components.
 
 ## Context
+
 - BalatroMCP mod already implemented and sending REST API events
 - Must maintain backward compatibility with existing REST endpoints
 - Will serve as foundation for all component communication
 
 ## Acceptance Criteria
+
 - [ ] REST API endpoints compatible with BalatroMCP
   - [ ] POST /api/v1/events (single event)
   - [ ] POST /api/v1/events/batch (batch events)
@@ -232,12 +250,14 @@ Implement production-ready Event Bus in Rust to replace Python test server and s
 - [ ] Health check endpoints
 
 ## Technical Requirements
+
 - Language: Rust
 - Frameworks: Axum (REST), Tonic (gRPC)
 - Performance: 10,000+ events/second
 - Deployment: Docker container
 
 ## Dependencies
+
 - Blocks: All Event Bus consumer issues (#7, #9, #17)
 - Related: Protocol Buffer schemas (new issue)
 ```
@@ -246,9 +266,12 @@ Implement production-ready Event Bus in Rust to replace Python test server and s
 
 ```markdown
 ## Description
-Implement Resource Coordinator service in Rust for managing GPU, memory, and API quotas across all JimBot components.
+
+Implement Resource Coordinator service in Rust for managing GPU, memory, and API
+quotas across all JimBot components.
 
 ## Acceptance Criteria
+
 - [ ] gRPC service interface
 - [ ] GPU time slice management
 - [ ] Memory allocation tracking
@@ -258,12 +281,14 @@ Implement Resource Coordinator service in Rust for managing GPU, memory, and API
 - [ ] Docker deployment
 
 ## Technical Requirements
+
 - Language: Rust
 - Framework: Tonic (gRPC)
 - Performance: <1ms response time
 - Monitoring: Prometheus metrics
 
 ## Dependencies
+
 - Blocks: #13 (Resource Coordinator Integration)
 - Related: All components requiring resources
 ```

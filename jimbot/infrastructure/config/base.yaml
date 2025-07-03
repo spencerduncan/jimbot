@@ -9,7 +9,7 @@ infrastructure:
       - training.*
       - strategy.*
       - monitoring.*
-    
+
   resource_coordinator:
     gpu:
       default_timeout_seconds: 300
@@ -23,12 +23,12 @@ infrastructure:
     redis:
       max_connections: 20
       connection_timeout_seconds: 5
-      
+
   monitoring:
     metrics_flush_interval_seconds: 1.0
     health_check_interval_seconds: 30
     profiling_enabled: false
-    
+
   logging:
     level: INFO
     format: json

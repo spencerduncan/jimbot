@@ -2,7 +2,10 @@
 
 ## Overview
 
-This document provides a comprehensive reference for the Balatro modding API, focusing on the most commonly used functions and patterns that mod developers need to understand. It covers SMODS (Steamodded) framework, core game objects, and practical examples.
+This document provides a comprehensive reference for the Balatro modding API,
+focusing on the most commonly used functions and patterns that mod developers
+need to understand. It covers SMODS (Steamodded) framework, core game objects,
+and practical examples.
 
 ## Table of Contents
 
@@ -23,7 +26,8 @@ This document provides a comprehensive reference for the Balatro modding API, fo
 
 ### G (Global Game Object)
 
-The global `G` object is the root of all game state and functionality in Balatro.
+The global `G` object is the root of all game state and functionality in
+Balatro.
 
 #### Key Components:
 
@@ -35,20 +39,20 @@ G = {
     deck = {},          -- Draw pile
     consumeables = {},  -- Tarot, Planet, Spectral cards
     playing_cards = {}, -- All cards in the game
-    
+
     -- Game State
     GAME = {},          -- Current game state and stats
     STATE = nil,        -- Current game phase enum
     STATES = {},        -- All possible game states
-    
+
     -- UI and Functions
     FUNCS = {},         -- All UI callback functions
     UIT = {},           -- UI node type definitions
     E_MANAGER = {},     -- Event and animation manager
-    
+
     -- Shop and Economy
     shop = {},          -- Shop inventory
-    
+
     -- Other
     FRAME = 0,          -- Current frame number
     localization = {},  -- Text and translations
@@ -62,11 +66,11 @@ Collection of active joker cards affecting gameplay.
 ```lua
 G.jokers = {
     cards = {},  -- Array of joker card objects
-    
+
     -- Methods
     add_to_deck = function(self, card) end,
     remove_card = function(self, card) end,
-    
+
     -- Properties
     config = {
         card_limit = 5,  -- Default joker limit
@@ -82,7 +86,7 @@ Current hand of playing cards.
 G.hand = {
     cards = {},        -- Array of card objects in hand
     highlighted = {},  -- Currently selected cards
-    
+
     -- Methods
     add_to_highlighted = function(self, card) end,
     remove_from_highlighted = function(self, card) end,
@@ -97,7 +101,7 @@ Draw pile management.
 ```lua
 G.deck = {
     cards = {},  -- Remaining cards in draw pile
-    
+
     -- Methods
     shuffle = function(self) end,
     draw_card = function(self) end,
@@ -119,7 +123,8 @@ G.consumeables = {
 
 ## SMODS (Steamodded) API
 
-SMODS is the primary modding framework for Balatro, providing extensive APIs for content creation.
+SMODS is the primary modding framework for Balatro, providing extensive APIs for
+content creation.
 
 ### Mod Structure
 
@@ -160,7 +165,7 @@ SMODS.Joker {
     cost = 5,
     atlas = 'my_joker_atlas',
     pos = {x = 0, y = 0},
-    
+
     -- Calculate function - core joker logic
     calculate = function(self, card, context)
         if context.joker_main and context.cardarea == G.jokers then
@@ -190,11 +195,11 @@ SMODS.Consumable {
         }
     },
     config = {max_highlighted = 3},
-    
+
     can_use = function(self, card)
         return #G.hand.highlighted <= self.config.max_highlighted
     end,
-    
+
     use = function(self, card, area, copier)
         for i = 1, #G.hand.highlighted do
             local highlighted = G.hand.highlighted[i]
@@ -212,10 +217,10 @@ local ref_func = G.FUNCS.play_cards_from_highlighted
 G.FUNCS.play_cards_from_highlighted = function(e)
     -- Custom logic before
     print("Playing cards!")
-    
+
     -- Call original function
     ref_func(e)
-    
+
     -- Custom logic after
     print("Cards played!")
 end
@@ -230,14 +235,14 @@ Card = {
     -- Identity
     unique_val = "card_123",  -- Unique identifier
     sort_id = 1,              -- Sorting order
-    
+
     -- Visual Properties
     base = {
         value = "A",          -- Rank (A, 2-10, J, Q, K)
         suit = "Spades",      -- Suit
         id = 14,              -- Numeric ID
     },
-    
+
     -- Abilities and Modifiers
     ability = {
         name = "ability_name",
@@ -245,17 +250,17 @@ Card = {
         mult = 0,             -- Multiplier bonus
         t_chips = 0,          -- Chip bonus
     },
-    
+
     -- State
     cost = 5,                 -- Purchase cost
     sell_cost = 2,            -- Sell value
     highlighted = false,      -- Selection state
     debuffed = false,         -- Debuff state
-    
+
     -- Edition/Enhancement
     edition = nil,            -- Foil, Holo, Polychrome
     seal = nil,               -- Gold, Red, Blue, Purple
-    
+
     -- Methods
     set_ability = function(self, center, initial, delay) end,
     juice_up = function(self, scale, rot) end,
@@ -291,29 +296,29 @@ Jokers can trigger at various points during gameplay:
 context = {
     -- Before hand is played
     before = true,
-    
+
     -- Main hand evaluation
     joker_main = true,
-    
+
     -- Individual card scoring
     individual = true,
     cardarea = G.play,
     other_card = scoring_card,
-    
+
     -- After hand is played
     after = true,
-    
+
     -- End of round
     end_of_round = true,
-    
+
     -- Card destruction
     destroying_card = true,
-    
+
     -- Shop actions
     buying_card = true,
     selling_card = true,
     reroll_shop = true,
-    
+
     -- Game events
     skip_blind = true,
     setting_blind = true,
@@ -332,10 +337,10 @@ calculate = function(self, card, context)
             mult_mod = 10,      -- Add to mult
             chip_mod = 50,      -- Add to chips
             Xmult_mod = 1.5,    -- Multiply total mult
-            
+
             -- Visual feedback
             message = localize{type='variable', key='a_mult', vars={10}},
-            
+
             -- Additional effects
             card_eval_status_text(card, 'extra', nil, nil, nil, {message = "Triggered!"})
         }
@@ -427,10 +432,10 @@ end
 G.FUNCS.update_my_menu = function(e)
     local menu_box = e.config.ref_table.menu_box
     local parent = menu_box.parent
-    
+
     -- Remove old content
     parent.config.object:remove()
-    
+
     -- Create new content
     parent.config.object = UIBox({
         definition = create_updated_menu(),
@@ -527,7 +532,7 @@ G.GAME = {
         discards = 3,
         reroll_cost = 5,
     },
-    
+
     -- Current round state
     current_round = {
         hands_left = 4,
@@ -536,16 +541,16 @@ G.GAME = {
         discards_used = 0,
         reroll_cost = 5,
     },
-    
+
     -- Resources
     dollars = 4,
     chips = 0,
     mult = 0,
-    
+
     -- Score tracking
     chips_scored = 0,
     hand_type = "",
-    
+
     -- Blind information
     blind = {
         name = "Small Blind",
@@ -553,7 +558,7 @@ G.GAME = {
         mult = 1,
         boss = false,
     },
-    
+
     -- Other
     pseudorandom_seed = "seed_value",
     win_condition = {
@@ -758,7 +763,7 @@ SMODS.Challenge {
             "but {C:red}no money{}"
         }
     },
-    
+
     -- Challenge rules
     rules = {
         custom = {
@@ -766,19 +771,19 @@ SMODS.Challenge {
             {id = 'starting_jokers', value = 10}
         }
     },
-    
+
     -- Starting deck
     deck = {
         type = 'Challenge Deck',
         cards = {{s='H',r='A'},{s='H',r='A'}}, -- Two Ace of Hearts
     },
-    
+
     -- Starting items
     jokers = {
         {id = 'j_joker'},
         {id = 'j_greedy_joker'},
     },
-    
+
     -- Win condition
     restrictions = {
         banned_cards = {
@@ -820,11 +825,11 @@ SMODS.Joker {
     config = {extra = {mult = 15}},
     rarity = 1,
     cost = 4,
-    
+
     loc_vars = function(self, info_queue, card)
         return {vars = {card.ability.extra.mult}}
     end,
-    
+
     calculate = function(self, card, context)
         if context.joker_main then
             return {
@@ -851,11 +856,11 @@ SMODS.Joker {
     config = {extra = {Xmult = 3}},
     rarity = 2,
     cost = 6,
-    
+
     loc_vars = function(self, info_queue, card)
         return {vars = {card.ability.extra.Xmult}}
     end,
-    
+
     calculate = function(self, card, context)
         if context.joker_main and context.cardarea == G.jokers then
             if context.poker_hands and next(context.poker_hands['Flush']) then
@@ -884,11 +889,11 @@ SMODS.Joker {
     config = {extra = {discount = 2}},
     rarity = 2,
     cost = 6,
-    
+
     loc_vars = function(self, info_queue, card)
         return {vars = {card.ability.extra.discount}}
     end,
-    
+
     -- Hook into shop generation
     add_to_deck = function(self, card, from_debuff)
         -- Modify shop prices when joker is acquired
@@ -916,15 +921,15 @@ SMODS.Consumable {
         }
     },
     config = {max_highlighted = 2},
-    
+
     loc_vars = function(self, info_queue, card)
         return {vars = {self.config.max_highlighted}}
     end,
-    
+
     can_use = function(self, card)
         return #G.hand.highlighted > 0 and #G.hand.highlighted <= self.config.max_highlighted
     end,
-    
+
     use = function(self, card, area, copier)
         for i = 1, #G.hand.highlighted do
             local target = G.hand.highlighted[i]
@@ -959,7 +964,7 @@ SMODS.Joker {
     config = {extra = {mult = 5, mult_gain = 3, rounds = 3, rounds_remaining = 3}},
     rarity = 2,
     cost = 5,
-    
+
     loc_vars = function(self, info_queue, card)
         return {vars = {
             card.ability.extra.mult,
@@ -967,7 +972,7 @@ SMODS.Joker {
             card.ability.extra.rounds
         }}
     end,
-    
+
     calculate = function(self, card, context)
         -- Provide mult bonus
         if context.joker_main then
@@ -976,7 +981,7 @@ SMODS.Joker {
                 message = localize{type='variable', key='a_mult', vars={card.ability.extra.mult}}
             }
         end
-        
+
         -- Track rounds
         if context.end_of_round and not context.blueprint then
             card.ability.extra.rounds_remaining = card.ability.extra.rounds_remaining - 1
@@ -1040,4 +1045,6 @@ end
 - **Balatro Discord**: Community support and mod sharing
 - **Example Mods**: Learn from existing SMODS implementations
 
-This reference covers the essential APIs and patterns for Balatro modding. For more specific implementations, refer to the Steamodded documentation and example mods.
+This reference covers the essential APIs and patterns for Balatro modding. For
+more specific implementations, refer to the Steamodded documentation and example
+mods.

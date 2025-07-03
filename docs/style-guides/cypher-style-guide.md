@@ -1,8 +1,12 @@
 # Cypher Query Language Style Guide for JimBot
 
-This comprehensive style guide establishes best practices for writing Cypher queries in the JimBot project, focusing on Memgraph-specific optimizations, real-time performance, and knowledge graph patterns for the Balatro learning system.
+This comprehensive style guide establishes best practices for writing Cypher
+queries in the JimBot project, focusing on Memgraph-specific optimizations,
+real-time performance, and knowledge graph patterns for the Balatro learning
+system.
 
 ## Table of Contents
+
 1. [Naming Conventions](#naming-conventions)
 2. [Query Formatting](#query-formatting)
 3. [Performance Patterns](#performance-patterns)
@@ -15,7 +19,9 @@ This comprehensive style guide establishes best practices for writing Cypher que
 ## Naming Conventions
 
 ### Node Labels
+
 Use **UpperCamelCase** (PascalCase) for all node labels:
+
 ```cypher
 // Good
 (:Joker), (:Card), (:GameState), (:Strategy), (:SynergyPattern)
@@ -25,7 +31,9 @@ Use **UpperCamelCase** (PascalCase) for all node labels:
 ```
 
 ### Relationship Types
+
 Use **ALL_UPPERCASE** with underscores for word separation:
+
 ```cypher
 // Good
 -[:SYNERGIZES_WITH]->
@@ -40,7 +48,9 @@ Use **ALL_UPPERCASE** with underscores for word separation:
 ```
 
 ### Properties
+
 Use **camelCase** for property names (JSON-style):
+
 ```cypher
 // Good
 {name: "Baron", rarity: "common", cost: 4}
@@ -52,7 +62,9 @@ Use **camelCase** for property names (JSON-style):
 ```
 
 ### Variables and Parameters
+
 Use **camelCase** for variables and parameters:
+
 ```cypher
 // Good
 MATCH (j:Joker {name: $jokerName})
@@ -66,7 +78,9 @@ WITH J, count(s) AS SynergyCount
 ## Query Formatting
 
 ### Keyword Capitalization
+
 Always use **UPPERCASE** for Cypher keywords:
+
 ```cypher
 // Good
 MATCH (j:Joker)
@@ -82,7 +96,9 @@ return j.name
 ```
 
 ### Clause Structure
+
 Start each clause on a new line with consistent indentation:
+
 ```cypher
 // Good
 MATCH (j:Joker)-[:SYNERGIZES_WITH]->(other:Joker)
@@ -96,7 +112,9 @@ MATCH (j:Joker)-[:SYNERGIZES_WITH]->(other:Joker) WHERE j.name = 'Baron' AND oth
 ```
 
 ### String Literals
+
 Use single quotes for string literals:
+
 ```cypher
 // Good
 WHERE j.name = 'Baron'
@@ -106,7 +124,9 @@ WHERE j.name = "Baron"
 ```
 
 ### Boolean and Null Values
+
 Use lowercase for boolean and null values:
+
 ```cypher
 // Good
 WHERE j.isActive = true
@@ -120,7 +140,9 @@ WHERE j.isActive = TRUE
 ## Performance Patterns
 
 ### 1. Index Usage
+
 Create indexes on frequently queried properties:
+
 ```cypher
 // Create indexes for optimal performance
 CREATE INDEX ON :Joker(name);
@@ -135,7 +157,9 @@ RETURN j
 ```
 
 ### 2. Early Filtering
+
 Filter as early as possible in the query:
+
 ```cypher
 // Good - filter in MATCH clause
 MATCH (j:Joker {rarity: 'legendary'})
@@ -154,7 +178,9 @@ RETURN j
 ```
 
 ### 3. Limit Variable-Length Paths
+
 Always set upper bounds on variable-length patterns:
+
 ```cypher
 // Good - bounded traversal
 MATCH (j1:Joker)-[:SYNERGIZES_WITH*1..3]->(j2:Joker)
@@ -168,7 +194,9 @@ RETURN j2
 ```
 
 ### 4. Use Parameters
+
 Parameterize queries for better plan caching:
+
 ```cypher
 // Good - parameterized
 MATCH (j:Joker {name: $jokerName})
@@ -182,7 +210,9 @@ RETURN j
 ```
 
 ### 5. Project Only Needed Data
+
 Return only required properties:
+
 ```cypher
 // Good - specific properties
 MATCH (j:Joker)-[:SYNERGIZES_WITH]->(other:Joker)
@@ -196,6 +226,7 @@ RETURN j, collect(other) AS synergies
 ## Anti-Patterns to Avoid
 
 ### 1. Cartesian Products
+
 ```cypher
 // BAD - Creates cartesian product
 MATCH (j:Joker), (c:Card)
@@ -209,6 +240,7 @@ RETURN j, c
 ```
 
 ### 2. Missing Labels
+
 ```cypher
 // BAD - No label filter
 MATCH (n)
@@ -222,6 +254,7 @@ RETURN j
 ```
 
 ### 3. Dense Node Traversal
+
 ```cypher
 // BAD - Traversing through hub nodes
 MATCH (j:Joker)-[:PLAYED_IN]->(g:Game)-[:PLAYED_IN]-(other:Joker)
@@ -233,6 +266,7 @@ RETURN j, other
 ```
 
 ### 4. Excessive OPTIONAL MATCH
+
 ```cypher
 // BAD - Multiple optional matches
 MATCH (j:Joker)
@@ -250,6 +284,7 @@ RETURN j,
 ```
 
 ### 5. Query Part Splitting
+
 ```cypher
 // BAD - Multiple MATCH clauses split query
 MATCH (j:Joker {name: 'Baron'})
@@ -265,7 +300,9 @@ RETURN j, other
 ## Transaction Patterns
 
 ### Batch Operations
+
 Use transactions for bulk updates:
+
 ```cypher
 // Good - Batch insert with UNWIND
 UNWIND $jokerData AS data
@@ -285,7 +322,9 @@ CALL {
 ```
 
 ### Read-Write Separation
+
 Keep read and write operations separate:
+
 ```cypher
 // Good - Separate read query
 MATCH (j:Joker)-[:SYNERGIZES_WITH]->(other:Joker)
@@ -298,7 +337,9 @@ SET j.lastPlayed = timestamp()
 ```
 
 ### Idempotent Updates
+
 Use MERGE for idempotent operations:
+
 ```cypher
 // Good - MERGE ensures no duplicates
 MERGE (j:Joker {name: 'Baron'})
@@ -313,7 +354,9 @@ ON MATCH SET
 ## Memgraph-Specific Optimizations
 
 ### 1. Query Plan Caching
+
 Structure queries to maximize plan reuse:
+
 ```cypher
 // Good - Consistent structure enables caching
 MATCH (j:Joker {name: $jokerName})
@@ -325,7 +368,9 @@ RETURN j, collect(synergy) AS synergies
 ```
 
 ### 2. Memory Limits for Deep Traversals
+
 Set memory limits before expensive queries:
+
 ```cypher
 // Set query memory limit (80% of available)
 :query memory-limit 6GB
@@ -338,7 +383,9 @@ LIMIT 100
 ```
 
 ### 3. In-Memory Analytics Mode
+
 For bulk analysis without ACID guarantees:
+
 ```cypher
 // Use for read-heavy analytical queries
 MATCH (j:Joker)
@@ -348,7 +395,9 @@ ORDER BY avgCost DESC
 ```
 
 ### 4. Built-in Algorithm Usage
+
 Leverage Memgraph's C++ algorithms:
+
 ```cypher
 // Use built-in shortest path
 MATCH (j1:Joker {name: 'Baron'}), (j2:Joker {name: 'Mime'})
@@ -364,6 +413,7 @@ RETURN node
 ## Knowledge Graph Patterns
 
 ### 1. Hierarchical Relationships
+
 ```cypher
 // Define strategy hierarchies
 CREATE (root:Strategy {name: 'High Card'})
@@ -377,6 +427,7 @@ ORDER BY depth
 ```
 
 ### 2. Temporal Patterns
+
 ```cypher
 // Track game state evolution
 CREATE (gs1:GameState {ante: 1, score: 0, timestamp: timestamp()})
@@ -392,14 +443,15 @@ LIMIT 5
 ```
 
 ### 3. Synergy Networks
+
 ```cypher
 // Create synergy network
 MATCH (j1:Joker), (j2:Joker)
 WHERE j1.name < j2.name  // Avoid duplicates
   AND exists((j1)-[:WORKS_WELL_WITH]->(j2))
 MERGE (j1)-[s:SYNERGIZES_WITH]->(j2)
-SET s.strength = 
-  CASE 
+SET s.strength =
+  CASE
     WHEN j1.rarity = 'legendary' AND j2.rarity = 'legendary' THEN 1.0
     WHEN j1.rarity = 'legendary' OR j2.rarity = 'legendary' THEN 0.8
     ELSE 0.6
@@ -416,6 +468,7 @@ ORDER BY size(cluster) DESC
 ```
 
 ### 4. Decision Trees
+
 ```cypher
 // Model decision paths
 CREATE (root:Decision {state: 'ante_4_low_money'})
@@ -424,9 +477,9 @@ CREATE (skip:Decision {state: 'skip_shop'})-[:IF {condition: 'money < 25'}]->(ro
 
 // Query optimal paths
 MATCH path = (d:Decision)-[:IF*]->(outcome:Decision)
-WHERE d.state = 'ante_4_low_money' 
+WHERE d.state = 'ante_4_low_money'
   AND outcome.state CONTAINS 'win'
-RETURN path, 
+RETURN path,
   reduce(prob = 1.0, r IN relationships(path) | prob * r.probability) AS pathProbability
 ORDER BY pathProbability DESC
 ```
@@ -434,16 +487,17 @@ ORDER BY pathProbability DESC
 ## Real-Time Query Examples
 
 ### 1. Fast Joker Recommendation (Target: <50ms)
+
 ```cypher
 // Optimized for speed with precomputed scores
 MATCH (current:GameState {isCurrent: true})
 MATCH (j:Joker)
 WHERE NOT exists((current)-[:HAS_JOKER]->(j))
   AND j.cost <= current.money
-WITH j, j.baseScore + 
-  CASE 
-    WHEN current.ante >= 4 THEN j.lateGameBonus 
-    ELSE 0 
+WITH j, j.baseScore +
+  CASE
+    WHEN current.ante >= 4 THEN j.lateGameBonus
+    ELSE 0
   END AS score
 RETURN j.name, j.cost, score
 ORDER BY score DESC
@@ -451,6 +505,7 @@ LIMIT 5
 ```
 
 ### 2. Real-Time Synergy Check (Target: <30ms)
+
 ```cypher
 // Use indexed lookups and limited traversal
 MATCH (current:GameState {isCurrent: true})-[:HAS_JOKER]->(owned:Joker)
@@ -465,11 +520,12 @@ RETURN candidate.name,
 ```
 
 ### 3. Pattern Recognition (Target: <100ms)
+
 ```cypher
 // Detect winning patterns from current state
 MATCH (current:GameState {isCurrent: true})
 MATCH (pattern:WinningPattern)
-WHERE all(req IN pattern.requirements WHERE 
+WHERE all(req IN pattern.requirements WHERE
   CASE req.type
     WHEN 'joker' THEN exists((current)-[:HAS_JOKER]->(:Joker {name: req.value}))
     WHEN 'money' THEN current.money >= toInteger(req.value)
@@ -484,6 +540,7 @@ LIMIT 3
 ```
 
 ### 4. Performance Monitoring Query
+
 ```cypher
 // Track query performance metrics
 CREATE (qm:QueryMetric {
@@ -496,7 +553,7 @@ CREATE (qm:QueryMetric {
 // Analyze performance trends
 MATCH (qm:QueryMetric)
 WHERE qm.timestamp > timestamp() - 3600000  // Last hour
-WITH qm.queryType AS type, 
+WITH qm.queryType AS type,
   avg(qm.executionTime) AS avgTime,
   max(qm.executionTime) AS maxTime,
   count(qm) AS queryCount
@@ -507,7 +564,8 @@ ORDER BY avgMs DESC
 
 ## Summary
 
-This style guide provides a comprehensive foundation for writing efficient, maintainable Cypher queries in the JimBot project. Key takeaways:
+This style guide provides a comprehensive foundation for writing efficient,
+maintainable Cypher queries in the JimBot project. Key takeaways:
 
 1. **Consistency is King**: Follow naming conventions religiously
 2. **Performance First**: Always consider query performance implications
@@ -515,4 +573,6 @@ This style guide provides a comprehensive foundation for writing efficient, main
 4. **Real-Time Focus**: Design queries with <100ms response time targets
 5. **Avoid Anti-Patterns**: Learn from common mistakes to write better queries
 
-Remember that JimBot's success depends on fast, accurate queries that can keep pace with real-time game decisions. Every millisecond counts when making strategic choices in Balatro.
+Remember that JimBot's success depends on fast, accurate queries that can keep
+pace with real-time game decisions. Every millisecond counts when making
+strategic choices in Balatro.

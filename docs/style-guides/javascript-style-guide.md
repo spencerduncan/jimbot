@@ -1,6 +1,8 @@
 # JavaScript Style Guide
 
-This style guide provides comprehensive conventions for JavaScript development in the JimBot project, with a focus on real-time communication, event handling, and mod development patterns.
+This style guide provides comprehensive conventions for JavaScript development
+in the JimBot project, with a focus on real-time communication, event handling,
+and mod development patterns.
 
 ## Table of Contents
 
@@ -50,7 +52,7 @@ async function processGameState(state) {
 }
 
 // ✅ Good - Function expressions for module exports
-const gameEventHandler = async function(event) {
+const gameEventHandler = async function (event) {
   // Complex logic here
 };
 ```
@@ -84,14 +86,15 @@ const allJokers = [...baseJokers, ...modifiedJokers];
 
 // ✅ Good - Use array methods for transformations
 const activeJokers = jokers
-  .filter(joker => joker.isActive)
-  .map(joker => ({
+  .filter((joker) => joker.isActive)
+  .map((joker) => ({
     ...joker,
-    multiplier: calculateMultiplier(joker)
+    multiplier: calculateMultiplier(joker),
   }));
 
 // ❌ Bad - Avoid for-in loops
-for (const key in object) { } // Use Object.keys/values/entries instead
+for (const key in object) {
+} // Use Object.keys/values/entries instead
 ```
 
 ## Module Organization
@@ -103,7 +106,7 @@ for (const key in object) { } // Use Object.keys/values/entries instead
 export const EVENT_TYPES = {
   GAME_START: 'game:start',
   GAME_END: 'game:end',
-  STATE_UPDATE: 'state:update'
+  STATE_UPDATE: 'state:update',
 };
 
 export function createEventHandler(options) {
@@ -171,7 +174,9 @@ async function connectToGame(url) {
     return { connection, gameState };
   } catch (error) {
     console.error('Failed to connect:', error);
-    throw new ConnectionError('Unable to establish game connection', { cause: error });
+    throw new ConnectionError('Unable to establish game connection', {
+      cause: error,
+    });
   }
 }
 
@@ -192,24 +197,22 @@ async function loadGameAssets() {
   const [jokers, cards, sounds] = await Promise.all([
     loadJokerData(),
     loadCardData(),
-    loadSoundAssets()
+    loadSoundAssets(),
   ]);
-  
+
   return { jokers, cards, sounds };
 }
 
 // ✅ Good - Parallel with error handling
 async function fetchMultipleResources(urls) {
   try {
-    const results = await Promise.allSettled(
-      urls.map(url => fetch(url))
-    );
-    
+    const results = await Promise.allSettled(urls.map((url) => fetch(url)));
+
     return results.map((result, index) => ({
       url: urls[index],
       success: result.status === 'fulfilled',
       data: result.value || null,
-      error: result.reason || null
+      error: result.reason || null,
     }));
   } catch (error) {
     console.error('Batch fetch failed:', error);
@@ -222,11 +225,7 @@ async function fetchMultipleResources(urls) {
 
 ```javascript
 // ✅ Good - Exponential backoff retry
-async function retryWithBackoff(
-  fn, 
-  maxRetries = 3, 
-  baseDelay = 1000
-) {
+async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await fn();
@@ -234,20 +233,16 @@ async function retryWithBackoff(
       if (attempt === maxRetries - 1) {
         throw error;
       }
-      
+
       const delay = baseDelay * Math.pow(2, attempt);
       console.log(`Retry attempt ${attempt + 1} after ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }
 
 // Usage
-const gameData = await retryWithBackoff(
-  () => fetchGameData(gameId),
-  3,
-  1000
-);
+const gameData = await retryWithBackoff(() => fetchGameData(gameId), 3, 1000);
 ```
 
 ## WebSocket Programming
@@ -263,9 +258,9 @@ class GameWebSocketClient {
       reconnectInterval: 5000,
       maxReconnectAttempts: 5,
       heartbeatInterval: 30000,
-      ...options
+      ...options,
     };
-    
+
     this.reconnectAttempts = 0;
     this.messageQueue = [];
     this.handlers = new Map();
@@ -276,7 +271,7 @@ class GameWebSocketClient {
       try {
         // Use wss:// for production
         this.ws = new WebSocket(this.url);
-        
+
         this.ws.onopen = (event) => {
           console.log('WebSocket connected');
           this.reconnectAttempts = 0;
@@ -284,16 +279,16 @@ class GameWebSocketClient {
           this.startHeartbeat();
           resolve(this);
         };
-        
+
         this.ws.onmessage = (event) => {
           this.handleMessage(event.data);
         };
-        
+
         this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
           reject(error);
         };
-        
+
         this.ws.onclose = (event) => {
           console.log('WebSocket closed:', event.code, event.reason);
           this.stopHeartbeat();
@@ -307,7 +302,7 @@ class GameWebSocketClient {
 
   send(type, payload) {
     const message = JSON.stringify({ type, payload, timestamp: Date.now() });
-    
+
     if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(message);
     } else {
@@ -327,9 +322,9 @@ class GameWebSocketClient {
     try {
       const message = JSON.parse(data);
       const handlers = this.handlers.get(message.type);
-      
+
       if (handlers) {
-        handlers.forEach(handler => {
+        handlers.forEach((handler) => {
           try {
             handler(message.payload);
           } catch (error) {
@@ -365,9 +360,9 @@ class GameWebSocketClient {
 
     this.reconnectAttempts++;
     console.log(`Reconnecting... (attempt ${this.reconnectAttempts})`);
-    
+
     setTimeout(() => {
-      this.connect().catch(error => {
+      this.connect().catch((error) => {
         console.error('Reconnection failed:', error);
       });
     }, this.options.reconnectInterval);
@@ -398,15 +393,15 @@ const MESSAGE_TYPES = {
   JOIN_GAME: 'client:join_game',
   LEAVE_GAME: 'client:leave_game',
   PLAY_HAND: 'client:play_hand',
-  
+
   // Server -> Client
   GAME_STATE: 'server:game_state',
   PLAYER_JOINED: 'server:player_joined',
   ERROR: 'server:error',
-  
+
   // Bidirectional
   PING: 'ping',
-  PONG: 'pong'
+  PONG: 'pong',
 };
 
 // Message factory
@@ -417,7 +412,7 @@ function createMessage(type, payload, metadata = {}) {
     payload,
     timestamp: Date.now(),
     version: '1.0',
-    ...metadata
+    ...metadata,
   };
 }
 ```
@@ -436,7 +431,7 @@ class EventBus {
 
   on(eventPattern, handler, options = {}) {
     const { once = false, priority = 0 } = options;
-    
+
     if (eventPattern === '*') {
       this.wildcardHandlers.add({ handler, priority });
       return this;
@@ -449,7 +444,7 @@ class EventBus {
     this.events.get(eventPattern).push({
       handler,
       once,
-      priority
+      priority,
     });
 
     // Sort by priority
@@ -466,7 +461,7 @@ class EventBus {
     const event = {
       type: eventType,
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Emit to specific handlers
@@ -500,7 +495,7 @@ class EventBus {
 
   off(eventPattern, handler) {
     if (eventPattern === '*') {
-      this.wildcardHandlers.forEach(item => {
+      this.wildcardHandlers.forEach((item) => {
         if (item.handler === handler) {
           this.wildcardHandlers.delete(item);
         }
@@ -512,7 +507,7 @@ class EventBus {
     if (handlers) {
       this.events.set(
         eventPattern,
-        handlers.filter(h => h.handler !== handler)
+        handlers.filter((h) => h.handler !== handler)
       );
     }
 
@@ -612,10 +607,10 @@ class GameStateAggregator extends EventAggregator {
       // Aggregate multiple card plays into single update
       const totalCards = events.length;
       const totalScore = events.reduce((sum, e) => sum + e.data.score, 0);
-      
+
       eventBus.emit('game:score:update', {
         cardsPlayed: totalCards,
-        scoreGained: totalScore
+        scoreGained: totalScore,
       });
     }
   }
@@ -635,7 +630,7 @@ class GameError extends Error {
     this.code = code;
     this.details = details;
     this.timestamp = new Date().toISOString();
-    
+
     // Maintain proper stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -649,7 +644,7 @@ class GameError extends Error {
       code: this.code,
       details: this.details,
       timestamp: this.timestamp,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 }
@@ -669,15 +664,18 @@ class ConnectionError extends GameError {
 // Usage
 function validateGameMove(move) {
   const errors = [];
-  
+
   if (!move.playerId) {
     errors.push({ field: 'playerId', message: 'Player ID is required' });
   }
-  
+
   if (!move.cards || move.cards.length === 0) {
-    errors.push({ field: 'cards', message: 'At least one card must be played' });
+    errors.push({
+      field: 'cards',
+      message: 'At least one card must be played',
+    });
   }
-  
+
   if (errors.length > 0) {
     throw new ValidationError('Invalid game move', errors);
   }
@@ -692,7 +690,7 @@ class ErrorHandler {
   constructor(options = {}) {
     this.logger = options.logger || console;
     this.handlers = new Map();
-    
+
     // Register default handlers
     this.register(ValidationError, this.handleValidationError.bind(this));
     this.register(ConnectionError, this.handleConnectionError.bind(this));
@@ -709,7 +707,7 @@ class ErrorHandler {
         return handler(error);
       }
     }
-    
+
     // Default handling
     this.handleGenericError(error);
   }
@@ -717,44 +715,44 @@ class ErrorHandler {
   handleValidationError(error) {
     this.logger.warn('Validation error:', {
       message: error.message,
-      errors: error.details.validationErrors
+      errors: error.details.validationErrors,
     });
-    
+
     return {
       success: false,
       error: {
         type: 'validation',
         message: error.message,
-        fields: error.details.validationErrors
-      }
+        fields: error.details.validationErrors,
+      },
     };
   }
 
   handleConnectionError(error) {
     this.logger.error('Connection error:', {
       message: error.message,
-      cause: error.details.cause
+      cause: error.details.cause,
     });
-    
+
     return {
       success: false,
       error: {
         type: 'connection',
         message: 'Unable to connect to game server',
-        retryable: true
-      }
+        retryable: true,
+      },
     };
   }
 
   handleGenericError(error) {
     this.logger.error('Unhandled error:', error);
-    
+
     return {
       success: false,
       error: {
         type: 'unknown',
-        message: 'An unexpected error occurred'
-      }
+        message: 'An unexpected error occurred',
+      },
     };
   }
 }
@@ -775,55 +773,55 @@ process.on('unhandledRejection', (reason, promise) => {
 describe('GameWebSocketClient', () => {
   let client;
   let mockWebSocket;
-  
+
   beforeEach(() => {
     mockWebSocket = new MockWebSocket();
     global.WebSocket = jest.fn(() => mockWebSocket);
     client = new GameWebSocketClient('ws://localhost:3000');
   });
-  
+
   afterEach(() => {
     client.close();
     jest.restoreAllMocks();
   });
-  
+
   describe('connection handling', () => {
     it('should establish connection successfully', async () => {
       const connectionPromise = client.connect();
       mockWebSocket.triggerOpen();
-      
+
       await expect(connectionPromise).resolves.toBe(client);
       expect(client.ws.readyState).toBe(WebSocket.OPEN);
     });
-    
+
     it('should handle connection errors', async () => {
       const connectionPromise = client.connect();
       const error = new Error('Connection refused');
       mockWebSocket.triggerError(error);
-      
+
       await expect(connectionPromise).rejects.toThrow('Connection refused');
     });
-    
+
     it('should queue messages when disconnected', () => {
       client.send('test:message', { data: 'test' });
-      
+
       expect(client.messageQueue).toHaveLength(1);
       expect(mockWebSocket.send).not.toHaveBeenCalled();
     });
   });
-  
+
   describe('reconnection logic', () => {
     it('should attempt reconnection on disconnect', async () => {
       jest.useFakeTimers();
-      
+
       await client.connect();
       mockWebSocket.triggerClose({ code: 1006 });
-      
+
       expect(client.reconnectAttempts).toBe(1);
-      
+
       jest.advanceTimersByTime(5000);
       expect(global.WebSocket).toHaveBeenCalledTimes(2);
-      
+
       jest.useRealTimers();
     });
   });
@@ -837,35 +835,35 @@ describe('GameWebSocketClient', () => {
 describe('EventAggregator', () => {
   let aggregator;
   let processSpy;
-  
+
   beforeEach(() => {
-    aggregator = new EventAggregator({ 
+    aggregator = new EventAggregator({
       batchWindow: 50,
-      maxBatchSize: 3 
+      maxBatchSize: 3,
     });
     processSpy = jest.spyOn(aggregator, 'processBatch');
   });
-  
+
   it('should batch events within time window', async () => {
     aggregator.push({ type: 'test', data: 1 });
     aggregator.push({ type: 'test', data: 2 });
-    
+
     expect(processSpy).not.toHaveBeenCalled();
-    
+
     // Wait for batch window
-    await new Promise(resolve => setTimeout(resolve, 60));
-    
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
     expect(processSpy).toHaveBeenCalledWith([
       { type: 'test', data: 1 },
-      { type: 'test', data: 2 }
+      { type: 'test', data: 2 },
     ]);
   });
-  
+
   it('should flush immediately when max batch size reached', () => {
     aggregator.push({ type: 'test', data: 1 });
     aggregator.push({ type: 'test', data: 2 });
     aggregator.push({ type: 'test', data: 3 });
-    
+
     expect(processSpy).toHaveBeenCalledTimes(1);
   });
 });
@@ -883,29 +881,29 @@ class MockWebSocket {
     this.addEventListener = jest.fn();
     this.removeEventListener = jest.fn();
   }
-  
+
   triggerOpen() {
     this.readyState = WebSocket.OPEN;
     this.onopen?.({ type: 'open' });
   }
-  
+
   triggerMessage(data) {
-    this.onmessage?.({ 
-      type: 'message', 
-      data: typeof data === 'string' ? data : JSON.stringify(data) 
+    this.onmessage?.({
+      type: 'message',
+      data: typeof data === 'string' ? data : JSON.stringify(data),
     });
   }
-  
+
   triggerError(error) {
     this.onerror?.(error);
   }
-  
+
   triggerClose(event = {}) {
     this.readyState = WebSocket.CLOSED;
-    this.onclose?.({ 
+    this.onclose?.({
       type: 'close',
       code: event.code || 1000,
-      reason: event.reason || ''
+      reason: event.reason || '',
     });
   }
 }
@@ -913,7 +911,7 @@ class MockWebSocket {
 // Mock event bus for testing
 function createMockEventBus() {
   const events = [];
-  
+
   return {
     emit: jest.fn((type, data) => {
       events.push({ type, data, timestamp: Date.now() });
@@ -921,7 +919,9 @@ function createMockEventBus() {
     on: jest.fn(),
     off: jest.fn(),
     getEvents: () => [...events],
-    clear: () => { events.length = 0; }
+    clear: () => {
+      events.length = 0;
+    },
   };
 }
 ```
@@ -937,40 +937,37 @@ module.exports = {
     browser: true,
     es2021: true,
     node: true,
-    jest: true
+    jest: true,
   },
-  extends: [
-    'eslint:recommended',
-    'plugin:promise/recommended'
-  ],
+  extends: ['eslint:recommended', 'plugin:promise/recommended'],
   parserOptions: {
     ecmaVersion: 2022,
-    sourceType: 'module'
+    sourceType: 'module',
   },
   rules: {
     // Variables
     'no-var': 'error',
     'prefer-const': 'error',
-    
+
     // Functions
     'arrow-body-style': ['error', 'as-needed'],
     'prefer-arrow-callback': 'error',
-    
+
     // Async
     'no-async-promise-executor': 'error',
     'require-await': 'error',
-    
+
     // Best practices
     'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'eqeqeq': ['error', 'always', { null: 'ignore' }],
+    eqeqeq: ['error', 'always', { null: 'ignore' }],
     'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    
+
     // Style
-    'quotes': ['error', 'single', { avoidEscape: true }],
-    'semi': ['error', 'always'],
+    quotes: ['error', 'single', { avoidEscape: true }],
+    semi: ['error', 'always'],
     'comma-dangle': ['error', 'never'],
-    'indent': ['error', 2, { SwitchCase: 1 }]
-  }
+    indent: ['error', 2, { SwitchCase: 1 }],
+  },
 };
 ```
 
@@ -997,7 +994,7 @@ class GameWebSocketClient {
   constructor(url, options = {}) {
     // Implementation
   }
-  
+
   /**
    * Establishes WebSocket connection
    * @returns {Promise<GameWebSocketClient>} Resolves when connected
@@ -1006,7 +1003,7 @@ class GameWebSocketClient {
   async connect() {
     // Implementation
   }
-  
+
   /**
    * Sends a message to the server
    * @param {string} type - Message type
@@ -1026,9 +1023,11 @@ This style guide emphasizes:
 1. **Modern JavaScript**: Use ES6+ features, async/await, and ES modules
 2. **Robust Error Handling**: Custom error classes and centralized handling
 3. **Event-Driven Patterns**: Decoupled components with event bus architecture
-4. **Real-Time Communication**: Resilient WebSocket implementations with reconnection
+4. **Real-Time Communication**: Resilient WebSocket implementations with
+   reconnection
 5. **Performance**: Event aggregation and efficient async patterns
 6. **Testing**: Comprehensive test coverage with proper mocking
 7. **Code Quality**: Consistent formatting and thorough documentation
 
-Follow these patterns to build maintainable, scalable real-time applications suitable for game mods and similar event-driven systems.
+Follow these patterns to build maintainable, scalable real-time applications
+suitable for game mods and similar event-driven systems.

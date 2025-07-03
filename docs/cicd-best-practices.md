@@ -1,6 +1,8 @@
 # CI/CD Best Practices for Multi-Language Projects
 
-This guide provides comprehensive CI/CD configuration templates and best practices for the JimBot project, which uses Python, Lua, C++, Protocol Buffers, and various databases.
+This guide provides comprehensive CI/CD configuration templates and best
+practices for the JimBot project, which uses Python, Lua, C++, Protocol Buffers,
+and various databases.
 
 ## Table of Contents
 
@@ -17,6 +19,7 @@ This guide provides comprehensive CI/CD configuration templates and best practic
 ## Overview
 
 The JimBot project requires a comprehensive CI/CD pipeline that handles:
+
 - Multiple programming languages (Python, Lua, C++, Protocol Buffers)
 - GPU-accelerated machine learning workloads
 - Microservices architecture with Docker
@@ -34,9 +37,9 @@ name: Main CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, 'feature/**' ]
+    branches: [main, develop, 'feature/**']
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   schedule:
     # Run nightly for security updates
     - cron: '0 2 * * *'
@@ -55,51 +58,51 @@ jobs:
     name: Format Check
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Full history for better diffing
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better diffing
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install formatters
-      run: |
-        # Python formatters
-        pip install black isort
-        
-        # Lua formatter
-        wget https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux.zip
-        unzip stylua-linux.zip
-        chmod +x stylua
-        sudo mv stylua /usr/local/bin/
-        
-        # C++ formatter
-        sudo apt-get update
-        sudo apt-get install -y clang-format-15
-        
-        # Protocol Buffers formatter
-        go install github.com/bufbuild/buf/cmd/buf@latest
-        echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
+      - name: Install formatters
+        run: |
+          # Python formatters
+          pip install black isort
 
-    - name: Check Python formatting
-      run: |
-        black --check jimbot tests scripts
-        isort --check-only jimbot tests scripts
+          # Lua formatter
+          wget https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux.zip
+          unzip stylua-linux.zip
+          chmod +x stylua
+          sudo mv stylua /usr/local/bin/
 
-    - name: Check Lua formatting
-      run: |
-        find . -name "*.lua" -type f | xargs stylua --check
+          # C++ formatter
+          sudo apt-get update
+          sudo apt-get install -y clang-format-15
 
-    - name: Check C++ formatting
-      run: |
-        find . -name "*.cpp" -o -name "*.h" | xargs clang-format-15 --dry-run --Werror
+          # Protocol Buffers formatter
+          go install github.com/bufbuild/buf/cmd/buf@latest
+          echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
 
-    - name: Check Protocol Buffers formatting
-      run: |
-        buf format --diff
+      - name: Check Python formatting
+        run: |
+          black --check jimbot tests scripts
+          isort --check-only jimbot tests scripts
+
+      - name: Check Lua formatting
+        run: |
+          find . -name "*.lua" -type f | xargs stylua --check
+
+      - name: Check C++ formatting
+        run: |
+          find . -name "*.cpp" -o -name "*.h" | xargs clang-format-15 --dry-run --Werror
+
+      - name: Check Protocol Buffers formatting
+        run: |
+          buf format --diff
 
   # Job 2: Linting for all languages
   lint:
@@ -117,68 +120,70 @@ jobs:
             files: 'jimbot/memgraph/mage_modules'
           - language: protobuf
             files: 'jimbot/proto'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/pip
-          ~/.luarocks
-          ~/.cache/buf
-        key: ${{ runner.os }}-lint-${{ matrix.language }}-${{ hashFiles('**/requirements*.txt', '**/rockspec', '**/buf.yaml') }}
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.luarocks
+            ~/.cache/buf
+          key:
+            ${{ runner.os }}-lint-${{ matrix.language }}-${{
+            hashFiles('**/requirements*.txt', '**/rockspec', '**/buf.yaml') }}
 
-    - name: Install linters
-      run: |
-        case "${{ matrix.language }}" in
-          python)
-            pip install flake8 mypy pylint bandit safety
-            pip install -r jimbot/infrastructure/requirements.txt
-            ;;
-          lua)
-            sudo apt-get update
-            sudo apt-get install -y lua5.4 luarocks
-            sudo luarocks install luacheck
-            ;;
-          cpp)
-            sudo apt-get update
-            sudo apt-get install -y clang-tidy-15 cppcheck
-            ;;
-          protobuf)
-            go install github.com/bufbuild/buf/cmd/buf@latest
-            echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
-            ;;
-        esac
+      - name: Install linters
+        run: |
+          case "${{ matrix.language }}" in
+            python)
+              pip install flake8 mypy pylint bandit safety
+              pip install -r jimbot/infrastructure/requirements.txt
+              ;;
+            lua)
+              sudo apt-get update
+              sudo apt-get install -y lua5.4 luarocks
+              sudo luarocks install luacheck
+              ;;
+            cpp)
+              sudo apt-get update
+              sudo apt-get install -y clang-tidy-15 cppcheck
+              ;;
+            protobuf)
+              go install github.com/bufbuild/buf/cmd/buf@latest
+              echo "export PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
+              ;;
+          esac
 
-    - name: Run linters
-      run: |
-        case "${{ matrix.language }}" in
-          python)
-            flake8 ${{ matrix.files }} --config=.flake8
-            mypy ${{ matrix.files }} --config-file=mypy.ini
-            pylint ${{ matrix.files }} --rcfile=.pylintrc
-            bandit -r ${{ matrix.files }} -ll
-            safety check
-            ;;
-          lua)
-            luacheck ${{ matrix.files }} --config .luacheckrc
-            ;;
-          cpp)
-            find ${{ matrix.files }} -name "*.cpp" -o -name "*.h" | xargs clang-tidy-15
-            cppcheck --enable=all --error-exitcode=1 ${{ matrix.files }}
-            ;;
-          protobuf)
-            cd ${{ matrix.files }} && buf lint
-            ;;
-        esac
+      - name: Run linters
+        run: |
+          case "${{ matrix.language }}" in
+            python)
+              flake8 ${{ matrix.files }} --config=.flake8
+              mypy ${{ matrix.files }} --config-file=mypy.ini
+              pylint ${{ matrix.files }} --rcfile=.pylintrc
+              bandit -r ${{ matrix.files }} -ll
+              safety check
+              ;;
+            lua)
+              luacheck ${{ matrix.files }} --config .luacheckrc
+              ;;
+            cpp)
+              find ${{ matrix.files }} -name "*.cpp" -o -name "*.h" | xargs clang-tidy-15
+              cppcheck --enable=all --error-exitcode=1 ${{ matrix.files }}
+              ;;
+            protobuf)
+              cd ${{ matrix.files }} && buf lint
+              ;;
+          esac
 
   # Job 3: Unit tests with coverage
   test-unit:
@@ -188,103 +193,105 @@ jobs:
     strategy:
       matrix:
         component: [mcp, memgraph, training, llm, analytics, infrastructure]
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.component }}-${{ hashFiles('**/requirements*.txt') }}
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key:
+            ${{ runner.os }}-pip-${{ matrix.component }}-${{
+            hashFiles('**/requirements*.txt') }}
 
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip setuptools wheel
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-cov pytest-asyncio pytest-benchmark pytest-timeout
-        if [ -f "jimbot/${{ matrix.component }}/requirements.txt" ]; then
-          pip install -r jimbot/${{ matrix.component }}/requirements.txt
-        fi
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install -r jimbot/infrastructure/requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-benchmark pytest-timeout
+          if [ -f "jimbot/${{ matrix.component }}/requirements.txt" ]; then
+            pip install -r jimbot/${{ matrix.component }}/requirements.txt
+          fi
 
-    - name: Run unit tests
-      run: |
-        pytest jimbot/tests/unit/${{ matrix.component }}/ \
-          -v \
-          --cov=jimbot.${{ matrix.component }} \
-          --cov-report=xml \
-          --cov-report=term-missing \
-          --cov-fail-under=80 \
-          --benchmark-skip \
-          --timeout=300
+      - name: Run unit tests
+        run: |
+          pytest jimbot/tests/unit/${{ matrix.component }}/ \
+            -v \
+            --cov=jimbot.${{ matrix.component }} \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80 \
+            --benchmark-skip \
+            --timeout=300
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unit-${{ matrix.component }}
-        name: unit-${{ matrix.component }}-coverage
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unit-${{ matrix.component }}
+          name: unit-${{ matrix.component }}-coverage
 
   # Job 4: Integration tests
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: test-unit
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Start test services
-      run: |
-        docker-compose -f docker-compose.minimal.yml up -d
-        docker-compose -f jimbot/deployment/docker-compose.yml up -d test-services
-        
-        # Wait for services to be healthy
-        timeout 300s bash -c 'until docker ps | grep -E "healthy|running" | wc -l | grep -q "$(docker ps -q | wc -l)"; do sleep 5; done'
+      - name: Start test services
+        run: |
+          docker-compose -f docker-compose.minimal.yml up -d
+          docker-compose -f jimbot/deployment/docker-compose.yml up -d test-services
 
-    - name: Run integration tests
-      run: |
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-asyncio pytest-timeout requests
-        
-        pytest jimbot/tests/integration/ \
-          -v \
-          --timeout=600 \
-          --tb=short
+          # Wait for services to be healthy
+          timeout 300s bash -c 'until docker ps | grep -E "healthy|running" | wc -l | grep -q "$(docker ps -q | wc -l)"; do sleep 5; done'
 
-    - name: Collect service logs
-      if: failure()
-      run: |
-        docker-compose logs > docker-logs.txt
-        docker ps -a
+      - name: Run integration tests
+        run: |
+          pip install -r jimbot/infrastructure/requirements.txt
+          pip install pytest pytest-asyncio pytest-timeout requests
 
-    - name: Upload logs
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: integration-test-logs
-        path: docker-logs.txt
+          pytest jimbot/tests/integration/ \
+            -v \
+            --timeout=600 \
+            --tb=short
 
-    - name: Stop services
-      if: always()
-      run: |
-        docker-compose -f docker-compose.minimal.yml down -v
-        docker-compose -f jimbot/deployment/docker-compose.yml down -v
+      - name: Collect service logs
+        if: failure()
+        run: |
+          docker-compose logs > docker-logs.txt
+          docker ps -a
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-logs
+          path: docker-logs.txt
+
+      - name: Stop services
+        if: always()
+        run: |
+          docker-compose -f docker-compose.minimal.yml down -v
+          docker-compose -f jimbot/deployment/docker-compose.yml down -v
 
   # Job 5: GPU tests (self-hosted runner required)
   test-gpu:
@@ -292,37 +299,37 @@ jobs:
     runs-on: [self-hosted, gpu]
     needs: test-unit
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python with CUDA
-      run: |
-        # Assuming CUDA is pre-installed on self-hosted runner
-        python -m venv venv-gpu
-        source venv-gpu/bin/activate
-        pip install --upgrade pip
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-        pip install -r jimbot/training/requirements.txt
+      - name: Set up Python with CUDA
+        run: |
+          # Assuming CUDA is pre-installed on self-hosted runner
+          python -m venv venv-gpu
+          source venv-gpu/bin/activate
+          pip install --upgrade pip
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+          pip install -r jimbot/training/requirements.txt
 
-    - name: Verify GPU availability
-      run: |
-        source venv-gpu/bin/activate
-        python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
+      - name: Verify GPU availability
+        run: |
+          source venv-gpu/bin/activate
+          python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
 
-    - name: Run GPU tests
-      run: |
-        source venv-gpu/bin/activate
-        pytest jimbot/tests/unit/training/ \
-          -v \
-          -m gpu \
-          --timeout=1800
+      - name: Run GPU tests
+        run: |
+          source venv-gpu/bin/activate
+          pytest jimbot/tests/unit/training/ \
+            -v \
+            -m gpu \
+            --timeout=1800
 
-    - name: Run training smoke test
-      run: |
-        source venv-gpu/bin/activate
-        python -m jimbot.training.run --test-mode --max-iterations=10
+      - name: Run training smoke test
+        run: |
+          source venv-gpu/bin/activate
+          python -m jimbot.training.run --test-mode --max-iterations=10
 
   # Job 6: Build and test Docker images
   build-docker:
@@ -332,61 +339,63 @@ jobs:
     strategy:
       matrix:
         service: [mcp, ray, claude, analytics, memgraph]
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Docker Hub
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
-    - name: Build and test image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
-        target: test
-        load: true
-        tags: jimbot/${{ matrix.service }}:test
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and test image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file:
+            jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
+          target: test
+          load: true
+          tags: jimbot/${{ matrix.service }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Run container tests
-      run: |
-        docker run --rm jimbot/${{ matrix.service }}:test pytest /app/tests/
+      - name: Run container tests
+        run: |
+          docker run --rm jimbot/${{ matrix.service }}:test pytest /app/tests/
 
-    - name: Security scan with Trivy
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: jimbot/${{ matrix.service }}:test
-        format: 'sarif'
-        output: 'trivy-${{ matrix.service }}.sarif'
-        severity: 'CRITICAL,HIGH'
+      - name: Security scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: jimbot/${{ matrix.service }}:test
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
 
-    - name: Upload Trivy results
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: 'trivy-${{ matrix.service }}.sarif'
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-${{ matrix.service }}.sarif'
 
-    - name: Build and push production image
-      if: github.event_name != 'pull_request'
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
-        push: true
-        tags: |
-          jimbot/${{ matrix.service }}:latest
-          jimbot/${{ matrix.service }}:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push production image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file:
+            jimbot/deployment/docker/services/Dockerfile.${{ matrix.service }}
+          push: true
+          tags: |
+            jimbot/${{ matrix.service }}:latest
+            jimbot/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # Job 7: Performance benchmarks
   benchmark:
@@ -394,69 +403,69 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-docker
     if: github.event_name == 'push'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install dependencies
-      run: |
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-benchmark
+      - name: Install dependencies
+        run: |
+          pip install -r jimbot/infrastructure/requirements.txt
+          pip install pytest pytest-benchmark
 
-    - name: Run benchmarks
-      run: |
-        pytest jimbot/tests/performance/ \
-          --benchmark-only \
-          --benchmark-json=benchmark.json \
-          --benchmark-autosave
+      - name: Run benchmarks
+        run: |
+          pytest jimbot/tests/performance/ \
+            --benchmark-only \
+            --benchmark-json=benchmark.json \
+            --benchmark-autosave
 
-    - name: Store benchmark results
-      uses: benchmark-action/github-action-benchmark@v1
-      with:
-        tool: 'pytest'
-        output-file-path: benchmark.json
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: true
-        comment-on-alert: true
-        alert-threshold: '150%'
-        fail-on-alert: true
+      - name: Store benchmark results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'pytest'
+          output-file-path: benchmark.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          comment-on-alert: true
+          alert-threshold: '150%'
+          fail-on-alert: true
 
   # Job 8: Documentation build
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
     needs: format-check
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install documentation tools
-      run: |
-        pip install sphinx sphinx-rtd-theme myst-parser autodoc
+      - name: Install documentation tools
+        run: |
+          pip install sphinx sphinx-rtd-theme myst-parser autodoc
 
-    - name: Build documentation
-      run: |
-        cd docs
-        make clean
-        make html
+      - name: Build documentation
+        run: |
+          cd docs
+          make clean
+          make html
 
-    - name: Upload documentation
-      uses: actions/upload-artifact@v4
-      with:
-        name: documentation
-        path: docs/_build/html/
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/_build/html/
 
   # Job 9: Release
   release:
@@ -464,38 +473,39 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-docker, test-integration, benchmark]
     if: startsWith(github.ref, 'refs/tags/v')
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Generate changelog
-      id: changelog
-      run: |
-        # Generate changelog from commits
-        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-        git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from commits
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-    - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          ## Changes in this release
-          ${{ steps.changelog.outputs.CHANGELOG }}
-          
-          ## Docker Images
-          - `jimbot/mcp:${{ github.ref_name }}`
-          - `jimbot/ray:${{ github.ref_name }}`
-          - `jimbot/claude:${{ github.ref_name }}`
-          - `jimbot/analytics:${{ github.ref_name }}`
-          - `jimbot/memgraph:${{ github.ref_name }}`
-        draft: false
-        prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') }}
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## Changes in this release
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ## Docker Images
+            - `jimbot/mcp:${{ github.ref_name }}`
+            - `jimbot/ray:${{ github.ref_name }}`
+            - `jimbot/claude:${{ github.ref_name }}`
+            - `jimbot/analytics:${{ github.ref_name }}`
+            - `jimbot/memgraph:${{ github.ref_name }}`
+          draft: false
+          prerelease:
+            ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') }}
 ```
 
 ### Language-Specific Workflows
@@ -521,43 +531,43 @@ jobs:
   lua-checks:
     name: Lua Checks
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Lua
-      uses: leafo/gh-actions-lua@v10
-      with:
-        luaVersion: "5.4"
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: '5.4'
 
-    - name: Set up LuaRocks
-      uses: leafo/gh-actions-luarocks@v4
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
 
-    - name: Install dependencies
-      run: |
-        luarocks install luacheck
-        luarocks install luacov
-        luarocks install busted
+      - name: Install dependencies
+        run: |
+          luarocks install luacheck
+          luarocks install luacov
+          luarocks install busted
 
-    - name: Run luacheck
-      run: |
-        luacheck . --config .luacheckrc
+      - name: Run luacheck
+        run: |
+          luacheck . --config .luacheckrc
 
-    - name: Run tests
-      run: |
-        busted --coverage
+      - name: Run tests
+        run: |
+          busted --coverage
 
-    - name: Generate coverage report
-      run: |
-        luacov
-        luacov-console
+      - name: Generate coverage report
+        run: |
+          luacov
+          luacov-console
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./luacov.report.out
-        flags: lua
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./luacov.report.out
+          flags: lua
 ```
 
 Create `.github/workflows/cpp-ci.yml`:
@@ -581,52 +591,52 @@ jobs:
   cpp-checks:
     name: C++ Checks
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake clang-15 clang-tidy-15 cppcheck lcov
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang-15 clang-tidy-15 cppcheck lcov
 
-    - name: Configure CMake
-      run: |
-        cmake -B build \
-          -DCMAKE_C_COMPILER=clang-15 \
-          -DCMAKE_CXX_COMPILER=clang++-15 \
-          -DCMAKE_BUILD_TYPE=Debug \
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-          -DENABLE_COVERAGE=ON
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_C_COMPILER=clang-15 \
+            -DCMAKE_CXX_COMPILER=clang++-15 \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENABLE_COVERAGE=ON
 
-    - name: Run clang-tidy
-      run: |
-        find . -name "*.cpp" -o -name "*.h" | xargs clang-tidy-15 -p build
+      - name: Run clang-tidy
+        run: |
+          find . -name "*.cpp" -o -name "*.h" | xargs clang-tidy-15 -p build
 
-    - name: Run cppcheck
-      run: |
-        cppcheck --enable=all --error-exitcode=1 --project=build/compile_commands.json
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=all --error-exitcode=1 --project=build/compile_commands.json
 
-    - name: Build
-      run: |
-        cmake --build build --parallel
+      - name: Build
+        run: |
+          cmake --build build --parallel
 
-    - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
 
-    - name: Generate coverage
-      run: |
-        lcov --capture --directory build --output-file coverage.info
-        lcov --remove coverage.info '/usr/*' --output-file coverage.info
+      - name: Generate coverage
+        run: |
+          lcov --capture --directory build --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./coverage.info
-        flags: cpp
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.info
+          flags: cpp
 ```
 
 ## Pre-commit Framework
@@ -749,7 +759,7 @@ repos:
       - id: commitizen
         stages: [commit-msg]
 
-# Local hooks
+  # Local hooks
   - repo: local
     hooks:
       - id: pytest-check
@@ -797,7 +807,7 @@ command_exists() {
 # Function to install system dependencies
 install_system_deps() {
     echo -e "${YELLOW}Installing system dependencies...${NC}"
-    
+
     if [[ "$OS" == "linux" ]]; then
         sudo apt-get update
         sudo apt-get install -y \
@@ -808,13 +818,13 @@ install_system_deps() {
             git curl wget \
             docker.io docker-compose \
             nvidia-docker2  # For GPU support
-            
+
     elif [[ "$OS" == "macos" ]]; then
         # Install Homebrew if not present
         if ! command_exists brew; then
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         fi
-        
+
         brew update
         brew install \
             python@3.10 \
@@ -822,7 +832,7 @@ install_system_deps() {
             cmake llvm \
             protobuf \
             docker docker-compose
-            
+
     elif [[ "$OS" == "windows" ]]; then
         echo "Please install the following manually:"
         echo "- Python 3.10 from python.org"
@@ -837,26 +847,26 @@ install_system_deps() {
 # Function to setup Python environment
 setup_python() {
     echo -e "${YELLOW}Setting up Python environment...${NC}"
-    
+
     # Create virtual environment
     python3.10 -m venv venv
     source venv/bin/activate
-    
+
     # Upgrade pip and install base tools
     pip install --upgrade pip setuptools wheel
-    
+
     # Install development dependencies
     pip install \
         black isort flake8 mypy pylint bandit safety \
         pytest pytest-cov pytest-asyncio pytest-benchmark pytest-timeout \
         pre-commit \
         sphinx sphinx-rtd-theme myst-parser
-    
+
     # Install project requirements
     if [[ -f "jimbot/infrastructure/requirements.txt" ]]; then
         pip install -r jimbot/infrastructure/requirements.txt
     fi
-    
+
     # Install component-specific requirements
     for req in jimbot/*/requirements.txt; do
         if [[ -f "$req" ]]; then
@@ -869,13 +879,13 @@ setup_python() {
 # Function to setup Lua environment
 setup_lua() {
     echo -e "${YELLOW}Setting up Lua environment...${NC}"
-    
+
     # Install Lua development tools
     sudo luarocks install luacheck
     sudo luarocks install luacov
     sudo luarocks install busted
     sudo luarocks install penlight
-    
+
     # Download and install StyLua
     if [[ "$OS" == "linux" ]]; then
         wget https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux.zip
@@ -895,10 +905,10 @@ setup_lua() {
 # Function to setup C++ environment
 setup_cpp() {
     echo -e "${YELLOW}Setting up C++ environment...${NC}"
-    
+
     # Create build directory
     mkdir -p build
-    
+
     # Configure CMake
     cmake -B build \
         -DCMAKE_BUILD_TYPE=Debug \
@@ -910,14 +920,14 @@ setup_cpp() {
 # Function to setup Protocol Buffers
 setup_protobuf() {
     echo -e "${YELLOW}Setting up Protocol Buffers...${NC}"
-    
+
     # Install buf
     if ! command_exists buf; then
         curl -sSL https://github.com/bufbuild/buf/releases/latest/download/buf-Linux-x86_64 -o buf
         chmod +x buf
         sudo mv buf /usr/local/bin/
     fi
-    
+
     # Compile proto files
     cd jimbot/proto
     protoc --python_out=.. *.proto
@@ -927,7 +937,7 @@ setup_protobuf() {
 # Function to setup pre-commit hooks
 setup_precommit() {
     echo -e "${YELLOW}Setting up pre-commit hooks...${NC}"
-    
+
     pre-commit install
     pre-commit install --hook-type commit-msg
     pre-commit run --all-files || true  # Run once to download all tools
@@ -936,13 +946,13 @@ setup_precommit() {
 # Function to setup Docker environment
 setup_docker() {
     echo -e "${YELLOW}Setting up Docker environment...${NC}"
-    
+
     # Add user to docker group
     if [[ "$OS" == "linux" ]]; then
         sudo usermod -aG docker $USER
         echo "You may need to log out and back in for docker group changes to take effect"
     fi
-    
+
     # Pull base images
     docker pull python:3.10-slim
     docker pull ubuntu:22.04
@@ -954,7 +964,7 @@ setup_docker() {
 # Function to create configuration files
 create_configs() {
     echo -e "${YELLOW}Creating configuration files...${NC}"
-    
+
     # Create .env file
     if [[ ! -f ".env" ]]; then
         cat > .env << EOF
@@ -986,7 +996,7 @@ CLAUDE_API_KEY=your-api-key-here
 CLAUDE_RATE_LIMIT=100
 EOF
     fi
-    
+
     # Create .flake8
     if [[ ! -f ".flake8" ]]; then
         cat > .flake8 << EOF
@@ -997,7 +1007,7 @@ exclude = .git,__pycache__,venv,build,dist
 max-complexity = 10
 EOF
     fi
-    
+
     # Create mypy.ini
     if [[ ! -f "mypy.ini" ]]; then
         cat > mypy.ini << EOF
@@ -1010,12 +1020,12 @@ ignore_missing_imports = True
 exclude = venv|build|dist
 EOF
     fi
-    
+
     # Create .pylintrc
     if [[ ! -f ".pylintrc" ]]; then
         pylint --generate-rcfile > .pylintrc
     fi
-    
+
     # Create .luacheckrc
     if [[ ! -f ".luacheckrc" ]]; then
         cat > .luacheckrc << EOF
@@ -1026,7 +1036,7 @@ globals = {"G", "SMODS", "love"}
 exclude_files = {"libs/*", "vendor/*"}
 EOF
     fi
-    
+
     # Create .clang-format
     if [[ ! -f ".clang-format" ]]; then
         cat > .clang-format << EOF
@@ -1039,7 +1049,7 @@ AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: Never
 EOF
     fi
-    
+
     # Create buf.yaml
     if [[ ! -f "buf.yaml" ]]; then
         cat > buf.yaml << EOF
@@ -1057,9 +1067,9 @@ EOF
 # Function to verify installation
 verify_installation() {
     echo -e "${YELLOW}Verifying installation...${NC}"
-    
+
     local all_good=true
-    
+
     # Check Python
     if python --version | grep -q "3.10"; then
         echo -e "${GREEN}✓ Python 3.10${NC}"
@@ -1067,7 +1077,7 @@ verify_installation() {
         echo -e "${RED}✗ Python 3.10${NC}"
         all_good=false
     fi
-    
+
     # Check Lua
     if lua -v | grep -q "5.4"; then
         echo -e "${GREEN}✓ Lua 5.4${NC}"
@@ -1075,7 +1085,7 @@ verify_installation() {
         echo -e "${RED}✗ Lua 5.4${NC}"
         all_good=false
     fi
-    
+
     # Check Docker
     if docker --version > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Docker${NC}"
@@ -1083,7 +1093,7 @@ verify_installation() {
         echo -e "${RED}✗ Docker${NC}"
         all_good=false
     fi
-    
+
     # Check pre-commit
     if pre-commit --version > /dev/null 2>&1; then
         echo -e "${GREEN}✓ pre-commit${NC}"
@@ -1091,7 +1101,7 @@ verify_installation() {
         echo -e "${RED}✗ pre-commit${NC}"
         all_good=false
     fi
-    
+
     if $all_good; then
         echo -e "${GREEN}All dependencies installed successfully!${NC}"
     else
@@ -1107,26 +1117,26 @@ main() {
         echo -e "${RED}Please run this script from the project root directory${NC}"
         exit 1
     fi
-    
+
     # Install system dependencies
     install_system_deps
-    
+
     # Setup language environments
     setup_python
     setup_lua
     setup_cpp
     setup_protobuf
-    
+
     # Setup development tools
     setup_precommit
     setup_docker
-    
+
     # Create configuration files
     create_configs
-    
+
     # Verify installation
     verify_installation
-    
+
     echo -e "${GREEN}Development environment setup complete!${NC}"
     echo ""
     echo "Next steps:"
@@ -1180,7 +1190,7 @@ services:
   jupyter:
     image: jupyter/tensorflow-notebook:latest
     ports:
-      - "8888:8888"
+      - '8888:8888'
     volumes:
       - .:/home/jovyan/work
     environment:
@@ -1192,7 +1202,7 @@ services:
   sonarqube:
     image: sonarqube:community
     ports:
-      - "9001:9000"
+      - '9001:9000'
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     volumes:
@@ -1210,7 +1220,7 @@ services:
       - POSTGRES_USER=jimbot
       - POSTGRES_PASSWORD=testpass
     ports:
-      - "5433:5432"
+      - '5433:5432'
     networks:
       - jimbot
 
@@ -1218,7 +1228,7 @@ services:
   redis-dev:
     image: redis:7-alpine
     ports:
-      - "6380:6379"
+      - '6380:6379'
     networks:
       - jimbot
 
@@ -1226,7 +1236,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - '9090:9090'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
@@ -1236,7 +1246,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - '3001:3000'
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
@@ -1337,54 +1347,54 @@ name: Code Quality
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   sonarqube:
     name: SonarQube Analysis
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for better analysis
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for better analysis
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: |
-        pip install coverage pytest pytest-cov
+      - name: Install dependencies
+        run: |
+          pip install coverage pytest pytest-cov
 
-    - name: Run tests with coverage
-      run: |
-        pytest --cov=jimbot --cov-report=xml --cov-report=term
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=jimbot --cov-report=xml --cov-report=term
 
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   codeclimate:
     name: CodeClimate Analysis
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
 
-    - name: Run CodeClimate
-      uses: paambaati/codeclimate-action@v5.0.0
-      env:
-        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-      with:
-        coverageCommand: pytest --cov=jimbot --cov-report=xml
-        debug: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run CodeClimate
+        uses: paambaati/codeclimate-action@v5.0.0
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageCommand: pytest --cov=jimbot --cov-report=xml
+          debug: true
 
   codeql:
     name: CodeQL Analysis
@@ -1393,26 +1403,26 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    
+
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'python', 'cpp' ]
-    
+        language: ['python', 'cpp']
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 ```
 
 ## Automated Dependency Updates
@@ -1423,48 +1433,48 @@ Create `.github/dependabot.yml`:
 version: 2
 updates:
   # Python dependencies
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: 'pip'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
-      - "python"
+      - 'dependencies'
+      - 'python'
     reviewers:
-      - "spencerduncan"
+      - 'spencerduncan'
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
 
   # Docker dependencies
-  - package-ecosystem: "docker"
-    directory: "/jimbot/deployment/docker/services"
+  - package-ecosystem: 'docker'
+    directory: '/jimbot/deployment/docker/services'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     labels:
-      - "dependencies"
-      - "docker"
+      - 'dependencies'
+      - 'docker'
 
   # GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     labels:
-      - "dependencies"
-      - "github-actions"
+      - 'dependencies'
+      - 'github-actions'
 
   # npm dependencies (if any)
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     labels:
-      - "dependencies"
-      - "javascript"
+      - 'dependencies'
+      - 'javascript'
 ```
 
 Create `.github/renovate.json` (alternative to Dependabot):
@@ -1472,9 +1482,7 @@ Create `.github/renovate.json` (alternative to Dependabot):
 ```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
+  "extends": ["config:base"],
   "packageRules": [
     {
       "description": "Automatically merge minor and patch updates",
@@ -1529,12 +1537,12 @@ name: GPU Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'jimbot/training/**'
       - 'jimbot/memgraph/mage_modules/**'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'jimbot/training/**'
       - 'jimbot/memgraph/mage_modules/**'
@@ -1549,51 +1557,51 @@ jobs:
     container:
       image: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
       options: --gpus all
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python with CUDA
-      run: |
-        apt-get update
-        apt-get install -y python3.10 python3.10-dev python3-pip
-        pip3 install --upgrade pip
-        pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+      - name: Set up Python with CUDA
+        run: |
+          apt-get update
+          apt-get install -y python3.10 python3.10-dev python3-pip
+          pip3 install --upgrade pip
+          pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-    - name: Install dependencies
-      run: |
-        pip3 install -r jimbot/training/requirements.txt
-        pip3 install pytest pytest-timeout pytest-benchmark
+      - name: Install dependencies
+        run: |
+          pip3 install -r jimbot/training/requirements.txt
+          pip3 install pytest pytest-timeout pytest-benchmark
 
-    - name: Verify GPU availability
-      run: |
-        nvidia-smi
-        python3 -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
+      - name: Verify GPU availability
+        run: |
+          nvidia-smi
+          python3 -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
 
-    - name: Run GPU unit tests
-      run: |
-        pytest jimbot/tests/unit/training/ -v -m gpu --timeout=1800
+      - name: Run GPU unit tests
+        run: |
+          pytest jimbot/tests/unit/training/ -v -m gpu --timeout=1800
 
-    - name: Run GPU integration tests
-      run: |
-        pytest jimbot/tests/integration/gpu/ -v --timeout=3600
+      - name: Run GPU integration tests
+        run: |
+          pytest jimbot/tests/integration/gpu/ -v --timeout=3600
 
-    - name: Run training benchmark
-      run: |
-        python3 -m jimbot.training.run --benchmark --max-iterations=100
+      - name: Run training benchmark
+        run: |
+          python3 -m jimbot.training.run --benchmark --max-iterations=100
 
-    - name: Profile GPU memory usage
-      run: |
-        nsys profile --stats=true python3 -m jimbot.training.run --profile --max-iterations=10
+      - name: Profile GPU memory usage
+        run: |
+          nsys profile --stats=true python3 -m jimbot.training.run --profile --max-iterations=10
 
-    - name: Upload profiling results
-      uses: actions/upload-artifact@v4
-      with:
-        name: gpu-profiling-results
-        path: |
-          *.qdrep
-          *.sqlite
+      - name: Upload profiling results
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpu-profiling-results
+          path: |
+            *.qdrep
+            *.sqlite
 ```
 
 ## Best Practices
@@ -1615,23 +1623,27 @@ Create `docs/cicd-practices.md`:
 ## Language-Specific Guidelines
 
 ### Python
+
 - Use `black` for consistent formatting
 - Run `mypy` for type checking
 - Minimum 80% code coverage
 - Use `pytest-xdist` for parallel test execution
 
 ### Lua
+
 - Use `stylua` for formatting
 - Run `luacheck` for static analysis
 - Test with multiple Lua versions if supporting multiple
 
 ### C++
+
 - Use `clang-format` for consistent style
 - Run `clang-tidy` and `cppcheck` for static analysis
 - Use `AddressSanitizer` in debug builds
 - Generate coverage reports with `lcov`
 
 ### Protocol Buffers
+
 - Use `buf` for linting and breaking change detection
 - Version your schemas properly
 - Generate code in CI to ensure consistency
@@ -1702,9 +1714,11 @@ This comprehensive CI/CD configuration provides:
 3. **Docker integration**: Build, test, and push container images
 4. **Code quality**: Multiple static analysis and security scanning tools
 5. **Automated updates**: Dependabot and Renovate configurations
-6. **Development environment**: Scripts and Docker setup for consistent dev environments
+6. **Development environment**: Scripts and Docker setup for consistent dev
+   environments
 7. **Pre-commit hooks**: Catch issues before they reach CI
 8. **Performance tracking**: Benchmark results and profiling
 9. **Documentation**: Comprehensive best practices guide
 
-The configuration is modular and can be adapted based on specific project needs while maintaining high code quality standards.
+The configuration is modular and can be adapted based on specific project needs
+while maintaining high code quality standards.

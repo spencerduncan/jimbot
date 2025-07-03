@@ -2,21 +2,25 @@
 
 ## Overview
 
-The BalatroMCP mod enables Balatro to run in headless mode for AI integration. This guide explains how to install, configure, and use the mod with the JimBot system.
+The BalatroMCP mod enables Balatro to run in headless mode for AI integration.
+This guide explains how to install, configure, and use the mod with the JimBot
+system.
 
 ## Installation
 
 1. **Copy the mod to Balatro**:
+
    ```bash
    # Copy the mods folder to your Balatro installation
    cp -r mods/ /path/to/balatro/
    ```
 
 2. **Test with mock server**:
+
    ```bash
    # Start the test event bus server
    python3 mods/BalatroMCP/test_server.py
-   
+
    # In another terminal, run Balatro
    ./run_balatro.sh
    ```
@@ -38,6 +42,7 @@ Edit `mods/BalatroMCP/config.json`:
 ### For AI Integration
 
 To enable AI control:
+
 1. Set `"auto_play": true`
 2. Ensure your AI decision service is running
 3. The mod will execute actions received from the AI
@@ -47,6 +52,7 @@ To enable AI control:
 ### 1. Verify Headless Mode
 
 When running with `"headless": true`, you should see:
+
 - No game window appears (or a black window)
 - Console shows mod initialization messages
 - CPU usage is lower than normal
@@ -54,6 +60,7 @@ When running with `"headless": true`, you should see:
 ### 2. Check Event Streaming
 
 With the test server running:
+
 ```bash
 # Terminal 1: Start test server
 python3 mods/BalatroMCP/test_server.py
@@ -72,6 +79,7 @@ python3 mods/BalatroMCP/test_server.py
 ### 3. Test Action Execution
 
 Enable auto-play and send test actions:
+
 ```python
 # Example: Send action to the mod
 import requests
@@ -105,6 +113,7 @@ ray start --head
 ### 2. Configure Mod for JimBot
 
 Update `config.json`:
+
 ```json
 {
   "event_bus_url": "http://localhost:8000/api/v1/events",
@@ -151,6 +160,7 @@ Update `config.json`:
 ### Adding Custom Events
 
 In `game_state_extractor.lua`:
+
 ```lua
 function GameStateExtractor:extract_custom_data()
     return {
@@ -162,8 +172,9 @@ end
 ### Adding New Actions
 
 In `action_executor.lua`:
+
 ```lua
-self.action_handlers["custom_action"] = function(params) 
+self.action_handlers["custom_action"] = function(params)
     -- Your action implementation
 end
 ```
@@ -171,6 +182,7 @@ end
 ### Debugging
 
 Enable verbose logging:
+
 ```json
 {
   "debug": true,

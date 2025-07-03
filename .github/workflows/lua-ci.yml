@@ -16,40 +16,40 @@ jobs:
   lua-checks:
     name: Lua Checks
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Lua
-      uses: leafo/gh-actions-lua@v10
-      with:
-        luaVersion: "5.4"
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: '5.4'
 
-    - name: Set up LuaRocks
-      uses: leafo/gh-actions-luarocks@v4
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
 
-    - name: Install dependencies
-      run: |
-        luarocks install luacheck
-        luarocks install luacov
-        luarocks install busted
+      - name: Install dependencies
+        run: |
+          luarocks install luacheck
+          luarocks install luacov
+          luarocks install busted
 
-    - name: Run luacheck
-      run: |
-        luacheck . --config .luacheckrc
+      - name: Run luacheck
+        run: |
+          luacheck . --config .luacheckrc
 
-    - name: Run tests
-      run: |
-        busted --coverage
+      - name: Run tests
+        run: |
+          busted --coverage
 
-    - name: Generate coverage report
-      run: |
-        luacov
-        luacov-console
+      - name: Generate coverage report
+        run: |
+          luacov
+          luacov-console
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./luacov.report.out
-        flags: lua
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./luacov.report.out
+          flags: lua

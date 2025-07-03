@@ -1,6 +1,7 @@
 # Docker and Docker Compose Best Practices for Machine Learning Projects
 
 ## Table of Contents
+
 1. [Dockerfile Best Practices](#dockerfile-best-practices)
 2. [Docker Compose Patterns](#docker-compose-patterns)
 3. [Volume Management and Data Persistence](#volume-management-and-data-persistence)
@@ -17,7 +18,9 @@
 
 ### Multi-Stage Builds for ML Projects
 
-Multi-stage builds can significantly reduce container size. For ML projects, this is crucial as dependencies like TensorFlow, PyTorch, and scientific libraries can be large.
+Multi-stage builds can significantly reduce container size. For ML projects,
+this is crucial as dependencies like TensorFlow, PyTorch, and scientific
+libraries can be large.
 
 ```dockerfile
 # Stage 1: Build stage with full development dependencies
@@ -124,9 +127,9 @@ services:
       dockerfile: Dockerfile.ray
     container_name: ray-head
     ports:
-      - "8265:8265"  # Ray dashboard
-      - "6379:6379"  # Ray GCS
-      - "10001:10001"  # Ray client
+      - '8265:8265' # Ray dashboard
+      - '6379:6379' # Ray GCS
+      - '10001:10001' # Ray client
     environment:
       - RAY_HEAD_SERVICE_HOST=ray-head
     command: ray start --head --dashboard-host 0.0.0.0
@@ -144,7 +147,7 @@ services:
       - ray-data:/tmp/ray
       - ./models:/models
     healthcheck:
-      test: ["CMD", "ray", "status"]
+      test: ['CMD', 'ray', 'status']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -184,8 +187,8 @@ services:
     image: memgraph/memgraph-platform:latest
     container_name: memgraph
     ports:
-      - "7687:7687"  # Bolt protocol
-      - "3000:3000"  # Memgraph Lab
+      - '7687:7687' # Bolt protocol
+      - '3000:3000' # Memgraph Lab
     environment:
       - MEMGRAPH_USER=memgraph
       - MEMGRAPH_PASSWORD=password
@@ -204,7 +207,18 @@ services:
     networks:
       - ml-network
     healthcheck:
-      test: ["CMD", "mg_client", "-u", "memgraph", "-p", "password", "--output-format=csv", "--execute", "RETURN 1"]
+      test:
+        [
+          'CMD',
+          'mg_client',
+          '-u',
+          'memgraph',
+          '-p',
+          'password',
+          '--output-format=csv',
+          '--execute',
+          'RETURN 1',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -214,9 +228,9 @@ services:
     image: questdb/questdb:latest
     container_name: questdb
     ports:
-      - "9000:9000"  # REST API & Web Console
-      - "8812:8812"  # PostgreSQL wire protocol
-      - "9009:9009"  # InfluxDB line protocol
+      - '9000:9000' # REST API & Web Console
+      - '8812:8812' # PostgreSQL wire protocol
+      - '9009:9009' # InfluxDB line protocol
     environment:
       - QDB_CAIRO_COMMIT_LAG=1000
       - QDB_CAIRO_MAX_UNCOMMITTED_ROWS=100000
@@ -235,7 +249,7 @@ services:
     networks:
       - ml-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -245,13 +259,13 @@ services:
     image: eventstore/eventstore:latest
     container_name: eventstore
     ports:
-      - "2113:2113"  # HTTP API & UI
-      - "1113:1113"  # TCP
+      - '2113:2113' # HTTP API & UI
+      - '1113:1113' # TCP
     environment:
       - EVENTSTORE_CLUSTER_SIZE=1
       - EVENTSTORE_RUN_PROJECTIONS=All
       - EVENTSTORE_START_STANDARD_PROJECTIONS=true
-      - EVENTSTORE_INSECURE=true  # Only for development
+      - EVENTSTORE_INSECURE=true # Only for development
       - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
     volumes:
       - eventstore-data:/var/lib/eventstore
@@ -267,7 +281,7 @@ services:
     networks:
       - ml-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:2113/health/live']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -345,7 +359,7 @@ volumes:
       o: bind
       device: /data/models
     labels:
-      backup: "daily"
+      backup: 'daily'
 
   # Training datasets
   datasets:
@@ -355,7 +369,7 @@ volumes:
       o: bind
       device: /data/datasets
     labels:
-      readonly: "true"
+      readonly: 'true'
 
   # Shared memory for Ray
   ray-shm:
@@ -487,7 +501,7 @@ services:
           memory: 12G
         reservations:
           cpus: '2'
-          memory: 10G  # 2GB safety margin
+          memory: 10G # 2GB safety margin
 
   # Elastic services that can scale
   ray-cluster:
@@ -544,18 +558,18 @@ services:
       - LOG_LEVEL=debug
       - DEBUG=true
     ports:
-      - "5678:5678"  # Python debugger
+      - '5678:5678' # Python debugger
     command: python -m debugpy --listen 0.0.0.0:5678 main.py
 
   memgraph:
     environment:
       - MEMGRAPH_TELEMETRY_ENABLED=false
     ports:
-      - "3000:3000"  # Memgraph Lab
+      - '3000:3000' # Memgraph Lab
 
   questdb:
     ports:
-      - "9000:9000"  # Web console
+      - '9000:9000' # Web console
 
   eventstore:
     environment:
@@ -624,7 +638,7 @@ docker-compose --env-file .env.production -f docker-compose.yml -f docker-compos
 services:
   ml-api:
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -633,7 +647,7 @@ services:
 
   ray-head:
     healthcheck:
-      test: ["CMD", "ray", "status"]
+      test: ['CMD', 'ray', 'status']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -652,7 +666,7 @@ services:
 
   questdb:
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -684,7 +698,7 @@ services:
 
   # Batch jobs - no restart
   data-migration:
-    restart: "no"
+    restart: 'no'
     deploy:
       restart_policy:
         condition: none
@@ -875,8 +889,8 @@ CMD ["python3", "train_gpu.py"]
 memgraph:
   image: memgraph/memgraph-platform:latest
   ports:
-    - "7687:7687"
-    - "3000:3000"
+    - '7687:7687'
+    - '3000:3000'
   environment:
     - MEMGRAPH_USER=memgraph
     - MEMGRAPH_PASSWORD=${MEMGRAPH_PASSWORD}
@@ -889,7 +903,7 @@ memgraph:
     - memgraph-data:/var/lib/memgraph
     - memgraph-log:/var/log/memgraph
     - ./memgraph/memgraph.conf:/etc/memgraph/memgraph.conf:ro
-  command: ["--log-level=WARNING", "--also-log-to-stderr"]
+  command: ['--log-level=WARNING', '--also-log-to-stderr']
 ```
 
 ### QuestDB Configuration
@@ -898,9 +912,9 @@ memgraph:
 questdb:
   image: questdb/questdb:latest
   ports:
-    - "9000:9000"  # REST API & Web Console
-    - "8812:8812"  # PostgreSQL wire protocol
-    - "9009:9009"  # InfluxDB line protocol
+    - '9000:9000' # REST API & Web Console
+    - '8812:8812' # PostgreSQL wire protocol
+    - '9009:9009' # InfluxDB line protocol
   environment:
     - QDB_CAIRO_COMMIT_LAG=1000
     - QDB_CAIRO_MAX_UNCOMMITTED_ROWS=100000
@@ -920,8 +934,8 @@ questdb:
 eventstore:
   image: eventstore/eventstore:latest
   ports:
-    - "2113:2113"
-    - "1113:1113"
+    - '2113:2113'
+    - '1113:1113'
   environment:
     - EVENTSTORE_CLUSTER_SIZE=1
     - EVENTSTORE_RUN_PROJECTIONS=All
@@ -943,9 +957,9 @@ ray-head:
     context: .
     dockerfile: Dockerfile.ray
   ports:
-    - "8265:8265"  # Dashboard
-    - "6379:6379"  # GCS
-    - "10001:10001"  # Client
+    - '8265:8265' # Dashboard
+    - '6379:6379' # GCS
+    - '10001:10001' # Client
   environment:
     - RAY_HEAD_SERVICE_HOST=ray-head
     - RAY_REDIS_PASSWORD=${RAY_REDIS_PASSWORD}
@@ -959,7 +973,7 @@ ray-head:
     --num-cpus=4
     --num-gpus=1
     --object-store-memory=2147483648
-  shm_size: 2g  # 30% of available RAM for Ray object store
+  shm_size: 2g # 30% of available RAM for Ray object store
 ```
 
 ## Example: Complete ML Project Configuration
@@ -1012,8 +1026,8 @@ services:
     container_name: memgraph
     restart: unless-stopped
     ports:
-      - "7687:7687"
-      - "3000:3000"
+      - '7687:7687'
+      - '3000:3000'
     environment:
       <<: *common-variables
       MEMGRAPH_USER: memgraph
@@ -1025,7 +1039,17 @@ services:
       - data
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "mg_client", "-u", "memgraph", "-p", "${MEMGRAPH_PASSWORD}", "--execute", "RETURN 1"]
+      test:
+        [
+          'CMD',
+          'mg_client',
+          '-u',
+          'memgraph',
+          '-p',
+          '${MEMGRAPH_PASSWORD}',
+          '--execute',
+          'RETURN 1',
+        ]
     deploy:
       resources:
         limits:
@@ -1040,9 +1064,9 @@ services:
     container_name: questdb
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "8812:8812"
-      - "9009:9009"
+      - '9000:9000'
+      - '8812:8812'
+      - '9009:9009'
     environment:
       <<: *common-variables
       QDB_TELEMETRY_ENABLED: false
@@ -1052,7 +1076,7 @@ services:
       - data
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000']
     deploy:
       resources:
         limits:
@@ -1064,8 +1088,8 @@ services:
     container_name: eventstore
     restart: unless-stopped
     ports:
-      - "2113:2113"
-      - "1113:1113"
+      - '2113:2113'
+      - '1113:1113'
     environment:
       <<: *common-variables
       EVENTSTORE_CLUSTER_SIZE: 1
@@ -1077,7 +1101,7 @@ services:
       - data
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:2113/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:2113/health/live']
     deploy:
       resources:
         limits:
@@ -1093,9 +1117,9 @@ services:
     container_name: ray-head
     restart: unless-stopped
     ports:
-      - "8265:8265"
-      - "6379:6379"
-      - "10001:10001"
+      - '8265:8265'
+      - '6379:6379'
+      - '10001:10001'
     environment:
       <<: *common-variables
       RAY_HEAD_SERVICE_HOST: ray-head
@@ -1108,7 +1132,7 @@ services:
     shm_size: 2g
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "ray", "status"]
+      test: ['CMD', 'ray', 'status']
     deploy:
       resources:
         limits:
@@ -1185,4 +1209,6 @@ secrets:
     file: ./secrets/api_keys.json
 ```
 
-This comprehensive guide provides best practices for Docker and Docker Compose specifically tailored for machine learning projects, with examples relevant to your JimBot project's technology stack.
+This comprehensive guide provides best practices for Docker and Docker Compose
+specifically tailored for machine learning projects, with examples relevant to
+your JimBot project's technology stack.

@@ -1,32 +1,42 @@
 # Infrastructure CLAUDE.md
 
-This file provides guidance to Claude Code when working with the shared infrastructure components of JimBot.
+This file provides guidance to Claude Code when working with the shared
+infrastructure components of JimBot.
 
 ## Infrastructure Overview
 
-The infrastructure layer provides the foundation for all JimBot components to communicate and share resources efficiently. It implements the Event Bus pattern with Protocol Buffers for serialization and includes resource coordination for GPU and API management.
+The infrastructure layer provides the foundation for all JimBot components to
+communicate and share resources efficiently. It implements the Event Bus pattern
+with Protocol Buffers for serialization and includes resource coordination for
+GPU and API management.
 
 ## Core Components
 
 ### 1. Event Bus (Central Communication Hub)
+
 - **Pattern**: Publish-Subscribe with topic-based routing
 - **Implementation**: AsyncIO-based with gRPC for inter-process communication
 - **Batch Processing**: 100ms aggregation windows for game events
 - **Reliability**: At-least-once delivery with acknowledgments
 
 ### 2. Resource Coordinator (GPU/API Management)
+
 - **GPU Allocation**: Manages Ray RLlib GPU access with semaphores
 - **API Rate Limiting**: Controls Claude API requests (100/hour limit)
-- **Redis Sharing**: Coordinates shared Redis access between Claude and Analytics
+- **Redis Sharing**: Coordinates shared Redis access between Claude and
+  Analytics
 - **Priority Queuing**: Ensures critical operations get resources first
 
 ### 3. Protocol Buffer Schemas
+
 - **Event Definitions**: All game events, state updates, and commands
 - **Version Management**: Backward compatibility with schema evolution
-- **Language Support**: Python, C++ (for MAGE modules), and potential future languages
+- **Language Support**: Python, C++ (for MAGE modules), and potential future
+  languages
 - **Performance**: Binary serialization for minimal overhead
 
 ### 4. Configuration Management
+
 - **Hierarchical Config**: Environment → Component → Feature levels
 - **Hot Reload**: Dynamic configuration updates without restarts
 - **Validation**: Schema-based validation for all configurations
@@ -35,26 +45,28 @@ The infrastructure layer provides the foundation for all JimBot components to co
 ## Event Bus Patterns
 
 ### Publishing Events
+
 ```python
 # infrastructure/event_bus.py
 async def publish_event(self, topic: str, event: Any):
     # Serialize with Protocol Buffers
     serialized = self.serializer.serialize(event)
-    
+
     # Add to batch queue
     await self.batch_queue.put((topic, serialized))
-    
+
     # Trigger batch processing if window elapsed
     if time.time() - self.last_batch > 0.1:  # 100ms
         await self.flush_batch()
 ```
 
 ### Subscribing to Events
+
 ```python
 # Pattern for component subscription
 async def subscribe(self, topic: str, handler: Callable):
     self.handlers[topic].append(handler)
-    
+
     # For gRPC subscriptions
     async for event in self.grpc_stream(topic):
         deserialized = self.serializer.deserialize(event)
@@ -62,6 +74,7 @@ async def subscribe(self, topic: str, handler: Callable):
 ```
 
 ### Event Aggregation
+
 ```python
 # 100ms batch aggregation for MCP events
 class EventAggregator:
@@ -70,7 +83,7 @@ class EventAggregator:
         grouped = defaultdict(list)
         for event in events:
             grouped[event.type].append(event)
-        
+
         # Apply aggregation rules
         aggregated = []
         for event_type, group in grouped.items():
@@ -80,13 +93,14 @@ class EventAggregator:
                 )
             else:
                 aggregated.extend(group)
-        
+
         return aggregated
 ```
 
 ## Protocol Buffer Usage
 
 ### Schema Definition
+
 ```protobuf
 // serialization/schemas/game_events.proto
 syntax = "proto3";
@@ -95,7 +109,7 @@ package jimbot;
 message GameStateUpdate {
     int64 timestamp = 1;
     string game_id = 2;
-    
+
     oneof update {
         JokerPurchased joker_purchased = 3;
         HandPlayed hand_played = 4;
@@ -111,6 +125,7 @@ message JokerPurchased {
 ```
 
 ### Python Integration
+
 ```python
 # Generated from protobuf schemas
 from jimbot.infrastructure.serialization import game_events_pb2
@@ -125,13 +140,14 @@ event.joker_purchased.joker_name = "Jimbo"
 ## Resource Coordinator Patterns
 
 ### GPU Allocation
+
 ```python
 # resource_coordinator.py
 class GPUAllocator:
     def __init__(self):
         self.gpu_semaphore = asyncio.Semaphore(1)
         self.allocation_queue = asyncio.Queue()
-    
+
     async def allocate_gpu(self, component_id: str, duration: float):
         async with self.gpu_semaphore:
             self.current_user = component_id
@@ -142,30 +158,32 @@ class GPUAllocator:
 ```
 
 ### API Rate Limiting
+
 ```python
 # Claude API rate limiter
 class ClaudeRateLimiter:
     def __init__(self, hourly_limit=100):
         self.window = deque(maxlen=hourly_limit)
         self.lock = asyncio.Lock()
-    
+
     async def acquire(self):
         async with self.lock:
             now = time.time()
             # Remove old timestamps
             while self.window and self.window[0] < now - 3600:
                 self.window.popleft()
-            
+
             if len(self.window) >= self.hourly_limit:
                 wait_time = 3600 - (now - self.window[0])
                 await asyncio.sleep(wait_time)
                 return await self.acquire()
-            
+
             self.window.append(now)
             return True
 ```
 
 ### Redis Sharing
+
 ```python
 # Shared Redis pool for Claude and Analytics
 class RedisCoordinator:
@@ -179,7 +197,7 @@ class RedisCoordinator:
             'analytics': 'analytics:',
             'shared': 'shared:'
         }
-    
+
     async def get_client(self, namespace: str):
         return aioredis.Redis(
             connection_pool=self.pool,
@@ -190,6 +208,7 @@ class RedisCoordinator:
 ## Communication Patterns
 
 ### gRPC Services
+
 ```python
 # For synchronous inter-component communication
 class InfrastructureService(infrastructure_pb2_grpc.InfrastructureServicer):
@@ -201,40 +220,42 @@ class InfrastructureService(infrastructure_pb2_grpc.InfrastructureServicer):
 ```
 
 ### Async Queue Pattern (for Claude)
+
 ```python
 # Claude uses async queues instead of direct gRPC
 class ClaudeQueue:
     def __init__(self):
         self.request_queue = asyncio.Queue(maxsize=1000)
         self.response_queues = {}
-    
+
     async def submit_request(self, request_id: str, prompt: str):
         response_queue = asyncio.Queue(maxsize=1)
         self.response_queues[request_id] = response_queue
-        
+
         await self.request_queue.put({
             'id': request_id,
             'prompt': prompt,
             'timestamp': time.time()
         })
-        
+
         return await response_queue.get()
 ```
 
 ## Monitoring Integration
 
 ### Metrics Collection
+
 ```python
 # monitoring/metrics.py
 class MetricsCollector:
     def __init__(self):
         self.event_counters = defaultdict(int)
         self.latency_histograms = defaultdict(list)
-    
+
     async def record_event(self, event_type: str, latency: float):
         self.event_counters[event_type] += 1
         self.latency_histograms[event_type].append(latency)
-        
+
         # Batch send to QuestDB every second
         if time.time() - self.last_flush > 1.0:
             await self.flush_to_questdb()
@@ -243,6 +264,7 @@ class MetricsCollector:
 ## Configuration Examples
 
 ### YAML Configuration
+
 ```yaml
 # config/infrastructure.yaml
 event_bus:
@@ -257,7 +279,7 @@ event_bus:
 resource_coordinator:
   gpu:
     max_allocation_seconds: 300
-    priority_components: ["training", "inference"]
+    priority_components: ['training', 'inference']
   claude:
     hourly_limit: 100
     cache_ttl: 3600
@@ -267,13 +289,14 @@ resource_coordinator:
 
 monitoring:
   metrics_flush_interval: 1.0
-  questdb_url: "http://localhost:9000"
+  questdb_url: 'http://localhost:9000'
   enable_profiling: false
 ```
 
 ## Error Handling
 
 ### Circuit Breaker Pattern
+
 ```python
 class CircuitBreaker:
     def __init__(self, failure_threshold=5, recovery_timeout=60):
@@ -282,14 +305,14 @@ class CircuitBreaker:
         self.recovery_timeout = recovery_timeout
         self.last_failure_time = None
         self.state = "closed"  # closed, open, half-open
-    
+
     async def call(self, func, *args, **kwargs):
         if self.state == "open":
             if time.time() - self.last_failure_time > self.recovery_timeout:
                 self.state = "half-open"
             else:
                 raise CircuitOpenError()
-        
+
         try:
             result = await func(*args, **kwargs)
             if self.state == "half-open":
@@ -307,13 +330,14 @@ class CircuitBreaker:
 ## Testing Infrastructure
 
 ### Mock Event Bus
+
 ```python
 # For component testing without full infrastructure
 class MockEventBus:
     def __init__(self):
         self.published_events = []
         self.handlers = defaultdict(list)
-    
+
     async def publish(self, topic: str, event: Any):
         self.published_events.append((topic, event))
         # Immediately deliver to handlers for testing

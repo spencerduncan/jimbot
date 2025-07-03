@@ -1,0 +1,59 @@
+# Workspace Cargo.toml Template
+# This file should be created at the root when you have multiple Rust components
+# Rename this file to Cargo.toml and uncomment the sections below
+
+# [workspace]
+# members = [
+#     "services/event-bus-rust",
+#     "jimbot/infrastructure/resource_coordinator_rust",
+#     # Add more Rust components here as you create them
+# ]
+# 
+# # Shared dependencies and configuration
+# [workspace.dependencies]
+# serde = { version = "1.0", features = ["derive"] }
+# serde_json = "1.0"
+# tokio = { version = "1.0", features = ["full"] }
+# tracing = "0.1"
+# tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# uuid = { version = "1.0", features = ["v4", "serde"] }
+# anyhow = "1.0"
+# thiserror = "1.0"
+# clap = { version = "4.0", features = ["derive"] }
+# 
+# # Development dependencies
+# [workspace.dev-dependencies]
+# tokio-test = "0.4"
+# criterion = "0.5"
+# mockall = "0.11"
+# 
+# # Shared configuration
+# [workspace.package]
+# version = "0.1.0"
+# edition = "2021"
+# authors = ["spencerduncan"]
+# license = "MIT"
+# repository = "https://github.com/spencerduncan/jimbot-main"
+# 
+# # Shared metadata
+# [workspace.metadata]
+# description = "Jimbot Rust components workspace"
+# homepage = "https://github.com/spencerduncan/jimbot-main"
+# documentation = "https://github.com/spencerduncan/jimbot-main/docs"
+# 
+# # Cargo configuration
+# [profile.release]
+# lto = true
+# codegen-units = 1
+# panic = "abort"
+# strip = true
+# 
+# [profile.dev]
+# debug = true
+# overflow-checks = true
+# 
+# # Example: Performance profiling
+# [profile.profiling]
+# inherits = "release"
+# debug = true
+# strip = false

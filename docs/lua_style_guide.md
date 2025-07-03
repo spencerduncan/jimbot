@@ -1,6 +1,7 @@
 # Comprehensive Lua Style Guide and Best Practices
 
 ## Table of Contents
+
 1. [Major Style Guides Overview](#major-style-guides-overview)
 2. [Variable Naming Conventions](#variable-naming-conventions)
 3. [Table Structures and Metatables](#table-structures-and-metatables)
@@ -17,6 +18,7 @@
 ### 1. Olivine Labs Lua Style Guide
 
 Key principles:
+
 - **Indentation**: Use soft tabs with 2 spaces
 - **Functions**: Prefer many small functions over large ones
 - **Variables**: Always use `local` to declare variables
@@ -27,6 +29,7 @@ Key principles:
 ### 2. Lua-users Wiki Style Guide
 
 Notable for its acknowledgment of diversity in Lua style:
+
 - **Indentation**: 2 spaces (most common), though 3-4 spaces or tabs also used
 - **Comments**: Use space after `--`
 - **Flexibility**: "know when to be inconsistent" - readability trumps rules
@@ -34,17 +37,20 @@ Notable for its acknowledgment of diversity in Lua style:
 ### 3. Roblox Lua Style Guide
 
 Focused on game development consistency:
-- **Naming**: 
+
+- **Naming**:
   - PascalCase for Roblox APIs
   - camelCase for local variables and functions
   - LOUD_SNAKE_CASE for constants
   - Prefix private members with underscore: `_camelCase`
-- **Acronyms**: `aJsonVariable` not `aJSONVariable` (except sets like `anRGBValue`)
+- **Acronyms**: `aJsonVariable` not `aJSONVariable` (except sets like
+  `anRGBValue`)
 - **File Organization**: All `require` calls at top, sorted alphabetically
 
 ### 4. Kong Enterprise Patterns
 
 Enterprise-focused conventions:
+
 - Clear directory structure for plugins
 - `handler.lua`, `schema.lua`, `daos.lua` pattern
 - Performance-focused: avoid blocking functions
@@ -74,6 +80,7 @@ end
 ```
 
 ### Reserved Patterns
+
 - **Avoid**: `_VERSION`, `_LOADED` (underscore + uppercase reserved for Lua)
 - **Use**: `_` for dummy variables, `_name` for private members
 
@@ -107,7 +114,7 @@ local mt = {
     __index = function(table, key)
         -- Custom lookup logic
     end,
-    
+
     __newindex = function(table, key, value)
         -- Custom assignment logic
     end
@@ -199,6 +206,7 @@ local success, result = xpcall(riskyOperation, errorHandler)
 ```
 
 ### Best Practices
+
 - Use pcall/xpcall for I/O operations and external calls
 - Always log errors for debugging
 - Provide meaningful error messages to users
@@ -251,13 +259,13 @@ function ObjectPool:new(size)
         objects = {},
         available = {}
     }
-    
+
     for i = 1, size do
         local obj = {}  -- Create object
         pool.objects[i] = obj
         pool.available[i] = obj
     end
-    
+
     return setmetatable(pool, self)
 end
 

@@ -6,7 +6,7 @@
     "jsx": "react-jsx",
     "module": "ES2022",
     "moduleResolution": "node",
-    
+
     // Strict Type Checking
     "strict": true,
     "noImplicitAny": true,
@@ -19,7 +19,7 @@
     "alwaysStrict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
-    
+
     // Additional Checks
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -30,7 +30,7 @@
     "noPropertyAccessFromIndexSignature": true,
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
-    
+
     // Module Resolution
     "baseUrl": ".",
     "paths": {
@@ -41,7 +41,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    
+
     // Emit
     "declaration": true,
     "declarationMap": true,
@@ -50,15 +50,15 @@
     "noEmit": true,
     "importHelpers": true,
     "downlevelIteration": true,
-    
+
     // Interop Constraints
     "isolatedModules": true,
     "allowJs": false,
     "forceConsistentCasingInFileNames": true,
-    
+
     // Skip Lib Check
     "skipLibCheck": true,
-    
+
     // Advanced
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -66,18 +66,8 @@
     "preserveWatchOutput": true,
     "pretty": true
   },
-  "include": [
-    "packages/*/src/**/*",
-    "packages/*/tests/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "coverage",
-    "**/*.js",
-    "**/*.d.ts"
-  ],
+  "include": ["packages/*/src/**/*", "packages/*/tests/**/*"],
+  "exclude": ["node_modules", "dist", "build", "coverage", "**/*.js", "**/*.d.ts"],
   "references": [
     // Add package references here as they are created
     // { "path": "./packages/web-ui" },

@@ -11,7 +11,7 @@
     "panels": [
       {
         "id": 1,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
         "type": "graph",
         "title": "CPU Usage by Component",
         "datasource": "QuestDB",
@@ -43,7 +43,7 @@
       },
       {
         "id": 2,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
         "type": "graph",
         "title": "Memory Usage",
         "datasource": "QuestDB",
@@ -110,7 +110,7 @@
       },
       {
         "id": 3,
-        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8},
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
         "type": "stat",
         "title": "GPU Utilization",
         "datasource": "QuestDB",
@@ -137,10 +137,10 @@
             "thresholds": {
               "mode": "absolute",
               "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 50},
-                {"color": "orange", "value": 75},
-                {"color": "red", "value": 90}
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 50 },
+                { "color": "orange", "value": 75 },
+                { "color": "red", "value": 90 }
               ]
             },
             "unit": "percent"
@@ -149,7 +149,7 @@
       },
       {
         "id": 4,
-        "gridPos": {"h": 8, "w": 18, "x": 6, "y": 8},
+        "gridPos": { "h": 8, "w": 18, "x": 6, "y": 8 },
         "type": "table",
         "title": "Component Status",
         "datasource": "QuestDB",
@@ -165,7 +165,7 @@
         "fieldConfig": {
           "overrides": [
             {
-              "matcher": {"id": "byName", "options": "current_status"},
+              "matcher": { "id": "byName", "options": "current_status" },
               "properties": [
                 {
                   "id": "custom.displayMode",
@@ -174,9 +174,9 @@
                 {
                   "id": "mappings",
                   "value": [
-                    {"type": "value", "value": "healthy", "color": "green", "text": "Healthy"},
-                    {"type": "value", "value": "warning", "color": "yellow", "text": "Warning"},
-                    {"type": "value", "value": "error", "color": "red", "text": "Error"}
+                    { "type": "value", "value": "healthy", "color": "green", "text": "Healthy" },
+                    { "type": "value", "value": "warning", "color": "yellow", "text": "Warning" },
+                    { "type": "value", "value": "error", "color": "red", "text": "Error" }
                   ]
                 }
               ]

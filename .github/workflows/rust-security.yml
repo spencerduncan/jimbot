@@ -1,0 +1,370 @@
+name: Rust Security Audit
+
+on:
+  schedule:
+    # Run security audit daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/rust-security.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/rust-security.yml'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  detect-rust-components:
+    name: Detect Rust Components
+    runs-on: ubuntu-latest
+    outputs:
+      rust-components: ${{ steps.detect.outputs.components }}
+      has-changes: ${{ steps.detect.outputs.has-changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect Rust components
+        id: detect
+        run: |
+          # Find all Cargo.toml files (excluding target directories)
+          COMPONENTS=$(find . -name "Cargo.toml" -not -path "./target/*" -not -path "*/target/*" | while read -r cargo_file; do
+            component_dir=$(dirname "$cargo_file")
+            component_name=$(basename "$component_dir")
+            echo "$component_dir:$component_name"
+          done | jq -R -s -c 'split("\n") | map(select(length > 0)) | map(split(":") | {path: .[0], name: .[1]})')
+
+          echo "components=$COMPONENTS" >> $GITHUB_OUTPUT
+
+          # Check if we have any Rust components
+          if [ "$COMPONENTS" = "[]" ]; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "No Rust components found"
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "Found Rust components: $COMPONENTS"
+          fi
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: detect-rust-components
+    if: needs.detect-rust-components.outputs.has-changes == 'true'
+    strategy:
+      matrix:
+        component: ${{ fromJson(needs.detect-rust-components.outputs.rust-components) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.component.path }}
+          key: security-${{ matrix.component.name }}
+
+      - name: Install security tools
+        run: |
+          cargo install cargo-audit
+          cargo install cargo-deny
+          cargo install cargo-outdated
+
+      - name: Run cargo-audit
+        working-directory: ${{ matrix.component.path }}
+        run: |
+          echo "## Security Audit Results for ${{ matrix.component.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Run cargo audit and capture output
+          if cargo audit --format json > audit_results.json 2>&1; then
+            echo "✅ No security vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Security vulnerabilities detected:" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat audit_results.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Check for outdated dependencies
+        working-directory: ${{ matrix.component.path }}
+        continue-on-error: true
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if cargo outdated --format json > outdated.json 2>/dev/null; then
+            if [ -s outdated.json ] && [ "$(cat outdated.json | jq '.dependencies | length')" -gt 0 ]; then
+              echo "📦 Found outdated dependencies:" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              cargo outdated >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ All dependencies are up to date" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ Could not check for outdated dependencies" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-${{ matrix.component.name }}
+          path: |
+            ${{ matrix.component.path }}/audit_results.json
+            ${{ matrix.component.path }}/outdated.json
+          if-no-files-found: ignore
+
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    needs: detect-rust-components
+    if: needs.detect-rust-components.outputs.has-changes == 'true'
+    strategy:
+      matrix:
+        component: ${{ fromJson(needs.detect-rust-components.outputs.rust-components) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.component.path }}
+          key: license-${{ matrix.component.name }}
+
+      - name: Install cargo-license
+        run: cargo install cargo-license
+
+      - name: Check licenses
+        working-directory: ${{ matrix.component.path }}
+        run: |
+          echo "## License Compliance for ${{ matrix.component.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Generate license report
+          cargo license --json > licenses.json
+
+          # Check for non-permissive licenses
+          PROBLEMATIC_LICENSES=$(jq -r '.[] | select(.license | test("GPL|AGPL|LGPL|MPL") and (test("GPL|AGPL|LGPL|MPL") | not)) | .name + " (" + .license + ")"' licenses.json)
+
+          if [ -n "$PROBLEMATIC_LICENSES" ]; then
+            echo "⚠️ Found potentially problematic licenses:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$PROBLEMATIC_LICENSES" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All licenses are permissive" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### All Dependencies and Licenses" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cargo license >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report-${{ matrix.component.name }}
+          path: ${{ matrix.component.path }}/licenses.json
+
+  supply-chain-security:
+    name: Supply Chain Security
+    runs-on: ubuntu-latest
+    needs: detect-rust-components
+    if: needs.detect-rust-components.outputs.has-changes == 'true'
+    strategy:
+      matrix:
+        component: ${{ fromJson(needs.detect-rust-components.outputs.rust-components) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.component.path }}
+          key: supply-chain-${{ matrix.component.name }}
+
+      - name: Install supply chain tools
+        run: |
+          cargo install cargo-deny
+          cargo install cargo-geiger
+
+      - name: Run cargo-deny
+        working-directory: ${{ matrix.component.path }}
+        continue-on-error: true
+        run: |
+          # Create a basic deny.toml if it doesn't exist
+          if [ ! -f deny.toml ]; then
+            cat > deny.toml << 'EOF'
+          [graph]
+          targets = [
+              { triple = "x86_64-unknown-linux-gnu" },
+              { triple = "aarch64-unknown-linux-gnu" },
+          ]
+
+          [licenses]
+          allow = [
+              "MIT",
+              "Apache-2.0",
+              "Apache-2.0 WITH LLVM-exception",
+              "BSD-2-Clause",
+              "BSD-3-Clause",
+              "ISC",
+              "Unicode-DFS-2016",
+          ]
+          deny = [
+              "GPL-2.0",
+              "GPL-3.0",
+              "AGPL-1.0",
+              "AGPL-3.0",
+          ]
+
+          [bans]
+          multiple-versions = "warn"
+          deny = []
+
+          [advisories]
+          vulnerability = "deny"
+          unmaintained = "warn"
+          yanked = "warn"
+          notice = "warn"
+          ignore = []
+
+          [sources]
+          unknown-registry = "warn"
+          unknown-git = "warn"
+          allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+          allow-git = []
+          EOF
+          fi
+
+          echo "## Supply Chain Security for ${{ matrix.component.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if cargo deny check 2>&1 | tee deny_output.txt; then
+            echo "✅ Supply chain security checks passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Supply chain security issues found:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat deny_output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Run cargo-geiger (unsafe code detection)
+        working-directory: ${{ matrix.component.path }}
+        continue-on-error: true
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Unsafe Code Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if cargo geiger --format GitHubMarkdown >> $GITHUB_STEP_SUMMARY 2>/dev/null; then
+            echo "✅ Unsafe code analysis completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Could not run unsafe code analysis" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload supply chain reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supply-chain-${{ matrix.component.name }}
+          path: |
+            ${{ matrix.component.path }}/deny_output.txt
+            ${{ matrix.component.path }}/deny.toml
+          if-no-files-found: ignore
+
+  create-security-issue:
+    name: Create Security Issue
+    runs-on: ubuntu-latest
+    needs: [security-audit, license-check, supply-chain-security]
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      issues: write
+    steps:
+      - name: Create security issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Security Alert: Vulnerabilities detected in Rust components`;
+            const body = `
+            ## Security Alert
+
+            Automated security scanning has detected potential issues in our Rust components.
+
+            ### Details
+            - **Trigger**: Scheduled security audit
+            - **Date**: ${new Date().toISOString()}
+            - **Workflow**: ${{ github.workflow }}
+            - **Run ID**: ${{ github.run_id }}
+
+            ### Action Required
+            1. Review the failed workflow logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            2. Download the security audit artifacts
+            3. Address any identified vulnerabilities
+            4. Update dependencies as needed
+
+            ### Security Best Practices
+            - Keep dependencies up to date
+            - Review new dependencies before adding them
+            - Monitor security advisories
+            - Use \`cargo audit\` regularly in local development
+
+            **Priority**: High
+            **Labels**: security, rust, automated
+            `;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'rust', 'automated', 'P1']
+            });
+
+  summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [security-audit, license-check, supply-chain-security]
+    if: always()
+    steps:
+      - name: Generate security summary
+        run: |
+          echo "# Rust Security Audit Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Audit | ${{ needs.security-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| License Check | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Supply Chain | ${{ needs.supply-chain-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.security-audit.result }}" == "success" && 
+                "${{ needs.license-check.result }}" == "success" && 
+                "${{ needs.supply-chain-security.result }}" == "success" ]]; then
+            echo "🔒 **All security checks passed!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Some security checks failed. Please review the details above.**" >> $GITHUB_STEP_SUMMARY
+          fi

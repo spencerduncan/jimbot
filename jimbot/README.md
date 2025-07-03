@@ -1,6 +1,8 @@
 # JimBot - Sequential Learning System for Balatro
 
-JimBot is an AI system that masters Balatro through a combination of knowledge graphs, reinforcement learning, and strategic LLM consultation. The system is designed to run on a single workstation with 32GB RAM and RTX 3090 GPU.
+JimBot is an AI system that masters Balatro through a combination of knowledge
+graphs, reinforcement learning, and strategic LLM consultation. The system is
+designed to run on a single workstation with 32GB RAM and RTX 3090 GPU.
 
 ## System Overview
 

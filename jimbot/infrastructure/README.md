@@ -1,10 +1,13 @@
 # JimBot Infrastructure
 
-The infrastructure layer provides the foundation for all JimBot components to communicate and share resources. It implements an event-driven architecture with Protocol Buffer serialization and intelligent resource management.
+The infrastructure layer provides the foundation for all JimBot components to
+communicate and share resources. It implements an event-driven architecture with
+Protocol Buffer serialization and intelligent resource management.
 
 ## Overview
 
-The infrastructure consists of six core modules that work together to provide reliable, high-performance communication and resource management:
+The infrastructure consists of six core modules that work together to provide
+reliable, high-performance communication and resource management:
 
 ```
 infrastructure/
@@ -20,7 +23,8 @@ infrastructure/
 
 ### 1. Event Bus Architecture
 
-The Event Bus is the central nervous system of JimBot, enabling decoupled communication between components:
+The Event Bus is the central nervous system of JimBot, enabling decoupled
+communication between components:
 
 ```python
 # Publishing events
@@ -38,6 +42,7 @@ async def handle_game_event(event):
 ```
 
 **Key Features:**
+
 - Topic-based routing with wildcard support
 - 100ms batch aggregation for efficiency
 - At-least-once delivery guarantees
@@ -45,10 +50,13 @@ async def handle_game_event(event):
 
 ### 2. Communication Protocols
 
-Different components use different communication patterns optimized for their needs:
+Different components use different communication patterns optimized for their
+needs:
 
 #### gRPC (High-Performance RPC)
+
 Used for: Memgraph ↔ Ray, MCP ↔ Event Bus
+
 ```python
 # Synchronous request-response
 response = await memgraph_client.query_synergies(
@@ -57,7 +65,9 @@ response = await memgraph_client.query_synergies(
 ```
 
 #### REST API (Simple Integration)
+
 Used for: External monitoring, health checks
+
 ```python
 # RESTful endpoints for status
 GET /api/v1/health
@@ -66,7 +76,9 @@ POST /api/v1/events
 ```
 
 #### Async Queues (Decoupled Processing)
+
 Used for: Claude AI integration
+
 ```python
 # Submit request to Claude queue
 request_id = await claude_queue.submit(
@@ -111,7 +123,7 @@ infrastructure:
   event_bus:
     grpc_port: 50051
     max_batch_size: 1000
-  
+
   resource_coordinator:
     claude_hourly_limit: 100
     gpu_timeout_seconds: 300
@@ -135,7 +147,8 @@ async def on_batch_window_change(new_value):
 
 ## Protocol Buffer Schemas
 
-All inter-component communication uses Protocol Buffers for efficiency and type safety:
+All inter-component communication uses Protocol Buffers for efficiency and type
+safety:
 
 ```protobuf
 // Common event wrapper
@@ -182,7 +195,7 @@ async def make_decision(state):
 Structured logging with correlation IDs:
 
 ```python
-logger.info("Processing game event", 
+logger.info("Processing game event",
     event_id="evt_123",
     game_id="game_456",
     component="memgraph",
@@ -240,18 +253,21 @@ assert len(mock_bus.published_events) == 1
 ## Architecture Decisions
 
 ### Why Event Bus?
+
 - **Decoupling**: Components don't need to know about each other
 - **Scalability**: Easy to add new components
 - **Flexibility**: Can replay events for debugging/recovery
 - **Observability**: Central point for monitoring all communication
 
 ### Why Protocol Buffers?
+
 - **Performance**: 10x faster than JSON serialization
 - **Type Safety**: Compile-time validation of message formats
 - **Evolution**: Backward compatibility with schema changes
 - **Language Support**: Works with Python, C++, and more
 
 ### Why Resource Coordinator?
+
 - **Fairness**: Prevents any component from monopolizing resources
 - **Efficiency**: Maximizes utilization of GPU and API limits
 - **Reliability**: Graceful degradation when resources are constrained
@@ -271,16 +287,19 @@ assert len(mock_bus.published_events) == 1
 ### Common Issues
 
 **Event Bus not receiving messages:**
+
 - Check topic subscriptions match publishing topics
 - Verify event serialization is correct
 - Look for errors in component logs
 
 **Resource allocation timeouts:**
+
 - Check resource coordinator logs for contention
 - Verify GPU is not locked by crashed process
 - Review allocation priorities
 
 **High latency:**
+
 - Check batch window settings
 - Monitor queue depths
 - Review event aggregation rules
@@ -301,16 +320,19 @@ python -m jimbot.infrastructure.tools.config_validator
 ## Performance Tuning
 
 ### Event Bus Optimization
+
 - Adjust batch windows based on latency requirements
 - Use event aggregation for high-frequency updates
 - Implement topic sharding for high throughput
 
 ### Resource Coordinator Tuning
+
 - Set appropriate timeouts for GPU allocation
 - Configure Claude API rate limits with buffer
 - Use priority queues for critical operations
 
 ### Monitoring Optimization
+
 - Adjust metric collection intervals
 - Use sampling for high-frequency events
 - Implement metric aggregation before storage

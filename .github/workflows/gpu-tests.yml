@@ -2,20 +2,20 @@ name: GPU Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'jimbot/training/**'
       - 'jimbot/memgraph/mage_modules/**'
       - '.github/workflows/gpu-tests.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'jimbot/training/**'
       - 'jimbot/memgraph/mage_modules/**'
       - '.github/workflows/gpu-tests.yml'
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM
+    - cron: '0 2 * * 0' # Weekly on Sunday at 2 AM
 
 env:
   PYTHON_VERSION: '3.9'
@@ -24,44 +24,44 @@ env:
 jobs:
   gpu-tests:
     name: GPU Tests
-    runs-on: [self-hosted, gpu]  # Requires self-hosted runner with GPU
+    runs-on: [self-hosted, gpu] # Requires self-hosted runner with GPU
     container:
       image: nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
       options: --gpus all
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install system dependencies
         run: |
           apt-get update
           apt-get install -y python3.9 python3-pip git curl
-          
+
       - name: Install NVIDIA tools
         run: |
           nvidia-smi
-          
+
       - name: Set up Python environment
         run: |
           python3 -m pip install --upgrade pip
           pip install -e ".[dev,test]"
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-          
+
       - name: Verify GPU availability
         run: |
           python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
-          
+
       - name: Run GPU unit tests
         run: |
           pytest tests/unit -v -m gpu --tb=short
-          
+
       - name: Run GPU performance benchmarks
         run: |
           pytest tests/performance -v -m gpu --benchmark-only
-          
+
       - name: Profile GPU memory usage
         run: |
           python scripts/profile_gpu_memory.py
-          
+
       - name: Upload profiling results
         uses: actions/upload-artifact@v3
         with:
@@ -70,26 +70,26 @@ jobs:
             profiling/*.txt
             profiling/*.json
             profiling/*.png
-            
+
   ray-distributed-tests:
     name: Ray Distributed Tests
     runs-on: [self-hosted, gpu]
     needs: gpu-tests
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Ray cluster
         run: |
           ray start --head --port=6379 --dashboard-host=0.0.0.0
-          
+
       - name: Run distributed training tests
         run: |
           pytest tests/integration/test_ray_training.py -v
-          
+
       - name: Run hyperparameter tuning tests
         run: |
           pytest tests/integration/test_ray_tune.py -v
-          
+
       - name: Stop Ray
         run: ray stop
         if: always()

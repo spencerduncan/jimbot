@@ -33,7 +33,7 @@ services:
   jupyter:
     image: jupyter/tensorflow-notebook:latest
     ports:
-      - "8888:8888"
+      - '8888:8888'
     volumes:
       - .:/home/jovyan/work
     environment:
@@ -45,7 +45,7 @@ services:
   sonarqube:
     image: sonarqube:community
     ports:
-      - "9001:9000"
+      - '9001:9000'
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     volumes:
@@ -63,7 +63,7 @@ services:
       - POSTGRES_USER=jimbot
       - POSTGRES_PASSWORD=testpass
     ports:
-      - "5433:5432"
+      - '5433:5432'
     networks:
       - jimbot
 
@@ -71,7 +71,7 @@ services:
   redis-dev:
     image: redis:7-alpine
     ports:
-      - "6380:6379"
+      - '6380:6379'
     networks:
       - jimbot
 
@@ -79,7 +79,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - '9090:9090'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
@@ -89,7 +89,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - '3001:3000'
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:

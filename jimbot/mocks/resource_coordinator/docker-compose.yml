@@ -7,7 +7,7 @@ services:
       dockerfile: jimbot/mocks/resource_coordinator/Dockerfile
     container_name: mock-resource-coordinator
     ports:
-      - "50051:50051"
+      - '50051:50051'
     environment:
       - PYTHONUNBUFFERED=1
     command: >
@@ -17,7 +17,13 @@ services:
     networks:
       - jimbot-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import grpc; channel = grpc.insecure_channel('localhost:50051'); channel.close()"]
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import grpc; channel = grpc.insecure_channel('localhost:50051'); channel.close()",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -28,7 +34,7 @@ services:
       dockerfile: jimbot/mocks/resource_coordinator/Dockerfile
     container_name: mock-resource-coordinator-ui
     ports:
-      - "8080:8080"
+      - '8080:8080'
     environment:
       - PYTHONUNBUFFERED=1
     command: >

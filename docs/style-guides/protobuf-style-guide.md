@@ -1,8 +1,10 @@
 # Protocol Buffers Style Guide for JimBot
 
-This guide defines Protocol Buffers (protobuf) conventions for the JimBot project's event schemas and service interfaces.
+This guide defines Protocol Buffers (protobuf) conventions for the JimBot
+project's event schemas and service interfaces.
 
 ## Table of Contents
+
 1. [General Principles](#general-principles)
 2. [File Organization](#file-organization)
 3. [Naming Conventions](#naming-conventions)
@@ -16,13 +18,15 @@ This guide defines Protocol Buffers (protobuf) conventions for the JimBot projec
 ## General Principles
 
 ### Core Rules
+
 - **Always use proto3** syntax for new development
 - **Design for forward/backward compatibility** from day one
 - **Keep messages focused** - one concept per message
-- **Use well-known types** when available (google.protobuf.*)
+- **Use well-known types** when available (google.protobuf.\*)
 - **Document everything** with clear comments
 
 ### File Structure
+
 ```protobuf
 syntax = "proto3";
 
@@ -42,11 +46,13 @@ option go_package = "github.com/jimbot/proto/mcp/v1;mcpv1";
 ## File Organization
 
 ### Naming Convention
+
 - Files use `snake_case.proto`
 - One primary message type per file
 - Related messages can be in the same file
 
 ### Directory Structure
+
 ```
 proto/
 ├── jimbot/
@@ -71,6 +77,7 @@ proto/
 ## Naming Conventions
 
 ### Messages
+
 - **PascalCase** for message names
 - Descriptive, noun-based names
 - Avoid abbreviations
@@ -89,6 +96,7 @@ message GS {  // Bad: Too abbreviated
 ```
 
 ### Fields
+
 - **snake_case** for field names
 - Use meaningful, descriptive names
 - Standard suffixes:
@@ -107,6 +115,7 @@ message PlayerAction {
 ```
 
 ### Enums
+
 - **PascalCase** for enum names
 - **UPPER_SNAKE_CASE** for values
 - First value must be `_UNSPECIFIED` with number 0
@@ -124,11 +133,12 @@ enum JokerRarity {
 ## Message Design Patterns
 
 ### Event Pattern
+
 ```protobuf
 message MCPEvent {
   // Event metadata
   EventMetadata metadata = 1;
-  
+
   // Event-specific payload
   oneof payload {
     GameStarted game_started = 2;
@@ -148,24 +158,25 @@ message EventMetadata {
 ```
 
 ### State Snapshot Pattern
+
 ```protobuf
 message GameStateSnapshot {
   // Immutable game info
   string game_id = 1;
   string player_id = 2;
-  
+
   // Current state
   int32 ante = 3;
   int32 round = 4;
   int64 money = 5;
   int32 hands_remaining = 6;
   int32 discards_remaining = 7;
-  
+
   // Collections
   repeated Joker active_jokers = 8;
   repeated Card hand_cards = 9;
   repeated Card deck_cards = 10;
-  
+
   // Computed values
   ScoreInfo current_score = 11;
   google.protobuf.Timestamp snapshot_at = 12;
@@ -173,10 +184,11 @@ message GameStateSnapshot {
 ```
 
 ### Command Pattern
+
 ```protobuf
 message PlayerCommand {
   CommandMetadata metadata = 1;
-  
+
   oneof command {
     PlayCards play_cards = 2;
     DiscardCards discard_cards = 3;
@@ -195,6 +207,7 @@ message CommandMetadata {
 ```
 
 ### Aggregation Pattern
+
 ```protobuf
 message AggregatedEvents {
   AggregationInfo info = 1;
@@ -214,6 +227,7 @@ message AggregationInfo {
 ## Field Guidelines
 
 ### Field Numbers
+
 - **1-15**: Most frequently accessed fields (1 byte encoding)
 - **16-2047**: Regular fields (2 byte encoding)
 - **2048+**: Rarely used fields
@@ -227,7 +241,7 @@ message OptimizedGameState {
   int32 hands = 3;
   int32 discards = 4;
   repeated string joker_ids = 5;
-  
+
   // Regular fields (16+)
   string game_id = 16;
   string player_id = 17;
@@ -236,22 +250,23 @@ message OptimizedGameState {
 ```
 
 ### Field Types
+
 ```protobuf
 message FieldTypeExamples {
   // Use specific types for clarity
   int32 count = 1;           // For counts/quantities
   sint32 delta = 2;          // For values that can be negative
   fixed32 hash = 3;          // For fixed-size values
-  
+
   // Strings
   string joker_id = 4;       // IDs as strings for flexibility
-  
+
   // Repeated fields
   repeated string tags = 5 [packed = true];  // Pack numeric arrays
-  
+
   // Maps for lookups
   map<string, float> synergy_scores = 6;
-  
+
   // Well-known types
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Duration processing_time = 8;
@@ -260,11 +275,12 @@ message FieldTypeExamples {
 ```
 
 ### Reserved Fields
+
 ```protobuf
 message EvolvingMessage {
   reserved 2, 4, 6 to 10;  // Reserved field numbers
   reserved "old_field", "deprecated_name";  // Reserved names
-  
+
   string active_field = 1;
   int32 new_field = 3;
 }
@@ -273,6 +289,7 @@ message EvolvingMessage {
 ## Versioning and Compatibility
 
 ### Package Versioning
+
 ```protobuf
 // Always include version in package name
 package jimbot.mcp.v1;
@@ -282,6 +299,7 @@ package jimbot.mcp.v2;
 ```
 
 ### Field Evolution Rules
+
 1. **Never change field numbers** once deployed
 2. **Never change field types**
 3. **Add new fields** with higher numbers
@@ -306,16 +324,17 @@ message UserStats {
 ```
 
 ### Deprecation Pattern
+
 ```protobuf
 message GameConfig {
   // Active fields
   int32 starting_money = 1;
   int32 hands_per_round = 2;
-  
+
   // Deprecated but reserved
   reserved 3, 4;
   reserved "old_difficulty", "legacy_mode";
-  
+
   // Replacement field
   DifficultySettings difficulty = 5;
 }
@@ -324,19 +343,21 @@ message GameConfig {
 ## Performance Optimization
 
 ### Packed Repeated Fields
+
 ```protobuf
 message PerformanceMetrics {
   // Pack numeric repeated fields
   repeated int32 frame_times = 1 [packed = true];
   repeated float cpu_usage = 2 [packed = true];
   repeated int64 memory_bytes = 3 [packed = true];
-  
+
   // Strings cannot be packed
   repeated string event_types = 4;
 }
 ```
 
 ### Size Optimization
+
 ```protobuf
 message OptimizedEvent {
   // Use appropriate numeric types
@@ -344,16 +365,17 @@ message OptimizedEvent {
   uint32 positive_only = 2;  // If never negative
   sint32 signed_value = 3;   // If often negative
   fixed32 fixed_size = 4;    // If always 4 bytes
-  
+
   // Avoid repeated message fields when possible
   repeated string joker_ids = 5;  // Better than repeated Joker
-  
+
   // Use bytes for binary data
   bytes compressed_data = 6;
 }
 ```
 
 ### Streaming Patterns
+
 ```protobuf
 message StreamHeader {
   string stream_id = 1;
@@ -380,23 +402,25 @@ message StreamControl {
 ## gRPC Service Definitions
 
 ### Service Design
+
 ```protobuf
 service BalatroGameService {
   // Unary RPC - Simple request/response
   rpc GetGameState(GetGameStateRequest) returns (GameStateSnapshot);
-  
+
   // Server streaming - Real-time updates
   rpc WatchGameEvents(WatchRequest) returns (stream MCPEvent);
-  
+
   // Client streaming - Batch operations
   rpc SendCommands(stream PlayerCommand) returns (CommandResults);
-  
+
   // Bidirectional streaming - Interactive session
   rpc PlaySession(stream SessionMessage) returns (stream SessionUpdate);
 }
 ```
 
 ### Request/Response Pattern
+
 ```protobuf
 message GetGameStateRequest {
   string game_id = 1;
@@ -412,6 +436,7 @@ message WatchRequest {
 ```
 
 ### Error Handling
+
 ```protobuf
 message ErrorInfo {
   string code = 1;
@@ -431,6 +456,7 @@ message RetryInfo {
 ## JimBot-Specific Schemas
 
 ### MCP Event Schema
+
 ```protobuf
 // mcp/v1/events.proto
 syntax = "proto3";
@@ -441,18 +467,18 @@ import "jimbot/common/v1/types.proto";
 
 message MCPEvent {
   EventMetadata metadata = 1;
-  
+
   oneof payload {
     // Game flow events
     GameStarted game_started = 2;
     RoundStarted round_started = 3;
     HandDealt hand_dealt = 4;
-    
+
     // Player actions
     CardsPlayed cards_played = 10;
     CardsDiscarded cards_discarded = 11;
     JokerPurchased joker_purchased = 12;
-    
+
     // Game state changes
     ScoreCalculated score_calculated = 20;
     MoneyChanged money_changed = 21;
@@ -471,6 +497,7 @@ message EventMetadata {
 ```
 
 ### Knowledge Graph Integration
+
 ```protobuf
 // memgraph/v1/knowledge.proto
 message JokerNode {
@@ -500,6 +527,7 @@ message KnowledgeQuery {
 ```
 
 ### Training Messages
+
 ```protobuf
 // training/v1/model.proto
 message TrainingBatch {
@@ -528,17 +556,18 @@ message ModelCheckpoint {
 ```
 
 ### Performance Monitoring
+
 ```protobuf
 // monitoring/v1/metrics.proto
 message PerformanceEvent {
   string component = 1;  // "mcp", "memgraph", "ray", "claude"
-  
+
   oneof metric {
     LatencyMetric latency = 2;
     ThroughputMetric throughput = 3;
     ResourceMetric resource = 4;
   }
-  
+
   google.protobuf.Timestamp recorded_at = 5;
 }
 
