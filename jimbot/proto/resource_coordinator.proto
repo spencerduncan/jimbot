@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package jimbot;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
 // Resource types that can be managed
 enum ResourceType {
@@ -36,24 +36,24 @@ enum RequestStatus {
 
 // Resource allocation request
 message ResourceRequest {
-  string request_id = 1;      // Unique request ID
-  string component = 2;       // Requesting component (e.g., "ray_rllib")
-  ResourceType resource = 3;  // Type of resource requested
-  int32 quantity = 4;         // Amount requested (e.g., GPU memory in MB)
-  Priority priority = 5;      // Request priority
-  google.protobuf.Duration timeout = 6;  // Max time to wait for resource
+  string request_id = 1; // Unique request ID
+  string component = 2; // Requesting component (e.g., "ray_rllib")
+  ResourceType resource = 3; // Type of resource requested
+  int32 quantity = 4; // Amount requested (e.g., GPU memory in MB)
+  Priority priority = 5; // Request priority
+  google.protobuf.Duration timeout = 6; // Max time to wait for resource
   google.protobuf.Duration duration = 7; // Expected usage duration
-  map<string, string> metadata = 8;      // Additional request metadata
+  map<string, string> metadata = 8; // Additional request metadata
 }
 
 // Resource allocation response
 message ResourceResponse {
   string request_id = 1;
   RequestStatus status = 2;
-  string message = 3;         // Human-readable status message
+  string message = 3; // Human-readable status message
   google.protobuf.Timestamp granted_at = 4;
   google.protobuf.Timestamp expires_at = 5;
-  string token = 6;           // Token to use when releasing resource
+  string token = 6; // Token to use when releasing resource
   int32 granted_quantity = 7; // Actual amount granted (may be less than requested)
 }
 
@@ -72,7 +72,7 @@ message ReleaseResponse {
 
 // Query for current resource status
 message ResourceStatusRequest {
-  ResourceType resource = 1;  // Empty for all resources
+  ResourceType resource = 1; // Empty for all resources
 }
 
 // Current resource status
@@ -114,16 +114,16 @@ message HealthCheckResponse {
 service ResourceCoordinator {
   // Request a resource allocation
   rpc RequestResource(ResourceRequest) returns (ResourceResponse);
-  
+
   // Release a previously allocated resource
   rpc ReleaseResource(ReleaseRequest) returns (ReleaseResponse);
-  
+
   // Get current resource status
   rpc GetResourceStatus(ResourceStatusRequest) returns (ResourceStatusResponse);
-  
+
   // Health check
   rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
-  
+
   // Stream resource status updates (for monitoring)
   rpc StreamResourceStatus(ResourceStatusRequest) returns (stream ResourceStatus);
 }

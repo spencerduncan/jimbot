@@ -8,7 +8,7 @@ function StateExtractorUtils.safe_check_path(root, path)
     if not root then
         return false
     end
-    
+
     local current = root
     for _, key in ipairs(path) do
         if type(current) ~= "table" or current[key] == nil then
@@ -24,11 +24,11 @@ function StateExtractorUtils.safe_get_value(table, key, default)
     if not table or type(table) ~= "table" then
         return default
     end
-    
+
     if table[key] ~= nil then
         return table[key]
     end
-    
+
     return default
 end
 
@@ -37,7 +37,7 @@ function StateExtractorUtils.safe_get_nested_value(root, path, default)
     if not root then
         return default
     end
-    
+
     local current = root
     for _, key in ipairs(path) do
         if type(current) ~= "table" or current[key] == nil then
@@ -55,7 +55,7 @@ function StateExtractorUtils.safe_primitive_value(table, key, default)
     if not table or type(table) ~= "table" then
         return default
     end
-    
+
     local value = table[key]
     if value ~= nil then
         local value_type = type(value)
@@ -66,7 +66,7 @@ function StateExtractorUtils.safe_primitive_value(table, key, default)
             return default
         end
     end
-    
+
     return default
 end
 
@@ -76,7 +76,7 @@ function StateExtractorUtils.safe_primitive_nested_value(root, path, default)
     if not root then
         return default
     end
-    
+
     local current = root
     for _, key in ipairs(path) do
         if type(current) ~= "table" or current[key] == nil then
@@ -84,7 +84,7 @@ function StateExtractorUtils.safe_primitive_nested_value(root, path, default)
         end
         current = current[key]
     end
-    
+
     -- Only return if it's a primitive type
     local value_type = type(current)
     if value_type == "string" or value_type == "number" or value_type == "boolean" then

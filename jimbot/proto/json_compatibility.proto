@@ -7,23 +7,23 @@ import "jimbot/proto/balatro_events.proto";
 
 // JSON compatibility wrapper for legacy event format
 message JsonEvent {
-  string type = 1;                           // Original JSON event type string
-  string source = 2;                         // Event source
-  int64 timestamp = 3;                       // Unix timestamp in milliseconds
-  string priority = 4;                       // Priority level
-  google.protobuf.Struct payload = 5;        // Original JSON payload as Struct
-  string subtype = 6;                        // Optional subtype field
-  map<string, string> metadata = 7;          // Additional metadata
+  string type = 1; // Original JSON event type string
+  string source = 2; // Event source
+  int64 timestamp = 3; // Unix timestamp in milliseconds
+  string priority = 4; // Priority level
+  google.protobuf.Struct payload = 5; // Original JSON payload as Struct
+  string subtype = 6; // Optional subtype field
+  map<string, string> metadata = 7; // Additional metadata
 }
 
 // Bidirectional conversion service
 service JsonCompatibilityService {
   // Convert JSON event to protobuf Event
   rpc JsonToProto(JsonEvent) returns (jimbot.Event);
-  
+
   // Convert protobuf Event to JSON event
   rpc ProtoToJson(jimbot.Event) returns (JsonEvent);
-  
+
   // Batch conversion
   rpc BatchJsonToProto(JsonEventBatch) returns (jimbot.EventBatch);
   rpc BatchProtoToJson(jimbot.EventBatch) returns (JsonEventBatch);
@@ -37,14 +37,14 @@ message JsonEventBatch {
 
 // Mapping configuration for field conversion
 message FieldMapping {
-  string json_path = 1;      // JSON field path (e.g., "payload.game_state.money")
-  string proto_path = 2;     // Proto field path (e.g., "game_state.money")
-  string transform = 3;      // Optional transformation function
+  string json_path = 1; // JSON field path (e.g., "payload.game_state.money")
+  string proto_path = 2; // Proto field path (e.g., "game_state.money")
+  string transform = 3; // Optional transformation function
 }
 
 message EventTypeMapping {
-  string json_type = 1;      // JSON event type string
-  jimbot.EventType proto_type = 2;  // Proto event type enum
+  string json_type = 1; // JSON event type string
+  jimbot.EventType proto_type = 2; // Proto event type enum
   repeated FieldMapping field_mappings = 3;
 }
 
@@ -52,6 +52,6 @@ message EventTypeMapping {
 message JsonCompatibilityConfig {
   repeated EventTypeMapping type_mappings = 1;
   map<string, string> default_values = 2;
-  bool strict_mode = 3;      // Fail on unknown fields if true
+  bool strict_mode = 3; // Fail on unknown fields if true
   bool preserve_unknown = 4; // Preserve unknown fields in metadata
 }

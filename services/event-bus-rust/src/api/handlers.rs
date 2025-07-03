@@ -1,8 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::Json,
-};
+use axum::{extract::State, http::StatusCode, response::Json};
 use tracing::{debug, error, info};
 
 use crate::{
@@ -16,8 +12,11 @@ pub async fn handle_single_event(
     State(state): State<AppState>,
     Json(event): Json<JsonEvent>,
 ) -> Result<Json<ApiResponse>, StatusCode> {
-    debug!("Received single event: type={}, source={}", event.event_type, event.source);
-    
+    debug!(
+        "Received single event: type={}, source={}",
+        event.event_type, event.source
+    );
+
     // Convert JSON to Protocol Buffer
     match json_to_proto_event(event) {
         Ok(proto_event) => {
@@ -26,13 +25,16 @@ pub async fn handle_single_event(
                 error!("Failed to route event: {}", e);
                 return Ok(Json(ApiResponse::error(format!("Routing failed: {}", e))));
             }
-            
+
             info!("Successfully processed single event");
             Ok(Json(ApiResponse::ok()))
         }
         Err(e) => {
             error!("Failed to convert JSON to protobuf: {}", e);
-            Ok(Json(ApiResponse::error(format!("Invalid event format: {}", e))))
+            Ok(Json(ApiResponse::error(format!(
+                "Invalid event format: {}",
+                e
+            ))))
         }
     }
 }
@@ -44,10 +46,10 @@ pub async fn handle_batch_events(
 ) -> Result<Json<ApiResponse>, StatusCode> {
     let event_count = batch.events.len();
     info!("Received batch with {} events", event_count);
-    
+
     let mut processed = 0;
     let mut errors = Vec::new();
-    
+
     for (idx, event) in batch.events.into_iter().enumerate() {
         match json_to_proto_event(event) {
             Ok(proto_event) => {
@@ -64,7 +66,7 @@ pub async fn handle_batch_events(
             }
         }
     }
-    
+
     if errors.is_empty() {
         info!("Successfully processed all {} events", processed);
         Ok(Json(ApiResponse::ok()))

@@ -2,192 +2,192 @@ syntax = "proto3";
 
 package jimbot.infrastructure;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
 
 // Common event wrapper for all components
 message Event {
-    string id = 1;
-    google.protobuf.Timestamp timestamp = 2;
-    string source = 3;
-    string topic = 4;
-    google.protobuf.Any payload = 5;
-    string correlation_id = 6;
-    map<string, string> metadata = 7;
+  string id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string source = 3;
+  string topic = 4;
+  google.protobuf.Any payload = 5;
+  string correlation_id = 6;
+  map<string, string> metadata = 7;
 }
 
 // Game-specific events
 message GameStateUpdate {
-    string game_id = 1;
-    int32 round = 2;
-    int32 ante = 3;
-    repeated Joker jokers = 4;
-    Hand current_hand = 5;
-    int32 money = 6;
-    int32 score = 7;
-    int32 remaining_discards = 8;
-    int32 remaining_hands = 9;
+  string game_id = 1;
+  int32 round = 2;
+  int32 ante = 3;
+  repeated Joker jokers = 4;
+  Hand current_hand = 5;
+  int32 money = 6;
+  int32 score = 7;
+  int32 remaining_discards = 8;
+  int32 remaining_hands = 9;
 }
 
 message Joker {
-    string id = 1;
-    string name = 2;
-    string rarity = 3;
-    int32 cost = 4;
-    repeated string effects = 5;
-    map<string, float> modifiers = 6;
+  string id = 1;
+  string name = 2;
+  string rarity = 3;
+  int32 cost = 4;
+  repeated string effects = 5;
+  map<string, float> modifiers = 6;
 }
 
 message Card {
-    string suit = 1;
-    string rank = 2;
-    string enhancement = 3;
-    string edition = 4;
-    string seal = 5;
+  string suit = 1;
+  string rank = 2;
+  string enhancement = 3;
+  string edition = 4;
+  string seal = 5;
 }
 
 message Hand {
-    repeated Card cards = 1;
-    string hand_type = 2;
-    int32 base_chips = 3;
-    int32 base_mult = 4;
+  repeated Card cards = 1;
+  string hand_type = 2;
+  int32 base_chips = 3;
+  int32 base_mult = 4;
 }
 
 // MCP Events
 message JokerPurchased {
-    string joker_id = 1;
-    string joker_name = 2;
-    int32 cost = 3;
-    int32 slot_position = 4;
+  string joker_id = 1;
+  string joker_name = 2;
+  int32 cost = 3;
+  int32 slot_position = 4;
 }
 
 message HandPlayed {
-    Hand hand = 1;
-    int32 chips_earned = 2;
-    int32 mult_earned = 3;
-    int32 total_score = 4;
-    repeated string triggered_jokers = 5;
+  Hand hand = 1;
+  int32 chips_earned = 2;
+  int32 mult_earned = 3;
+  int32 total_score = 4;
+  repeated string triggered_jokers = 5;
 }
 
 message RoundCompleted {
-    int32 round_number = 1;
-    int32 ante = 2;
-    bool success = 3;
-    int32 money_earned = 4;
-    string boss_defeated = 5;
+  int32 round_number = 1;
+  int32 ante = 2;
+  bool success = 3;
+  int32 money_earned = 4;
+  string boss_defeated = 5;
 }
 
 message GameOver {
-    string game_id = 1;
-    int32 final_score = 2;
-    int32 final_ante = 3;
-    int32 final_round = 4;
-    string defeat_reason = 5;
-    google.protobuf.Timestamp duration = 6;
+  string game_id = 1;
+  int32 final_score = 2;
+  int32 final_ante = 3;
+  int32 final_round = 4;
+  string defeat_reason = 5;
+  google.protobuf.Timestamp duration = 6;
 }
 
 // Training Events
 message TrainingStateUpdate {
-    string model_id = 1;
-    int32 episode = 2;
-    float reward = 3;
-    float loss = 4;
-    map<string, float> metrics = 5;
+  string model_id = 1;
+  int32 episode = 2;
+  float reward = 3;
+  float loss = 4;
+  map<string, float> metrics = 5;
 }
 
 message CheckpointSaved {
-    string model_id = 1;
-    string checkpoint_path = 2;
-    int32 episode = 3;
-    float average_reward = 4;
+  string model_id = 1;
+  string checkpoint_path = 2;
+  int32 episode = 3;
+  float average_reward = 4;
 }
 
 // Strategy Events
 message StrategyRequest {
-    string request_id = 1;
-    GameStateUpdate game_state = 2;
-    string decision_type = 3;
-    repeated string options = 4;
+  string request_id = 1;
+  GameStateUpdate game_state = 2;
+  string decision_type = 3;
+  repeated string options = 4;
 }
 
 message StrategyResponse {
-    string request_id = 1;
-    string chosen_option = 2;
-    float confidence = 3;
-    string reasoning = 4;
-    bool from_cache = 5;
+  string request_id = 1;
+  string chosen_option = 2;
+  float confidence = 3;
+  string reasoning = 4;
+  bool from_cache = 5;
 }
 
 // Resource Events
 message ResourceAllocationRequest {
-    string component_id = 1;
-    string resource_type = 2;
-    float duration_seconds = 3;
-    int32 priority = 4;
+  string component_id = 1;
+  string resource_type = 2;
+  float duration_seconds = 3;
+  int32 priority = 4;
 }
 
 message ResourceAllocationResponse {
-    string component_id = 1;
-    string resource_type = 2;
-    bool allocated = 3;
-    string allocation_id = 4;
-    float wait_time_seconds = 5;
+  string component_id = 1;
+  string resource_type = 2;
+  bool allocated = 3;
+  string allocation_id = 4;
+  float wait_time_seconds = 5;
 }
 
-// Monitoring Events  
+// Monitoring Events
 message MetricUpdate {
-    string component = 1;
-    string metric_name = 2;
-    float value = 3;
-    map<string, string> labels = 4;
-    google.protobuf.Timestamp timestamp = 5;
+  string component = 1;
+  string metric_name = 2;
+  float value = 3;
+  map<string, string> labels = 4;
+  google.protobuf.Timestamp timestamp = 5;
 }
 
 message HealthCheck {
-    string component = 1;
-    bool healthy = 2;
-    string status_message = 3;
-    map<string, float> metrics = 4;
+  string component = 1;
+  bool healthy = 2;
+  string status_message = 3;
+  map<string, float> metrics = 4;
 }
 
 // Configuration Events
 message ConfigUpdate {
-    string component = 1;
-    string config_key = 2;
-    string old_value = 3;
-    string new_value = 4;
-    string updated_by = 5;
+  string component = 1;
+  string config_key = 2;
+  string old_value = 3;
+  string new_value = 4;
+  string updated_by = 5;
 }
 
 // Error Events
 message ErrorEvent {
-    string component = 1;
-    string error_type = 2;
-    string message = 3;
-    string stack_trace = 4;
-    map<string, string> context = 5;
+  string component = 1;
+  string error_type = 2;
+  string message = 3;
+  string stack_trace = 4;
+  map<string, string> context = 5;
 }
 
 // Command Messages
 message StartTraining {
-    string model_id = 1;
-    map<string, string> hyperparameters = 2;
-    int32 max_episodes = 3;
+  string model_id = 1;
+  map<string, string> hyperparameters = 2;
+  int32 max_episodes = 3;
 }
 
 message StopTraining {
-    string model_id = 1;
-    bool save_checkpoint = 2;
+  string model_id = 1;
+  bool save_checkpoint = 2;
 }
 
 message QueryKnowledgeGraph {
-    string query_type = 1;
-    repeated string parameters = 2;
-    int32 max_results = 3;
+  string query_type = 1;
+  repeated string parameters = 2;
+  int32 max_results = 3;
 }
 
 message KnowledgeGraphResponse {
-    string query_type = 1;
-    repeated google.protobuf.Any results = 2;
-    float query_time_ms = 3;
+  string query_type = 1;
+  repeated google.protobuf.Any results = 2;
+  float query_time_ms = 3;
 }

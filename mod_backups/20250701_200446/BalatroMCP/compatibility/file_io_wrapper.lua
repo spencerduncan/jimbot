@@ -2,29 +2,29 @@
 -- Maintains existing API while using the new refactored architecture internally
 -- Allows gradual migration from old FileIO to new MessageManager + FileTransport
 
-local MessageManager = require("message_manager")
 local FileTransport = require("transports.file_transport")
+local MessageManager = require("message_manager")
 
 local FileIO = {}
 FileIO.__index = FileIO
 
 function FileIO.new(base_path)
     local self = setmetatable({}, FileIO)
-    
+
     -- Create the new architecture components
     local transport = FileTransport.new(base_path)
     self.message_manager = MessageManager.new(transport, "FILE_IO_COMPAT")
-    
+
     -- Expose transport properties for backward compatibility
     self.base_path = transport.base_path
-    self.sequence_id = 0  -- Will be managed by message_manager
+    self.sequence_id = 0 -- Will be managed by message_manager
     self.last_read_sequences = transport.last_read_sequences
     self.component_name = "FILE_IO"
     self.json = self.message_manager.json
-    
+
     -- Direct access to transport for specific operations
     self.transport = transport
-    
+
     return self
 end
 

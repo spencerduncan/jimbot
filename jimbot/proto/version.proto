@@ -6,10 +6,10 @@ import "google/protobuf/timestamp.proto";
 
 // Version information for schema management
 message SchemaVersion {
-  int32 major = 1;           // Breaking changes
-  int32 minor = 2;           // New features (backward compatible)
-  int32 patch = 3;           // Bug fixes
-  string build = 4;          // Build identifier
+  int32 major = 1; // Breaking changes
+  int32 minor = 2; // New features (backward compatible)
+  int32 patch = 3; // Bug fixes
+  string build = 4; // Build identifier
   google.protobuf.Timestamp released_at = 5;
 }
 
@@ -66,7 +66,7 @@ message FieldAddition {
 message FieldRemoval {
   string message_type = 1;
   string field_name = 2;
-  bool move_to_metadata = 3;  // Preserve in metadata map
+  bool move_to_metadata = 3; // Preserve in metadata map
 }
 
 message EnumValueAddition {

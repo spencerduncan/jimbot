@@ -10,7 +10,7 @@ local EventBusClient = {
     logger = nil,
     connected = false,
     event_queue = {},
-    sending = false
+    sending = false,
 }
 
 -- Initialize the client
@@ -20,7 +20,7 @@ function EventBusClient:init(config)
     self.max_retries = config.max_retries or 3
     self.retry_delay = (config.retry_delay_ms or 1000) / 1000
     self.logger = BalatroMCP.components.logger
-    
+
     -- Don't test connection immediately - wait until SMODS is fully loaded
     self.connection_tested = false
     self.connected = false
@@ -29,8 +29,8 @@ end
 -- Test connection to event bus
 function EventBusClient:test_connection()
     self.connection_tested = true
-    self.logger:info("Testing connection to event bus", {url = self.url})
-    
+    self.logger:info("Testing connection to event bus", { url = self.url })
+
     -- Try to load https module directly (as SMODS does)
     local success, https = pcall(require, "https")
     if not success then
@@ -38,35 +38,35 @@ function EventBusClient:test_connection()
         self.connected = false
         return
     end
-    
+
     if not https or not https.request then
         self.logger:error("https module loaded but request function not found")
         self.connected = false
         return
     end
-    
+
     -- Store the https module for later use
     self.https = https
-    
+
     -- Send a test event to verify connection
     local test_event = {
         type = "connection_test",
         timestamp = os.time() * 1000,
         source = "BalatroMCP",
         data = {
-            message = "Testing event bus connection"
-        }
+            message = "Testing event bus connection",
+        },
     }
-    
+
     local json = self:event_to_json(test_event)
     local success, response = self:http_post(self.url, json)
-    
+
     if success then
         self.connected = true
-        self.logger:info("Event bus connection established", {response = response})
+        self.logger:info("Event bus connection established", { response = response })
     else
         self.connected = false
-        self.logger:error("Failed to connect to event bus", {error = response})
+        self.logger:error("Failed to connect to event bus", { error = response })
     end
 end
 
@@ -76,43 +76,45 @@ function EventBusClient:send_event(event)
     if not self.connection_tested then
         self:test_connection()
     end
-    
+
     if not self.connected then
         self.logger:warn("Event bus not connected, queueing event")
         table.insert(self.event_queue, event)
         return false
     end
-    
+
     -- Add metadata
     event.event_id = self:generate_uuid()
     event.timestamp = os.time() * 1000 -- milliseconds
     event.source = event.source or "BalatroMCP"
     event.version = 1
-    
+
     -- Convert to JSON
     local json = self:event_to_json(event)
-    
+
     -- Send via HTTP POST
     local success, response = self:http_post(self.url, json)
-    
+
     if success then
         self.retry_count = 0
         return true
     else
-        self.logger:error("Failed to send event", {error = response})
+        self.logger:error("Failed to send event", { error = response })
         return self:handle_send_failure(event)
     end
 end
 
 -- Send batch of events
 function EventBusClient:send_batch(events)
-    if #events == 0 then return true end
-    
+    if #events == 0 then
+        return true
+    end
+
     -- Test connection on first use if not already tested
     if not self.connection_tested then
         self:test_connection()
     end
-    
+
     if not self.connected then
         self.logger:warn("Event bus not connected, cannot send batch")
         -- Queue events for retry
@@ -121,16 +123,16 @@ function EventBusClient:send_batch(events)
         end
         return false
     end
-    
-    self.logger:debug("Sending event batch", {count = #events})
-    
+
+    self.logger:debug("Sending event batch", { count = #events })
+
     local batch = {
         batch_id = self:generate_uuid(),
         events = events,
         source = "BalatroMCP",
-        timestamp = os.time() * 1000
+        timestamp = os.time() * 1000,
     }
-    
+
     -- Add metadata to each event
     for _, event in ipairs(events) do
         event.event_id = event.event_id or self:generate_uuid()
@@ -138,15 +140,15 @@ function EventBusClient:send_batch(events)
         event.source = event.source or "BalatroMCP"
         event.version = event.version or 1
     end
-    
+
     local json = self:batch_to_json(batch)
     local success, response = self:http_post(self.url .. "/batch", json)
-    
+
     if success then
         self.logger:debug("Batch sent successfully")
         return true
     else
-        self.logger:error("Failed to send batch", {error = response})
+        self.logger:error("Failed to send batch", { error = response })
         -- Queue events for retry
         for _, event in ipairs(events) do
             table.insert(self.event_queue, event)
@@ -162,9 +164,9 @@ function EventBusClient:http_post(url, data)
         self.logger:error("https module not available")
         return false, "https module not available"
     end
-    
-    self.logger:debug("HTTP POST via https module", {url = url, size = #data})
-    
+
+    self.logger:debug("HTTP POST via https module", { url = url, size = #data })
+
     -- The https module in SMODS uses a simple API
     -- https.request(url, options) where options can include method, headers, body
     local options = {
@@ -172,34 +174,32 @@ function EventBusClient:http_post(url, data)
         headers = {
             ["Content-Type"] = "application/json",
             ["User-Agent"] = "BalatroMCP/1.0",
-            ["Content-Length"] = tostring(#data)
+            ["Content-Length"] = tostring(#data),
         },
-        body = data
+        body = data,
     }
-    
+
     -- Send the request using the https module
     local success, status_or_error, response_body = pcall(function()
         return self.https.request(url, options)
     end)
-    
+
     if not success then
-        self.logger:error("HTTP request failed", {error = tostring(status_or_error)})
+        self.logger:error("HTTP request failed", { error = tostring(status_or_error) })
         return false, tostring(status_or_error)
     end
-    
+
     -- The https module returns status code and response body
     local status = status_or_error
     local body = response_body
-    
+
     -- Check response status
     if status and status >= 200 and status < 300 then
-        self.logger:debug("HTTP POST successful", {status = status})
+        self.logger:debug("HTTP POST successful", { status = status })
         return true, body or "OK"
     else
-        local error_msg = string.format("HTTP %d: %s", 
-            status or 0, 
-            body or "no response body")
-        self.logger:error("HTTP POST failed", {error = error_msg})
+        local error_msg = string.format("HTTP %d: %s", status or 0, body or "no response body")
+        self.logger:error("HTTP POST failed", { error = error_msg })
         return false, error_msg
     end
 end
@@ -208,11 +208,11 @@ end
 function EventBusClient:parse_url(url)
     -- Remove protocol
     local without_protocol = url:gsub("^https?://", "")
-    
+
     -- Extract host and path
     local host, path = without_protocol:match("^([^/]+)(.*)$")
     path = path or "/"
-    
+
     -- Extract port if present
     local host_part, port = host:match("^([^:]+):(%d+)$")
     if host_part then
@@ -221,18 +221,18 @@ function EventBusClient:parse_url(url)
     else
         port = 80
     end
-    
+
     return host, port, path
 end
 
 -- Handle send failure
 function EventBusClient:handle_send_failure(event)
     self.retry_count = self.retry_count + 1
-    
+
     if self.retry_count <= self.max_retries then
         -- Queue for retry
         table.insert(self.event_queue, event)
-        self.logger:warn("Queueing event for retry", {attempt = self.retry_count})
+        self.logger:warn("Queueing event for retry", { attempt = self.retry_count })
         return false
     else
         self.logger:error("Max retries exceeded, dropping event")
@@ -246,20 +246,20 @@ function EventBusClient:process_queue()
     if #self.event_queue == 0 or self.sending then
         return
     end
-    
+
     self.sending = true
     local events_to_send = {}
-    
+
     -- Take up to 10 events from queue
     for i = 1, math.min(10, #self.event_queue) do
         table.insert(events_to_send, table.remove(self.event_queue, 1))
     end
-    
+
     -- Try to send as batch
     if not self:send_batch(events_to_send) then
         self.logger:warn("Failed to send queued events")
     end
-    
+
     self.sending = false
 end
 
@@ -277,15 +277,15 @@ end
 function EventBusClient:table_to_json(t)
     local json = "{"
     local first = true
-    
+
     for k, v in pairs(t) do
         if not first then
             json = json .. ","
         end
         first = false
-        
+
         json = json .. '"' .. k .. '":'
-        
+
         local vtype = type(v)
         if vtype == "string" then
             json = json .. '"' .. self:escape_json_string(v) .. '"'
@@ -298,7 +298,9 @@ function EventBusClient:table_to_json(t)
                 -- Array
                 json = json .. "["
                 for i, item in ipairs(v) do
-                    if i > 1 then json = json .. "," end
+                    if i > 1 then
+                        json = json .. ","
+                    end
                     if type(item) == "table" then
                         json = json .. self:table_to_json(item)
                     else
@@ -314,7 +316,7 @@ function EventBusClient:table_to_json(t)
             json = json .. "null"
         end
     end
-    
+
     json = json .. "}"
     return json
 end
@@ -331,10 +333,10 @@ end
 
 -- Generate a simple UUID
 function EventBusClient:generate_uuid()
-    local template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-    return string.gsub(template, '[xy]', function (c)
-        local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
-        return string.format('%x', v)
+    local template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+    return string.gsub(template, "[xy]", function(c)
+        local v = (c == "x") and math.random(0, 0xf) or math.random(8, 0xb)
+        return string.format("%x", v)
     end)
 end
 

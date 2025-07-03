@@ -1,7 +1,7 @@
 mod api;
 mod grpc;
-mod routing;
 mod proto;
+mod routing;
 
 use anyhow::Result;
 use axum::{routing::post, Router};
@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
     // Start REST API server
     let rest_addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     info!("REST API listening on {}", rest_addr);
-    
+
     let rest_server = tokio::spawn(async move {
         axum::Server::bind(&rest_addr)
             .serve(rest_app.into_make_service())
@@ -64,9 +64,9 @@ async fn main() -> Result<()> {
     // Start gRPC server
     let grpc_addr = "[::]:50051".parse()?;
     let grpc_service = EventBusService::new(router);
-    
+
     info!("gRPC server listening on {}", grpc_addr);
-    
+
     // Note: For now, we'll just have the gRPC service ready but not start a separate server
     // The actual gRPC service would need a proper proto definition file
     // This is a placeholder for the gRPC functionality

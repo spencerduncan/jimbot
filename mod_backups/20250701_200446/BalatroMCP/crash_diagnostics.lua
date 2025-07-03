@@ -28,7 +28,9 @@ function CrashDiagnostics:validate_object_config(obj, obj_name, access_location)
     end
 
     if not obj.config then
-        self:log("ERROR: " .. obj_name .. ".config is nil (accessed from " .. access_location .. ")")
+        self:log(
+            "ERROR: " .. obj_name .. ".config is nil (accessed from " .. access_location .. ")"
+        )
         self:log("DIAGNOSTIC: " .. obj_name .. " type: " .. type(obj))
 
         -- Log available properties
@@ -111,7 +113,7 @@ end
 function CrashDiagnostics:create_safe_hook(original_func, hook_name)
     -- Create a wrapped version of the hook with diagnostics
     return function(...)
-        local args = {...}  -- Capture varargs in local variable
+        local args = { ... } -- Capture varargs in local variable
 
         -- Pre-hook validation
         if not self:pre_hook_validation(hook_name) then
@@ -149,11 +151,16 @@ end
 function CrashDiagnostics:monitor_joker_operations()
     -- Add specific monitoring for joker operations that access config
     if G and G.jokers and G.jokers.cards then
-       -- self:log("MONITORING: Scanning " .. #G.jokers.cards .. " jokers for config validity")
-
+        -- self:log("MONITORING: Scanning " .. #G.jokers.cards .. " jokers for config validity")
 
         for i, joker in ipairs(G.jokers.cards) do
-            if not self:validate_object_config(joker, "monitored_joker[" .. i .. "]", "monitor_joker_operations") then
+            if
+                not self:validate_object_config(
+                    joker,
+                    "monitored_joker[" .. i .. "]",
+                    "monitor_joker_operations"
+                )
+            then
                 self:log("CRITICAL: Found corrupted joker during monitoring!")
 
                 -- Log detailed joker state
@@ -163,7 +170,9 @@ function CrashDiagnostics:monitor_joker_operations()
                         self:log("DETAIL: Joker " .. i .. " has ability object")
                     end
                     if joker.unique_val then
-                        self:log("DETAIL: Joker " .. i .. " unique_val: " .. tostring(joker.unique_val))
+                        self:log(
+                            "DETAIL: Joker " .. i .. " unique_val: " .. tostring(joker.unique_val)
+                        )
                     end
                 else
                     self:log("DETAIL: Joker " .. i .. " is completely nil")
@@ -188,15 +197,17 @@ function CrashDiagnostics:validate_game_state(operation)
     end
 
     if type(G.STATE) ~= "number" then
-        self:log("WARNING: G.STATE is not a number (type: " .. type(G.STATE) .. ") during " .. operation)
+        self:log(
+            "WARNING: G.STATE is not a number (type: " .. type(G.STATE) .. ") during " .. operation
+        )
     end
 
     -- Validate critical game objects
     local critical_objects = {
-        {"G.hand", G.hand},
-        {"G.jokers", G.jokers},
-        {"G.deck", G.deck},
-        {"G.FUNCS", G.FUNCS}
+        { "G.hand", G.hand },
+        { "G.jokers", G.jokers },
+        { "G.deck", G.deck },
+        { "G.FUNCS", G.FUNCS },
     }
 
     for _, obj_info in ipairs(critical_objects) do
@@ -219,7 +230,7 @@ function CrashDiagnostics:track_hook_chain(hook_name)
     table.insert(self.hook_chain, {
         hook = hook_name,
         timestamp = love.timer and love.timer.getTime() or os.clock(),
-        state = G and G.STATE or "NIL"
+        state = G and G.STATE or "NIL",
     })
 
     -- Keep only the last 10 hooks to avoid memory issues
@@ -238,8 +249,14 @@ function CrashDiagnostics:analyze_hook_chain()
 
     local analysis = "Hook chain analysis:\n"
     for i, hook_data in ipairs(self.hook_chain) do
-        analysis = analysis .. string.format("  %d: %s (state=%s, time=%.3f)\n",
-            i, hook_data.hook, tostring(hook_data.state), hook_data.timestamp)
+        analysis = analysis
+            .. string.format(
+                "  %d: %s (state=%s, time=%.3f)\n",
+                i,
+                hook_data.hook,
+                tostring(hook_data.state),
+                hook_data.timestamp
+            )
     end
 
     -- Look for rapid hook calls (potential infinite loops)
@@ -251,7 +268,12 @@ function CrashDiagnostics:analyze_hook_chain()
 
         for hook, count in pairs(recent_hooks) do
             if count >= 2 then
-                analysis = analysis .. "WARNING: Rapid calls to " .. hook .. " detected (" .. count .. " times)\n"
+                analysis = analysis
+                    .. "WARNING: Rapid calls to "
+                    .. hook
+                    .. " detected ("
+                    .. count
+                    .. " times)\n"
             end
         end
     end
@@ -317,7 +339,9 @@ function CrashDiagnostics:get_crash_context()
         object_access_count = self.object_access_count,
         hook_chain = self.hook_chain or {},
         timestamp = os.time(),
-        emergency_dump = function() return self:emergency_state_dump() end
+        emergency_dump = function()
+            return self:emergency_state_dump()
+        end,
     }
 end
 
@@ -327,22 +351,22 @@ function CrashDiagnostics:create_safe_state_extraction_wrapper(state_extractor)
         self:log("ERROR: Cannot wrap nil state_extractor")
         return
     end
-    
+
     self:log("INFO: Creating safe state extraction wrapper")
-    
+
     -- Store original method
     local original_extract = state_extractor.extract_current_state
     if not original_extract then
         self:log("ERROR: state_extractor missing extract_current_state method")
         return
     end
-    
+
     -- Create wrapped version with crash protection
     state_extractor.extract_current_state = function(self_extractor)
         local success, result = pcall(function()
             return original_extract(self_extractor)
         end)
-        
+
         if success then
             return result
         else
@@ -351,11 +375,11 @@ function CrashDiagnostics:create_safe_state_extraction_wrapper(state_extractor)
             -- Return minimal safe state
             return {
                 current_phase = "error",
-                extraction_errors = {"State extraction crashed: " .. tostring(result)}
+                extraction_errors = { "State extraction crashed: " .. tostring(result) },
             }
         end
     end
-    
+
     self:log("INFO: Safe state extraction wrapper created successfully")
 end
 

@@ -6,18 +6,18 @@ local BalatroMCP = {
     enabled = true,
     headless = true,
     debug = true,
-    
+
     -- Component references
     components = {},
-    
+
     -- Configuration
     config = {
         event_bus_url = "http://localhost:8080/api/v1/events",
         batch_window_ms = 100,
         heartbeat_interval_ms = 5000,
         max_retries = 3,
-        retry_delay_ms = 1000
-    }
+        retry_delay_ms = 1000,
+    },
 }
 
 -- Global reference for other modules
@@ -28,7 +28,7 @@ function BalatroMCP:init()
     if self.debug then
         print("[BalatroMCP] Initializing version " .. self.version)
     end
-    
+
     -- Load components
     self.components.config = require("mods.BalatroMCP.config")
     self.components.logger = require("mods.BalatroMCP.logger")
@@ -37,7 +37,7 @@ function BalatroMCP:init()
     self.components.event_bus = require("mods.BalatroMCP.event_bus_client")
     self.components.aggregator = require("mods.BalatroMCP.event_aggregator")
     self.components.executor = require("mods.BalatroMCP.action_executor")
-    
+
     -- Override configuration from file if exists
     local user_config = self.components.config:load()
     if user_config then
@@ -45,13 +45,13 @@ function BalatroMCP:init()
             self.config[k] = v
         end
     end
-    
+
     -- Initialize components
     self.components.logger:init(self.debug)
     self.components.event_bus:init(self.config)
     self.components.aggregator:init(self.config.batch_window_ms)
     self.components.executor:init()
-    
+
     -- Enable headless mode based on config
     self.headless = self.config.headless or false
     if self.headless then
@@ -60,10 +60,10 @@ function BalatroMCP:init()
     else
         self.components.logger:info("Headless mode disabled - graphics enabled")
     end
-    
+
     -- Start heartbeat
     self:start_heartbeat()
-    
+
     self.components.logger:info("BalatroMCP initialized successfully")
 end
 
@@ -84,20 +84,20 @@ function BalatroMCP:update(dt)
                 version = self.version,
                 uptime = current_time,
                 headless = self.headless,
-                game_state = G.STATE and tostring(G.STATE) or "unknown"
-            }
+                game_state = G.STATE and tostring(G.STATE) or "unknown",
+            },
         })
         self.last_heartbeat = current_time
     end
-    
+
     -- Process event queue
     self.components.aggregator:update(dt)
-    
+
     -- Process pending actions
     if self.components.executor then
         self.components.executor:update(dt)
     end
-    
+
     -- Check for commands periodically
     self:check_for_commands(dt)
 end
@@ -105,14 +105,14 @@ end
 -- Check for commands from the event bus
 function BalatroMCP:check_for_commands(dt)
     self.command_check_timer = (self.command_check_timer or 0) + dt
-    
+
     -- Check every 0.5 seconds
     if self.command_check_timer < 0.5 then
         return
     end
-    
+
     self.command_check_timer = 0
-    
+
     -- Poll for commands (in a real implementation, this would query an endpoint)
     -- For now, we'll enable auto-play by default for testing
     if not self.auto_play_set and self.components.executor then
@@ -129,39 +129,39 @@ function BalatroMCP:hook_game_events()
         if original_play_cards then
             original_play_cards(e)
         end
-        
+
         -- Extract and send game state
         local game_state = self.components.extractor:get_current_state()
         self.components.aggregator:add_event({
             type = "GAME_STATE",
             source = "BalatroMCP",
-            payload = game_state
+            payload = game_state,
         })
     end
-    
+
     -- Hook into shop purchases
     local original_buy = G.FUNCS.buy_from_shop
     G.FUNCS.buy_from_shop = function(e)
         if original_buy then
             original_buy(e)
         end
-        
+
         -- Extract and send updated state
         local game_state = self.components.extractor:get_current_state()
         self.components.aggregator:add_event({
             type = "GAME_STATE",
             source = "BalatroMCP",
-            payload = game_state
+            payload = game_state,
         })
     end
-    
+
     -- Hook into round completion
     local original_end_round = G.FUNCS.end_round
     G.FUNCS.end_round = function(e)
         if original_end_round then
             original_end_round(e)
         end
-        
+
         -- Send round complete event
         self.components.aggregator:add_event({
             type = "ROUND_COMPLETE",
@@ -170,8 +170,8 @@ function BalatroMCP:hook_game_events()
                 ante = G.GAME.round_resets.ante,
                 round = G.GAME.round,
                 score = G.GAME.chips,
-                money = G.GAME.dollars
-            }
+                money = G.GAME.dollars,
+            },
         })
     end
 end
@@ -199,12 +199,12 @@ love.update = function(dt)
     if original_update then
         original_update(dt)
     end
-    
+
     -- Initialize once when game is ready
     if not BalatroMCP.initialized and G and G.FUNCS then
         initialize_when_ready()
     end
-    
+
     -- Run our update if initialized
     if BalatroMCP.initialized and BalatroMCP.update then
         BalatroMCP:update(dt)
