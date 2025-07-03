@@ -37,7 +37,7 @@ jobs:
     - name: Install formatters
       run: |
         # Python formatters
-        pip install black isort
+        pip install -e ".[dev]"
         
         # Lua formatter with error handling
         wget --retry-connrefused --tries=3 https://github.com/JohnnyMorganz/StyLua/releases/download/v0.20.0/stylua-linux.zip
@@ -116,8 +116,7 @@ jobs:
       run: |
         case "${{ matrix.language }}" in
           python)
-            pip install flake8 mypy pylint bandit safety
-            pip install -r jimbot/infrastructure/requirements.txt
+            pip install -e ".[dev]"
             ;;
           lua)
             sudo apt-get update
@@ -183,8 +182,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip setuptools wheel
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-cov pytest-asyncio pytest-benchmark pytest-timeout
+        pip install -e ".[dev,test]"
         if [ -f "jimbot/${{ matrix.component }}/requirements.txt" ]; then
           pip install -r jimbot/${{ matrix.component }}/requirements.txt
         fi
@@ -235,8 +233,8 @@ jobs:
 
     - name: Run integration tests
       run: |
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-asyncio pytest-timeout requests
+        pip install -e ".[dev,test]"
+        pip install requests
         
         pytest jimbot/tests/integration/ \
           -v \
@@ -280,7 +278,10 @@ jobs:
         source venv-gpu/bin/activate
         pip install --upgrade pip
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-        pip install -r jimbot/training/requirements.txt
+        pip install -e ".[dev,test]"
+        if [ -f "jimbot/training/requirements.txt" ]; then
+          pip install -r jimbot/training/requirements.txt
+        fi
 
     - name: Verify GPU availability
       run: |
@@ -382,8 +383,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r jimbot/infrastructure/requirements.txt
-        pip install pytest pytest-benchmark
+        pip install -e ".[dev,test]"
 
     - name: Run benchmarks
       run: |
@@ -420,7 +420,7 @@ jobs:
 
     - name: Install documentation tools
       run: |
-        pip install sphinx sphinx-rtd-theme myst-parser autodoc
+        pip install -e ".[docs]"
 
     - name: Build documentation
       run: |

@@ -34,4 +34,5 @@ htmlcov/
 Thumbs.db
 
 # Process files
-*.pidtest_env/
+*.pid
+test_env/
