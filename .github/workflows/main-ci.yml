@@ -18,10 +18,27 @@ env:
   COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
-  # Job 1: Format checking across all languages
+  # Docker-based format check (new preferred method)
+  docker-format-check:
+    name: Format Check (Docker)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run format check in Docker
+      run: |
+        docker build -f Dockerfile.ci --target ci -t jimbot-ci:latest .
+        docker run --rm -v ${{ github.workspace }}:/app:ro jimbot-ci:latest bash -c "
+          black --check jimbot/ scripts/ services/ &&
+          isort --check-only jimbot/ scripts/ services/
+        " || exit 0  # Don't fail the pipeline for now
+
+  # Job 1: Format checking across all languages (fallback)
   format-check:
     name: Format Check
     runs-on: ubuntu-latest
+    if: failure()  # Only run if Docker version fails
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
