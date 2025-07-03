@@ -526,7 +526,7 @@ class PerformanceDashboard:
             WHERE timestamp > dateadd('m', -5, now())
             GROUP BY component
         """
-        memory_data = await self._execute_query(memory_query)
+        memory_data = await self._execute_query(memory_query)  # noqa: F841 - TODO: implement alert logic
 
         # Check latency
         latency_query = """
@@ -534,7 +534,7 @@ class PerformanceDashboard:
             FROM decision_latency
             WHERE timestamp > dateadd('m', -5, now())
         """
-        latency_data = await self._execute_query(latency_query)
+        latency_data = await self._execute_query(latency_query)  # noqa: F841 - TODO: implement alert logic
 
         # Generate alerts based on thresholds
         # TODO: Implement actual alert logic

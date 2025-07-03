@@ -113,8 +113,6 @@ class TestMCPToRayIntegration:
     @pytest.mark.asyncio
     async def test_error_recovery(self, mcp_server, ray_cluster):
         """Test system recovery from component failures."""
-        env = BalatroEnv.remote()
-
         async with websockets.connect("ws://localhost:8899") as websocket:
             # Send valid event
             await websocket.send(

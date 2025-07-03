@@ -181,13 +181,6 @@ class JsonCompatibilityLayer:
             JSON event dictionary or None if conversion fails
         """
         try:
-            # Use protobuf's built-in JSON conversion with custom handling
-            json_dict = json_format.MessageToDict(
-                proto_event,
-                preserving_proto_field_name=True,
-                including_default_value_fields=False,
-            )
-
             # Remap to match legacy JSON format
             json_event = {
                 "type": self._proto_type_to_json(proto_event.type),

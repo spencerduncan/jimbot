@@ -1,0 +1,286 @@
+# CI Pipeline Failure Test Scenarios
+# Execute these scenarios to validate failure handling
+
+test_scenarios:
+  - name: "Network Failure - Package Download"
+    description: "Test behavior when package downloads fail"
+    setup: |
+      # Block package repositories
+      sudo iptables -A OUTPUT -d pypi.org -j DROP
+      sudo iptables -A OUTPUT -d github.com -j DROP
+      sudo iptables -A OUTPUT -d registry.npmjs.org -j DROP
+    test: |
+      # Try to install packages
+      pip install black
+      wget https://github.com/JohnnyMorganz/StyLua/releases/download/v0.20.0/stylua-linux.zip
+    expected_behavior:
+      - Download attempts should retry 3 times
+      - Fallback mechanisms should activate
+      - Clear error messages in logs
+    cleanup: |
+      sudo iptables -D OUTPUT -d pypi.org -j DROP
+      sudo iptables -D OUTPUT -d github.com -j DROP
+      sudo iptables -D OUTPUT -d registry.npmjs.org -j DROP
+    
+  - name: "Docker Daemon Crash"
+    description: "Test pipeline behavior when Docker daemon crashes"
+    setup: |
+      # Note: Requires sudo access
+      docker run -d --name test_container alpine sleep 1000
+    test: |
+      # Kill Docker daemon
+      sudo systemctl stop docker
+      # Try Docker operations
+      docker ps
+      docker build -t test:latest .
+    expected_behavior:
+      - Clear error about Docker unavailability
+      - Integration tests should fail gracefully
+      - No hanging processes
+    cleanup: |
+      sudo systemctl start docker
+      docker rm -f test_container 2>/dev/null || true
+
+  - name: "Disk Space Exhaustion"
+    description: "Test behavior when disk space runs out"
+    setup: |
+      # Create large file to fill disk (leave 100MB free)
+      AVAILABLE=$(df / | tail -1 | awk '{print $4}')
+      dd if=/dev/zero of=/tmp/large_file bs=1M count=$((AVAILABLE - 100))
+    test: |
+      # Try operations that require disk space
+      docker build -t test:latest .
+      pip install numpy scipy pandas
+      git clone https://github.com/pytorch/pytorch.git /tmp/pytorch
+    expected_behavior:
+      - Clear "No space left on device" errors
+      - Cleanup attempts should be made
+      - Early failure detection
+    cleanup: |
+      rm -f /tmp/large_file
+      rm -rf /tmp/pytorch
+
+  - name: "Memory Exhaustion"
+    description: "Test behavior under memory pressure"
+    setup: |
+      # Start memory-consuming process
+      python3 -c "
+      import time
+      data = []
+      for i in range(1000):
+          data.append(bytearray(10 * 1024 * 1024))  # 10MB chunks
+          time.sleep(0.1)
+      " &
+      echo $! > /tmp/memory_hog.pid
+    test: |
+      # Run memory-intensive operations
+      pytest jimbot/tests/unit/ --parallel 10
+      docker build --memory=100m -t test:latest .
+    expected_behavior:
+      - OOM errors should be caught
+      - Graceful degradation of parallel execution
+      - No zombie processes
+    cleanup: |
+      kill $(cat /tmp/memory_hog.pid) 2>/dev/null || true
+      rm -f /tmp/memory_hog.pid
+
+  - name: "Timeout Cascade"
+    description: "Test cumulative timeout behavior"
+    setup: |
+      # Create slow test
+      cat > /tmp/slow_test.py << 'EOF'
+      import time
+      def test_slow():
+          time.sleep(400)  # Longer than timeout
+      EOF
+    test: |
+      # Run with timeout
+      timeout 300 pytest /tmp/slow_test.py
+      echo "Exit code: $?"
+    expected_behavior:
+      - Exit code should be 124 (timeout)
+      - Clear timeout message
+      - Process should be killed cleanly
+    cleanup: |
+      rm -f /tmp/slow_test.py
+
+  - name: "Git Authentication Failure"
+    description: "Test behavior with invalid Git credentials"
+    setup: |
+      # Save current Git config
+      cp ~/.gitconfig ~/.gitconfig.backup 2>/dev/null || true
+      # Set invalid token
+      git config --global github.token "invalid_token_12345"
+    test: |
+      # Try authenticated operations
+      gh pr list
+      git push origin main
+    expected_behavior:
+      - Clear authentication error
+      - No credential leakage in logs
+      - Appropriate exit codes
+    cleanup: |
+      mv ~/.gitconfig.backup ~/.gitconfig 2>/dev/null || true
+
+  - name: "Concurrent Job Interference"
+    description: "Test parallel job resource conflicts"
+    setup: |
+      # Create shared resource
+      mkdir -p /tmp/shared_test_dir
+      echo "initial" > /tmp/shared_test_dir/data.txt
+    test: |
+      # Simulate concurrent access
+      for i in {1..5}; do
+        (
+          echo "Job $i writing" >> /tmp/shared_test_dir/data.txt
+          sleep 1
+          cat /tmp/shared_test_dir/data.txt
+        ) &
+      done
+      wait
+    expected_behavior:
+      - No data corruption
+      - All jobs should complete
+      - Proper file locking
+    cleanup: |
+      rm -rf /tmp/shared_test_dir
+
+  - name: "SSL Certificate Failure"
+    description: "Test HTTPS failures"
+    setup: |
+      # Temporarily break SSL
+      export SSL_CERT_FILE=/tmp/invalid_cert.pem
+      echo "INVALID CERT" > /tmp/invalid_cert.pem
+    test: |
+      # Try HTTPS operations
+      curl https://api.github.com
+      pip install requests
+    expected_behavior:
+      - Clear SSL error messages
+      - Fallback to HTTP if available
+      - No security bypasses
+    cleanup: |
+      unset SSL_CERT_FILE
+      rm -f /tmp/invalid_cert.pem
+
+  - name: "Cache Corruption"
+    description: "Test behavior with corrupted cache"
+    setup: |
+      # Corrupt pip cache
+      mkdir -p ~/.cache/pip/wheels
+      echo "corrupted data" > ~/.cache/pip/wheels/corrupt.whl
+      # Corrupt Docker layer
+      sudo touch /var/lib/docker/image/overlay2/corrupt_layer
+    test: |
+      # Try to use caches
+      pip install --cache-dir ~/.cache/pip numpy
+      docker build -t test:latest .
+    expected_behavior:
+      - Cache errors should be detected
+      - Automatic cache invalidation
+      - Fallback to fresh download
+    cleanup: |
+      rm -rf ~/.cache/pip/wheels/corrupt.whl
+      sudo rm -f /var/lib/docker/image/overlay2/corrupt_layer
+
+  - name: "Runner Cleanup Failure"
+    description: "Test cleanup when runner is in bad state"
+    setup: |
+      # Leave processes running
+      nohup sleep 10000 &
+      echo $! > /tmp/orphan.pid
+      # Leave containers running
+      docker run -d --name orphan_container alpine sleep 10000
+    test: |
+      # Check for cleanup
+      ps aux | grep sleep
+      docker ps
+    expected_behavior:
+      - Orphan processes detected
+      - Cleanup attempted
+      - Warning messages logged
+    cleanup: |
+      kill $(cat /tmp/orphan.pid) 2>/dev/null || true
+      docker rm -f orphan_container 2>/dev/null || true
+      rm -f /tmp/orphan.pid
+
+# Chaos Engineering Scenarios
+chaos_scenarios:
+  - name: "Random Network Delays"
+    description: "Introduce variable network latency"
+    command: |
+      # Add 100-500ms delay to all packets
+      sudo tc qdisc add dev eth0 root netem delay 300ms 200ms
+
+  - name: "CPU Throttling"
+    description: "Limit CPU availability"
+    command: |
+      # Limit to 50% CPU
+      sudo systemd-run --uid=$(id -u) --gid=$(id -g) --scope -p CPUQuota=50% bash
+
+  - name: "Random Process Kills"
+    description: "Randomly kill processes"
+    command: |
+      # Kill random pytest process every 30 seconds
+      while true; do
+        pkill -9 -f pytest || true
+        sleep 30
+      done &
+
+  - name: "Filesystem Errors"
+    description: "Introduce I/O errors"
+    command: |
+      # Create a faulty loop device
+      dd if=/dev/zero of=/tmp/faulty.img bs=1M count=100
+      sudo losetup /dev/loop0 /tmp/faulty.img
+      sudo dmsetup create faulty --table "0 $(blockdev --getsize /dev/loop0) flakey /dev/loop0 0 9 1"
+
+# Validation Scripts
+validation:
+  pre_test:
+    - name: "Environment Check"
+      script: |
+        #!/bin/bash
+        echo "=== Pre-Test Environment Check ==="
+        echo "Docker: $(docker --version 2>/dev/null || echo 'Not installed')"
+        echo "Python: $(python3 --version)"
+        echo "Git: $(git --version)"
+        echo "Disk Space: $(df -h / | tail -1 | awk '{print $4}') available"
+        echo "Memory: $(free -h | grep Mem | awk '{print $4}') available"
+        echo "CPU Cores: $(nproc)"
+        
+  post_test:
+    - name: "Cleanup Verification"
+      script: |
+        #!/bin/bash
+        echo "=== Post-Test Cleanup Check ==="
+        echo "Docker containers: $(docker ps -q | wc -l)"
+        echo "Zombie processes: $(ps aux | grep defunct | wc -l)"
+        echo "Temp files: $(find /tmp -name "test_*" -mtime -1 | wc -l)"
+        echo "Open files: $(lsof | wc -l)"
+
+# Test Execution Framework
+execution:
+  mode: "sequential"  # or "parallel" or "random"
+  continue_on_failure: true
+  timeout_per_test: 600  # seconds
+  report_format: "junit"
+  output_dir: "./ci-test-results"
+  
+  hooks:
+    before_each: |
+      echo "Starting test: $TEST_NAME"
+      date
+      
+    after_each: |
+      echo "Completed test: $TEST_NAME"
+      echo "Exit code: $TEST_EXIT_CODE"
+      date
+      
+    on_failure: |
+      echo "Test failed, collecting diagnostics..."
+      dmesg | tail -50
+      journalctl -u docker -n 50
+      docker ps -a
+      df -h
+      free -m

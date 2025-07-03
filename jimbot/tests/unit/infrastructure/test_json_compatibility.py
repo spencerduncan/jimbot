@@ -128,6 +128,9 @@ class TestJsonCompatibilityLayer:
 
         result = compat_layer.json_to_proto(sample_json_event)
 
+        # Verify result
+        assert result == mock_event
+        
         # Verify basic fields
         assert mock_event.source == "BalatroMCP"
         assert mock_event.timestamp == 1234567890
@@ -147,6 +150,9 @@ class TestJsonCompatibilityLayer:
 
         result = compat_layer.json_to_proto(sample_json_event)
 
+        # Verify result
+        assert result == mock_event
+        
         # Verify game state fields
         assert mock_game_state.in_game == True
         assert mock_game_state.game_id == "test-game-123"
@@ -175,6 +181,9 @@ class TestJsonCompatibilityLayer:
 
         result = compat_layer.json_to_proto(json_event)
 
+        # Verify result
+        assert result == mock_event
+        
         # Unknown fields should be preserved in metadata
         assert "json_unknown_field" in mock_event.metadata
         assert "json_another_unknown" in mock_event.metadata
@@ -195,6 +204,9 @@ class TestJsonCompatibilityLayer:
 
         result = compat_layer.json_to_proto(sample_learning_request)
 
+        # Verify result
+        assert result == mock_event
+        
         # Verify request fields
         assert mock_request.request_id == "REQ-123"
         assert mock_request.time_limit_ms == 1000

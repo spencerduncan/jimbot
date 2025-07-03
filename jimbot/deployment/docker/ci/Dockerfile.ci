@@ -1,0 +1,141 @@
+# CI/CD Environment Docker Image
+# This image contains all tools needed for CI/CD pipelines
+# Built from Ubuntu 22.04 for maximum compatibility
+
+FROM ubuntu:22.04 AS base
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Version arguments (can be overridden during build)
+ARG PYTHON_VERSION=3.10
+ARG LUA_VERSION=5.4
+ARG GO_VERSION=1.21.5
+ARG STYLUA_VERSION=v0.20.0
+ARG BUF_VERSION=v1.28.1
+ARG PROTOC_VERSION=3.21.12
+ARG CMAKE_VERSION=3.25.3
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # Basic tools
+    curl wget git unzip ca-certificates gnupg lsb-release \
+    # Build tools
+    build-essential pkg-config \
+    # Python development
+    python${PYTHON_VERSION} python${PYTHON_VERSION}-dev python${PYTHON_VERSION}-venv python3-pip \
+    # Lua development
+    lua${LUA_VERSION} liblua${LUA_VERSION}-dev luarocks \
+    # C++ development tools with specific versions
+    clang-15 clang-format-15 clang-tidy-15 cppcheck \
+    # Additional libraries
+    libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+    libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create symlinks for Python
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON_VERSION} 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VERSION} 1
+
+# Install Go
+RUN wget -qO- https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz | tar xz -C /usr/local
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install Python tools with specific versions
+COPY .github/tool-versions.yml /tmp/tool-versions.yml
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir \
+    black==23.12.1 \
+    isort==5.13.2 \
+    flake8==7.0.0 \
+    mypy==1.8.0 \
+    pylint==3.0.3 \
+    bandit==1.7.6 \
+    safety==3.0.1 \
+    pytest==7.4.4 \
+    pytest-cov==4.1.0 \
+    pytest-asyncio==0.23.3 \
+    pytest-benchmark==4.0.0 \
+    pytest-timeout==2.2.0 \
+    sphinx==7.2.6 \
+    sphinx-rtd-theme==2.0.0 \
+    myst-parser==2.0.0 \
+    pre-commit==3.6.0
+
+# Install Lua tools
+RUN luarocks install luacheck 1.1.2 && \
+    luarocks install busted 2.2.0 && \
+    luarocks install luacov 0.15.0
+
+# Install StyLua with retry logic
+RUN for i in 1 2 3; do \
+        wget -q https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux.zip && break || \
+        echo "Retry $i failed, waiting..." && sleep 5; \
+    done && \
+    unzip -q stylua-linux.zip && \
+    chmod +x stylua && \
+    mv stylua /usr/local/bin/ && \
+    rm stylua-linux.zip
+
+# Install buf for Protocol Buffers
+RUN for i in 1 2 3; do \
+        wget -qO /usr/local/bin/buf https://github.com/bufbuild/buf/releases/download/${BUF_VERSION}/buf-Linux-x86_64 && break || \
+        echo "Retry $i failed, waiting..." && sleep 5; \
+    done && \
+    chmod +x /usr/local/bin/buf
+
+# Install CMake
+RUN wget -qO- https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz | \
+    tar xz -C /usr/local --strip-components=1
+
+# Install Protocol Buffers compiler
+RUN wget -qO protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
+    unzip -q protoc.zip -d /usr/local && \
+    rm protoc.zip
+
+# Install additional Go tools
+RUN go install github.com/bufbuild/buf/cmd/buf@${BUF_VERSION} && \
+    go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest && \
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# Set up environment variables
+ENV PATH="/usr/local/bin:/root/go/bin:${PATH}"
+ENV PYTHONPATH="/workspace"
+ENV GOPATH="/root/go"
+
+# Create a non-root user for running CI tasks
+RUN useradd -m -s /bin/bash ci-user
+
+# Add version information
+RUN echo "CI Image Build Information" > /etc/ci-image-info && \
+    echo "Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> /etc/ci-image-info && \
+    echo "Ubuntu: 22.04" >> /etc/ci-image-info && \
+    echo "Python: ${PYTHON_VERSION}" >> /etc/ci-image-info && \
+    echo "Lua: ${LUA_VERSION}" >> /etc/ci-image-info && \
+    echo "Go: ${GO_VERSION}" >> /etc/ci-image-info && \
+    echo "CMake: ${CMAKE_VERSION}" >> /etc/ci-image-info && \
+    echo "Protoc: ${PROTOC_VERSION}" >> /etc/ci-image-info
+
+# Healthcheck to verify tools are installed
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python --version && \
+        lua -v && \
+        go version && \
+        cmake --version && \
+        protoc --version && \
+        buf --version && \
+        stylua --version
+
+# Set working directory
+WORKDIR /workspace
+
+# Switch to non-root user by default
+USER ci-user
+
+# Labels for image metadata
+LABEL org.opencontainers.image.title="JimBot CI/CD Environment"
+LABEL org.opencontainers.image.description="Complete CI/CD environment with all required tools"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.authors="JimBot Team"
+LABEL org.opencontainers.image.source="https://github.com/jimbot/jimbot"

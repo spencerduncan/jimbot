@@ -342,6 +342,9 @@ async def example_usage():
 
         # Get query statistics
         stats = client.get_query_stats()
+        print(f"\nQuery statistics (last 5 queries):")
+        for stat in stats[-5:]:
+            print(f"  - {stat.query_type}: {stat.execution_time:.1f}ms")
         print(f"\nAverage query time: {client.get_average_query_time():.1f}ms")
 
     finally:

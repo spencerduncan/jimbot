@@ -234,7 +234,7 @@ class ClaudeAdvisor:
     async def _queue_llm_request(self, game_state: GameState) -> Strategy:
         """Queue a request for LLM processing."""
         future = asyncio.Future()
-        request_id = f"{game_state.ante}_{datetime.now().timestamp()}"
+        request_id = f"{game_state.ante}_{datetime.now().timestamp()}"  # noqa: F841 - TODO: implement request tracking
 
         await self.request_queue.put((game_state, future))
 

@@ -1,0 +1,264 @@
+# Hybrid CI/CD Pipeline - Example Implementation
+# This demonstrates the hybrid approach using Docker image, setup actions, and caching
+
+name: Main CI/CD Pipeline (Hybrid)
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *'
+
+env:
+  CI_IMAGE: ghcr.io/jimbot/ci-tools:1.0.0
+  TOOL_VERSIONS_FILE: .github/tool-versions.yml
+
+jobs:
+  # Job 1: Format checking using Docker image
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jimbot/ci-tools:1.0.0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check Python formatting
+      run: |
+        black --check jimbot tests scripts
+        isort --check-only jimbot tests scripts
+
+    - name: Check Lua formatting
+      run: |
+        find . -name "*.lua" -type f | xargs stylua --check
+
+    - name: Check C++ formatting
+      run: |
+        find . -name "*.cpp" -o -name "*.h" | xargs clang-format-15 --dry-run --Werror
+
+    - name: Check Protocol Buffers formatting
+      run: |
+        cd jimbot/proto && buf format --diff
+
+  # Job 2: Linting with hybrid approach (setup actions + caching)
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    needs: format-check
+    strategy:
+      matrix:
+        include:
+          - language: python
+            files: 'jimbot tests scripts'
+          - language: lua
+            files: 'mods balatro'
+          - language: cpp
+            files: 'jimbot/memgraph/mage_modules'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Load tool versions
+      id: versions
+      run: |
+        # Parse tool versions from YAML file
+        echo "python_version=$(yq e '.python.version' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "lua_version=$(yq e '.lua.version' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "cache_version=$(yq e '.cache.version' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+
+    # Python setup with caching
+    - name: Set up Python
+      if: matrix.language == 'python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ steps.versions.outputs.python_version }}
+        cache: 'pip'
+        cache-dependency-path: |
+          jimbot/infrastructure/requirements.txt
+          ${{ env.TOOL_VERSIONS_FILE }}
+
+    # Lua setup with caching
+    - name: Set up Lua
+      if: matrix.language == 'lua'
+      uses: leafo/gh-actions-lua@v10
+      with:
+        luaVersion: ${{ steps.versions.outputs.lua_version }}
+
+    - name: Set up LuaRocks
+      if: matrix.language == 'lua'
+      uses: leafo/gh-actions-luarocks@v4
+
+    # Tool cache for compiled/downloaded tools
+    - name: Cache tools
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.local/bin
+          ~/.luarocks
+          ~/go/bin
+        key: ${{ runner.os }}-tools-${{ matrix.language }}-${{ steps.versions.outputs.cache_version }}-${{ hashFiles(env.TOOL_VERSIONS_FILE) }}
+        restore-keys: |
+          ${{ runner.os }}-tools-${{ matrix.language }}-${{ steps.versions.outputs.cache_version }}-
+          ${{ runner.os }}-tools-${{ matrix.language }}-
+
+    # Install language-specific linters
+    - name: Install linters
+      run: |
+        case "${{ matrix.language }}" in
+          python)
+            # Check if tools are already installed
+            if ! command -v flake8 &> /dev/null; then
+              pip install -r .github/requirements-lint-python.txt
+            fi
+            ;;
+          lua)
+            # Check if luacheck is already installed
+            if ! command -v luacheck &> /dev/null; then
+              luarocks install luacheck 1.1.2
+            fi
+            ;;
+          cpp)
+            # Use Docker image for C++ tools
+            docker run --rm -v $PWD:/workspace ${{ env.CI_IMAGE }} \
+              bash -c "clang-tidy-15 --version && cppcheck --version"
+            ;;
+        esac
+
+    - name: Run linters
+      run: |
+        case "${{ matrix.language }}" in
+          python)
+            flake8 ${{ matrix.files }} --config=.flake8
+            mypy ${{ matrix.files }} --config-file=mypy.ini
+            pylint ${{ matrix.files }} --rcfile=.pylintrc
+            bandit -r ${{ matrix.files }} -ll
+            safety check
+            ;;
+          lua)
+            luacheck ${{ matrix.files }} --config .luacheckrc
+            ;;
+          cpp)
+            docker run --rm -v $PWD:/workspace -w /workspace ${{ env.CI_IMAGE }} \
+              bash -c "find ${{ matrix.files }} -name '*.cpp' -o -name '*.h' | xargs clang-tidy-15 && \
+                      cppcheck --enable=all --error-exitcode=1 ${{ matrix.files }}"
+            ;;
+        esac
+
+  # Job 3: Build Docker image for CI tools (runs on schedule or when Dockerfile changes)
+  build-ci-image:
+    name: Build CI Docker Image
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' || 
+      contains(github.event.head_commit.modified, 'jimbot/deployment/docker/ci/Dockerfile.ci') ||
+      contains(github.event.head_commit.modified, '.github/tool-versions.yml')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Parse tool versions
+      id: versions
+      run: |
+        # Extract versions for build args
+        echo "python_version=$(yq e '.python.version' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "lua_version=$(yq e '.lua.version' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "go_version=$(yq e '.go.version' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "stylua_version=$(yq e '.lua_tools.stylua' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "buf_version=$(yq e '.protobuf.buf' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "protoc_version=$(yq e '.protobuf.protoc' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+        echo "cmake_version=$(yq e '.cpp_tools.cmake' ${{ env.TOOL_VERSIONS_FILE }})" >> $GITHUB_OUTPUT
+
+    - name: Build and push CI image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: jimbot/deployment/docker/ci/Dockerfile.ci
+        push: true
+        tags: |
+          ghcr.io/jimbot/ci-tools:latest
+          ghcr.io/jimbot/ci-tools:1.0.0
+          ghcr.io/jimbot/ci-tools:${{ github.sha }}
+        build-args: |
+          PYTHON_VERSION=${{ steps.versions.outputs.python_version }}
+          LUA_VERSION=${{ steps.versions.outputs.lua_version }}
+          GO_VERSION=${{ steps.versions.outputs.go_version }}
+          STYLUA_VERSION=${{ steps.versions.outputs.stylua_version }}
+          BUF_VERSION=${{ steps.versions.outputs.buf_version }}
+          PROTOC_VERSION=${{ steps.versions.outputs.protoc_version }}
+          CMAKE_VERSION=${{ steps.versions.outputs.cmake_version }}
+        cache-from: type=registry,ref=ghcr.io/jimbot/ci-tools:buildcache
+        cache-to: type=registry,ref=ghcr.io/jimbot/ci-tools:buildcache,mode=max
+
+  # Job 4: Performance comparison
+  compare-performance:
+    name: CI Performance Metrics
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Measure Docker approach
+      id: docker_time
+      run: |
+        START=$(date +%s)
+        docker pull ${{ env.CI_IMAGE }} > /dev/null 2>&1
+        END=$(date +%s)
+        echo "duration=$((END-START))" >> $GITHUB_OUTPUT
+
+    - name: Measure traditional approach
+      id: traditional_time
+      run: |
+        START=$(date +%s)
+        # Simulate traditional installation (subset)
+        sudo apt-get update > /dev/null 2>&1
+        sudo apt-get install -y clang-format-15 > /dev/null 2>&1
+        pip install black flake8 > /dev/null 2>&1
+        END=$(date +%s)
+        echo "duration=$((END-START))" >> $GITHUB_OUTPUT
+
+    - name: Report performance
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const dockerTime = ${{ steps.docker_time.outputs.duration }};
+          const traditionalTime = ${{ steps.traditional_time.outputs.duration }};
+          const improvement = Math.round((1 - dockerTime/traditionalTime) * 100);
+          
+          const comment = `### CI Performance Report
+          
+          | Approach | Time (seconds) |
+          |----------|----------------|
+          | Docker Image | ${dockerTime}s |
+          | Traditional Install | ${traditionalTime}s |
+          | **Improvement** | **${improvement}%** |
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
