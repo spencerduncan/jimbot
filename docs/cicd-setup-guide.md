@@ -54,11 +54,10 @@ docker-compose -f docker-compose.dev.yml exec dev-env bash
    - Builds and pushes Docker images
    - Runs performance benchmarks
 
-2. **Language-Specific Workflows**
-   - **Lua CI** (`.github/workflows/lua-ci.yml`): Lua-specific checks
-   - **C++ CI** (`.github/workflows/cpp-ci.yml`): C++ compilation and tests
-   - **GPU Tests** (`.github/workflows/gpu-tests.yml`): GPU-accelerated code
-     testing
+2. **Specialized Workflows**
+   - **GPU Tests** (`.github/workflows/gpu-tests.yml`): GPU-accelerated code testing
+   - **Rust CI/CD** (`.github/workflows/rust-ci-cd.yml`): Rust-specific CI/CD with semantic release
+   - **Rust Security** (`.github/workflows/rust-security.yml`): Security audits for Rust dependencies
 
 3. **Code Quality** (`.github/workflows/code-quality.yml`)
    - SonarQube analysis

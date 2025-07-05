@@ -508,136 +508,14 @@ jobs:
             ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') }}
 ```
 
-### Language-Specific Workflows
+### Language-Specific Checks in Main CI
 
-Create `.github/workflows/lua-ci.yml`:
+The main CI/CD pipeline (`.github/workflows/main-ci.yml`) includes comprehensive language-specific checks for all supported languages including Lua, C++, Python, and more. These checks run as part of the unified pipeline to ensure consistency and reduce duplication.
 
-```yaml
-name: Lua CI
-
-on:
-  push:
-    paths:
-      - '**.lua'
-      - 'mods/**'
-      - 'balatro/**'
-  pull_request:
-    paths:
-      - '**.lua'
-      - 'mods/**'
-      - 'balatro/**'
-
-jobs:
-  lua-checks:
-    name: Lua Checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Lua
-        uses: leafo/gh-actions-lua@v10
-        with:
-          luaVersion: '5.4'
-
-      - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@v4
-
-      - name: Install dependencies
-        run: |
-          luarocks install luacheck
-          luarocks install luacov
-          luarocks install busted
-
-      - name: Run luacheck
-        run: |
-          luacheck . --config .luacheckrc
-
-      - name: Run tests
-        run: |
-          busted --coverage
-
-      - name: Generate coverage report
-        run: |
-          luacov
-          luacov-console
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./luacov.report.out
-          flags: lua
-```
-
-Create `.github/workflows/cpp-ci.yml`:
-
-```yaml
-name: C++ CI
-
-on:
-  push:
-    paths:
-      - '**.cpp'
-      - '**.h'
-      - '**/CMakeLists.txt'
-  pull_request:
-    paths:
-      - '**.cpp'
-      - '**.h'
-      - '**/CMakeLists.txt'
-
-jobs:
-  cpp-checks:
-    name: C++ Checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake clang-15 clang-tidy-15 cppcheck lcov
-
-      - name: Configure CMake
-        run: |
-          cmake -B build \
-            -DCMAKE_C_COMPILER=clang-15 \
-            -DCMAKE_CXX_COMPILER=clang++-15 \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DENABLE_COVERAGE=ON
-
-      - name: Run clang-tidy
-        run: |
-          find . -name "*.cpp" -o -name "*.h" | xargs clang-tidy-15 -p build
-
-      - name: Run cppcheck
-        run: |
-          cppcheck --enable=all --error-exitcode=1 --project=build/compile_commands.json
-
-      - name: Build
-        run: |
-          cmake --build build --parallel
-
-      - name: Run tests
-        run: |
-          cd build
-          ctest --output-on-failure
-
-      - name: Generate coverage
-        run: |
-          lcov --capture --directory build --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage.info
-          flags: cpp
-```
+For language-specific features like Rust security audits or GPU testing, specialized workflows are maintained:
+- **Rust CI/CD** (`.github/workflows/rust-ci-cd.yml`): Includes semantic release automation
+- **Rust Security** (`.github/workflows/rust-security.yml`): Daily security audits
+- **GPU Tests** (`.github/workflows/gpu-tests.yml`): Requires self-hosted runners with GPU
 
 ## Pre-commit Framework
 
