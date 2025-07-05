@@ -57,7 +57,7 @@ fi
 # Export Docker images (optional, can be large)
 if [[ "$INCLUDE_IMAGES" == "true" ]]; then
     echo "Exporting Docker images..."
-    images=$(docker-compose config | grep "image:" | awk '{print $2}' | sort -u)
+    images=$(docker compose config | grep "image:" | awk '{print $2}' | sort -u)
     docker save $images > "$TEMP_DIR/images.tar"
 fi
 
@@ -75,7 +75,7 @@ cat > "$TEMP_DIR/metadata.json" <<EOF
     "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
     "tag": "$TAG",
     "version": "$(git rev-parse HEAD 2>/dev/null || echo 'unknown')",
-    "services": $(docker-compose ps --format json 2>/dev/null || echo '[]'),
+    "services": $(docker compose ps --format json 2>/dev/null || echo '[]'),
     "host": "$(hostname)",
     "backup_size": "$(du -sh $TEMP_DIR | cut -f1)"
 }

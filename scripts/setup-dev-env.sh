@@ -87,8 +87,7 @@ install_system_deps() {
                 graphviz \
                 redis-tools \
                 postgresql-client \
-                docker.io \
-                docker-compose
+                docker.io
             ;;
         macos)
             # Check if Homebrew is installed
@@ -111,8 +110,7 @@ install_system_deps() {
                 graphviz \
                 redis \
                 postgresql \
-                docker \
-                docker-compose
+                docker
             ;;
         arch)
             sudo pacman -Syu --noconfirm
@@ -132,8 +130,7 @@ install_system_deps() {
                 graphviz \
                 redis \
                 postgresql \
-                docker \
-                docker-compose
+                docker
             ;;
         *)
             log_error "Unsupported OS. Please install dependencies manually."

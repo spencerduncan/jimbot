@@ -5,20 +5,18 @@ Simple web UI for monitoring the mock Resource Coordinator.
 
 import json
 import logging
+import sys
 from datetime import datetime
 from typing import Dict, List
 
 import grpc
 from flask import Flask, jsonify, render_template_string
 
-import sys
-sys.path.append('/home/spduncan/jimbot')
-from jimbot.proto import resource_coordinator_pb2
-from jimbot.proto import resource_coordinator_pb2_grpc
-
+sys.path.append("/home/spduncan/jimbot")
+from jimbot.proto import resource_coordinator_pb2, resource_coordinator_pb2_grpc
 
 app = Flask(__name__)
-app.config['JSON_SORT_KEYS'] = False
+app.config["JSON_SORT_KEYS"] = False
 
 # HTML template for the monitoring page
 HTML_TEMPLATE = """
@@ -287,99 +285,109 @@ HTML_TEMPLATE = """
 
 class ResourceCoordinatorClient:
     """Client for connecting to the Resource Coordinator."""
-    
-    def __init__(self, host='localhost', port=50051):
-        self.channel = grpc.insecure_channel(f'{host}:{port}')
+
+    def __init__(self, host="localhost", port=50051):
+        self.channel = grpc.insecure_channel(f"{host}:{port}")
         self.stub = resource_coordinator_pb2_grpc.ResourceCoordinatorStub(self.channel)
-    
+
     def get_health(self) -> Dict:
         """Get health status."""
         try:
             request = resource_coordinator_pb2.HealthCheckRequest()
             response = self.stub.HealthCheck(request)
             return {
-                'healthy': response.healthy,
-                'version': response.version,
-                'uptime_seconds': response.uptime_seconds,
-                'metadata': dict(response.metadata)
+                "healthy": response.healthy,
+                "version": response.version,
+                "uptime_seconds": response.uptime_seconds,
+                "metadata": dict(response.metadata),
             }
         except grpc.RpcError as e:
             return {
-                'healthy': False,
-                'version': 'unknown',
-                'uptime_seconds': 0,
-                'metadata': {'error': str(e)}
+                "healthy": False,
+                "version": "unknown",
+                "uptime_seconds": 0,
+                "metadata": {"error": str(e)},
             }
-    
+
     def get_status(self) -> Dict:
         """Get resource status."""
         try:
             request = resource_coordinator_pb2.ResourceStatusRequest()
             response = self.stub.GetResourceStatus(request)
-            
+
             statuses = []
             for status in response.statuses:
                 allocations = []
                 for alloc in status.allocations:
-                    allocations.append({
-                        'request_id': alloc.request_id,
-                        'component': alloc.component,
-                        'quantity': alloc.quantity,
-                        'allocated_at': alloc.allocated_at.ToDatetime().isoformat(),
-                        'expires_at': alloc.expires_at.ToDatetime().isoformat()
-                    })
-                
-                statuses.append({
-                    'resource': resource_coordinator_pb2.ResourceType.Name(status.resource),
-                    'total_capacity': status.total_capacity,
-                    'available': status.available,
-                    'allocated': status.allocated,
-                    'allocations': allocations
-                })
-            
+                    allocations.append(
+                        {
+                            "request_id": alloc.request_id,
+                            "component": alloc.component,
+                            "quantity": alloc.quantity,
+                            "allocated_at": alloc.allocated_at.ToDatetime().isoformat(),
+                            "expires_at": alloc.expires_at.ToDatetime().isoformat(),
+                        }
+                    )
+
+                statuses.append(
+                    {
+                        "resource": resource_coordinator_pb2.ResourceType.Name(
+                            status.resource
+                        ),
+                        "total_capacity": status.total_capacity,
+                        "available": status.available,
+                        "allocated": status.allocated,
+                        "allocations": allocations,
+                    }
+                )
+
             return {
-                'statuses': statuses,
-                'timestamp': response.timestamp.ToDatetime().isoformat()
+                "statuses": statuses,
+                "timestamp": response.timestamp.ToDatetime().isoformat(),
             }
         except grpc.RpcError as e:
             logging.error(f"Failed to get status: {e}")
-            return {'statuses': [], 'timestamp': datetime.now().isoformat()}
+            return {"statuses": [], "timestamp": datetime.now().isoformat()}
 
 
 # Initialize client
 client = ResourceCoordinatorClient()
 
 
-@app.route('/')
+@app.route("/")
 def index():
     """Render the monitoring page."""
     return render_template_string(HTML_TEMPLATE)
 
 
-@app.route('/api/health')
+@app.route("/api/health")
 def api_health():
     """Get health status."""
     return jsonify(client.get_health())
 
 
-@app.route('/api/status')
+@app.route("/api/status")
 def api_status():
     """Get resource status."""
     return jsonify(client.get_status())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
-    
-    parser = argparse.ArgumentParser(description='Resource Coordinator Web UI')
-    parser.add_argument('--port', type=int, default=8080, help='Web server port')
-    parser.add_argument('--coordinator-host', default='localhost', help='Coordinator host')
-    parser.add_argument('--coordinator-port', type=int, default=50051, help='Coordinator port')
-    
+
+    parser = argparse.ArgumentParser(description="Resource Coordinator Web UI")
+    parser.add_argument("--port", type=int, default=8080, help="Web server port")
+    parser.add_argument(
+        "--coordinator-host", default="localhost", help="Coordinator host"
+    )
+    parser.add_argument(
+        "--coordinator-port", type=int, default=50051, help="Coordinator port"
+    )
+
     args = parser.parse_args()
-    
+
     # Update client with custom host/port
     client = ResourceCoordinatorClient(args.coordinator_host, args.coordinator_port)
-    
+
     # Start web server
-    app.run(host='0.0.0.0', port=args.port, debug=True)
+    app.run(host="0.0.0.0", port=args.port, debug=True)
