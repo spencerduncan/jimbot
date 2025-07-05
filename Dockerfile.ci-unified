@@ -25,7 +25,10 @@ RUN python3.10 -m pip install --upgrade pip setuptools wheel
 FROM base AS rust-tools
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.80.0
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN /root/.cargo/bin/cargo install cargo-audit cargo-tarpaulin cargo-nextest
+# Install Rust tools with specific versions for compatibility
+RUN /root/.cargo/bin/cargo install cargo-audit --version 0.21.1 && \
+    /root/.cargo/bin/cargo install cargo-tarpaulin --version 0.32.8 && \
+    /root/.cargo/bin/cargo install cargo-nextest --version 0.9.87
 
 # C++ toolchain stage
 FROM base AS cpp-tools
