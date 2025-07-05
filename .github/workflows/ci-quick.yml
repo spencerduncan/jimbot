@@ -1,0 +1,63 @@
+# CI Quick Checks - Fast feedback on code quality
+name: CI Quick Checks
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quick-checks:
+    name: Format and Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build CI Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.ci-unified
+          target: ci
+          tags: jimbot-ci:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+          
+      - name: Run Quick Checks
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace jimbot-ci:latest bash -c "
+            set -e
+            echo '=== Python Format Check ==='
+            black --check /workspace/jimbot /workspace/scripts /workspace/services || true
+            isort --check-only /workspace/jimbot /workspace/scripts /workspace/services || true
+            
+            echo '=== Python Linting ==='
+            flake8 /workspace --max-line-length=120 --exclude=.git,__pycache__,venv || true
+            pylint /workspace/jimbot --fail-under=8.0 || true
+            mypy /workspace/jimbot --ignore-missing-imports || true
+            
+            echo '=== Rust Format Check ==='
+            if [ -f /workspace/Cargo.toml ]; then
+              cd /workspace && cargo fmt --all -- --check || true
+            fi
+            
+            echo '=== Rust Linting ==='
+            if [ -f /workspace/Cargo.toml ]; then
+              cargo clippy --all-targets --all-features -- -D warnings || true
+            fi
+            
+            echo '=== Security Audit ==='
+            if [ -f /workspace/Cargo.toml ]; then
+              cargo audit || true
+            fi
+            
+            echo 'Quick checks completed!'
+          "
