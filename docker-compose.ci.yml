@@ -5,7 +5,7 @@ services:
   ci-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified-unified
+      dockerfile: Dockerfile.ci-unified
       target: ci
     image: jimbot-ci:latest
     container_name: jimbot-ci-tests
@@ -23,7 +23,7 @@ services:
   python-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified-unified
+      dockerfile: Dockerfile.ci-unified
       target: ci
     image: jimbot-python-test:latest
     container_name: jimbot-python-tests
@@ -39,7 +39,7 @@ services:
   rust-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified-unified
+      dockerfile: Dockerfile.ci-unified
       target: ci
     image: jimbot-ci:latest
     container_name: jimbot-rust-tests
@@ -56,7 +56,7 @@ services:
   format-check:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified
+      dockerfile: Dockerfile.ci
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-format-check
@@ -74,7 +74,7 @@ services:
   lint:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified
+      dockerfile: Dockerfile.ci
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-lint
@@ -93,7 +93,7 @@ services:
   unit-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified
+      dockerfile: Dockerfile.ci
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-unit-tests
@@ -108,7 +108,7 @@ services:
   integration-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified
+      dockerfile: Dockerfile.ci
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-integration-tests
@@ -157,7 +157,7 @@ services:
   dev:
     build:
       context: .
-      dockerfile: Dockerfile.ci-unified
+      dockerfile: Dockerfile.ci
       target: dev
     image: jimbot-dev:latest
     container_name: jimbot-dev
