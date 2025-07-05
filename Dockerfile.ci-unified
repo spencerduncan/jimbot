@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     curl wget git build-essential pkg-config \
     libssl-dev libpq-dev ca-certificates \
     software-properties-common apt-transport-https \
+    protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
 # Python toolchain stage
@@ -104,6 +105,7 @@ RUN mkdir -p /usr/local/bin && \
     echo 'python3 --version' >> /usr/local/bin/health-checks.sh && \
     echo 'cargo --version' >> /usr/local/bin/health-checks.sh && \
     echo 'lua --version' >> /usr/local/bin/health-checks.sh && \
+    echo 'protoc --version' >> /usr/local/bin/health-checks.sh && \
     echo 'echo "All toolchains available!"' >> /usr/local/bin/health-checks.sh && \
     chmod +x /usr/local/bin/health-checks.sh
 
