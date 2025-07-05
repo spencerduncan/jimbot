@@ -42,6 +42,33 @@ services:
         echo 'CI tests completed!'
       "
 
+  # Rust-specific tests
+  rust-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci-unified
+      target: ci
+    image: jimbot-ci:latest
+    container_name: jimbot-rust-tests
+    volumes:
+      - .:/workspace
+      - ./ci/scripts/run-rust-tests.sh:/workspace/run-rust-tests.sh:ro
+      - cargo-cache:/root/.cargo/registry
+    depends_on:
+      questdb:
+        condition: service_healthy
+      memgraph:
+        condition: service_healthy
+    environment:
+      - CI=true
+      - RUST_BACKTRACE=1
+      - QUESTDB_HOST=questdb
+      - MEMGRAPH_HOST=memgraph
+    networks:
+      - ci-network
+    working_dir: /workspace
+    command: bash /workspace/run-rust-tests.sh
+
   questdb:
     image: questdb/questdb:7.3.10
     ports:
