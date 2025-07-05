@@ -55,9 +55,9 @@ tar -xzf "$BACKUP_FILE" -C "$ROLLBACK_DIR"
 # Stop current services
 echo "Stopping current services..."
 if [[ "$DRY_RUN" == "true" ]]; then
-    echo "[DRY RUN] docker-compose down"
+    echo "[DRY RUN] docker compose down"
 else
-    docker-compose down
+    docker compose down
 fi
 
 # Backup current state (just in case)

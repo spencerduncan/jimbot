@@ -51,8 +51,8 @@ run_unit_tests() {
 # Function to run integration tests
 run_integration_tests() {
     echo -e "${YELLOW}Running integration tests with services...${NC}"
-    docker-compose -f docker-compose.ci.yml up --build --abort-on-container-exit integration-tests
-    docker-compose -f docker-compose.ci.yml down -v
+    docker compose -f docker-compose.ci.yml up --build --abort-on-container-exit integration-tests
+    docker compose -f docker-compose.ci.yml down -v
 }
 
 # Function to run all tests
