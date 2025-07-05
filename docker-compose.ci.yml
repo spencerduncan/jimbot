@@ -1,6 +1,5 @@
 # docker-compose.ci.yml
 # Updated CI configuration with improved QuestDB health checks and service initialization
-version: '3.8'
 
 services:
   ci-runner:
@@ -48,7 +47,6 @@ services:
       context: .
       dockerfile: Dockerfile.ci-unified
       target: ci
-    image: jimbot-ci:latest
     container_name: jimbot-rust-tests
     volumes:
       - .:/workspace
@@ -93,7 +91,7 @@ services:
     restart: unless-stopped
 
   memgraph:
-    image: memgraph/memgraph-platform:2.15.0
+    image: memgraph/memgraph:latest
     ports:
       - "7687:7687"
       - "3000:3000"
