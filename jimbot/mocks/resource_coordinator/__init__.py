@@ -2,4 +2,4 @@
 
 from .client import ResourceCoordinatorClient
 
-__all__ = ['ResourceCoordinatorClient']
+__all__ = ["ResourceCoordinatorClient"]

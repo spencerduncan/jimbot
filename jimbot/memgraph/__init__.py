@@ -8,12 +8,12 @@ This package provides high-performance graph database functionality for:
 """
 
 from .client import MemgraphClient
-from .query_builder import QueryBuilder
 from .feature_extractor import GraphFeatureExtractor
+from .query_builder import QueryBuilder
 
 __all__ = [
     "MemgraphClient",
-    "QueryBuilder", 
+    "QueryBuilder",
     "GraphFeatureExtractor",
 ]
 
