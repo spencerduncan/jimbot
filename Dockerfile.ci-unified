@@ -63,9 +63,13 @@ COPY --from=python-tools /usr/local /usr/local
 COPY --from=rust-tools /root/.cargo /root/.cargo
 COPY --from=rust-tools /root/.rustup /root/.rustup
 
-# Copy C++ tools
+# Copy C++ tools - Fixed wildcard issue
 COPY --from=cpp-tools /usr/bin/cmake /usr/bin/cmake
-COPY --from=cpp-tools /usr/bin/clang* /usr/bin/
+# Fix for issue #188 - Copy clang binaries individually
+COPY --from=cpp-tools /usr/bin/clang-15 /usr/bin/clang-15
+COPY --from=cpp-tools /usr/bin/clang /usr/bin/clang || true
+COPY --from=cpp-tools /usr/bin/clang++ /usr/bin/clang++ || true
+COPY --from=cpp-tools /usr/bin/clang-tidy-15 /usr/bin/clang-tidy-15
 COPY --from=cpp-tools /usr/bin/cppcheck /usr/bin/cppcheck
 COPY --from=cpp-tools /usr/bin/lcov /usr/bin/lcov
 COPY --from=cpp-tools /usr/bin/gcc /usr/bin/gcc
