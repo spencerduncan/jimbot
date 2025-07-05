@@ -94,15 +94,14 @@ RUN ln -sf /usr/bin/python3.10 /usr/bin/python3 && \
     ln -sf /usr/bin/lua5.4 /usr/bin/lua
 
 # Install Python CI dependencies (fixes #142 - faker missing)
-COPY pyproject.toml requirements*.txt ./
 RUN python3 -m pip install --no-cache-dir \
     faker pytest pytest-cov pytest-xdist \
     black isort flake8 pylint mypy \
     coverage bandit safety pip-audit
 
-# Health check script
-COPY ci/scripts/health-checks.sh /usr/local/bin/health-checks.sh
-RUN chmod +x /usr/local/bin/health-checks.sh
+# Copy project files for dependency installation if they exist
+COPY pyproject.tom[l] requirements.tx[t] ./ || true
+RUN if [ -f pyproject.toml ]; then pip install -e ".[dev,test]" || true; fi
 
 # Create health check script if it doesn't exist
 RUN mkdir -p /usr/local/bin && \

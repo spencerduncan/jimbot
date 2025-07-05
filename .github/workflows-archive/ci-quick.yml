@@ -1,4 +1,4 @@
-# CI Quick Checks - Fast feedback on code quality
+# CI Quick Checks - New unified workflow
 name: CI Quick Checks
 
 on:
@@ -14,8 +14,7 @@ jobs:
     timeout-minutes: 10
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -36,28 +35,23 @@ jobs:
           docker run --rm -v ${{ github.workspace }}:/workspace jimbot-ci:latest bash -c "
             set -e
             echo '=== Python Format Check ==='
-            black --check /workspace/jimbot /workspace/scripts /workspace/services || true
-            isort --check-only /workspace/jimbot /workspace/scripts /workspace/services || true
+            black --check /workspace/jimbot /workspace/scripts /workspace/services
+            isort --check-only /workspace/jimbot /workspace/scripts /workspace/services
             
             echo '=== Python Linting ==='
-            flake8 /workspace --max-line-length=120 --exclude=.git,__pycache__,venv || true
-            pylint /workspace/jimbot --fail-under=8.0 || true
-            mypy /workspace/jimbot --ignore-missing-imports || true
+            flake8 /workspace --max-line-length=120 --exclude=.git,__pycache__,venv
+            pylint /workspace/jimbot --fail-under=8.0
+            mypy /workspace/jimbot --ignore-missing-imports
             
             echo '=== Rust Format Check ==='
-            if [ -f /workspace/Cargo.toml ]; then
-              cd /workspace && cargo fmt --all -- --check || true
-            fi
+            cd /workspace && cargo fmt --all -- --check
             
             echo '=== Rust Linting ==='
-            if [ -f /workspace/Cargo.toml ]; then
-              cargo clippy --all-targets --all-features -- -D warnings || true
-            fi
+            cargo clippy --all-targets --all-features -- -D warnings
+            
+            echo '=== C++ Linting ==='
+            find /workspace -name '*.cpp' -o -name '*.h' | xargs clang-tidy-15
             
             echo '=== Security Audit ==='
-            if [ -f /workspace/Cargo.toml ]; then
-              cargo audit || true
-            fi
-            
-            echo 'Quick checks completed!'
+            cargo audit
           "
