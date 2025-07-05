@@ -17,7 +17,7 @@ GPU.
 1. **Memgraph (Knowledge Graph) - 12GB RAM**
    - Stores game schema, strategies, and synergies
    - Custom algorithms for joker/deck analysis
-   - MAGE modules in C++ for performance
+   - MAGE modules in Rust for performance
 
 2. **Ray RLlib (Learning Orchestration) - 8GB RAM**
    - PPO algorithm for sequential decision making
