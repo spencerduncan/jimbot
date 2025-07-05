@@ -35,7 +35,7 @@ echo -e "${GREEN}Running JimBot Smoke Tests${NC}"
 echo "=========================="
 
 # Test 1: Check all containers are running
-run_test "Container status" "docker-compose ps --format json | jq -r '.[].State' | grep -v 'exited'"
+run_test "Container status" "docker compose ps --format json | jq -r '.[].State' | grep -v 'exited'"
 
 # Test 2: Memgraph connectivity
 run_test "Memgraph connection" "docker exec jimbot-memgraph echo 'RETURN 1;' | cypher-shell -u '' -p ''"
