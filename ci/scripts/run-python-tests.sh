@@ -13,10 +13,10 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}=== Python Test Suite (Docker CI) ===${NC}"
 
 # Ensure we're in the right directory
-cd /workspace
+cd /app
 
 # Set up environment
-export PYTHONPATH="/workspace:${PYTHONPATH}"
+export PYTHONPATH="/app:${PYTHONPATH}"
 export CI=true
 
 # Function to run tests with proper error handling
@@ -37,7 +37,7 @@ run_test() {
 
 # Install test dependencies (already in Dockerfile but ensure they're available)
 echo -e "${YELLOW}Checking Python test dependencies...${NC}"
-python3 -c "import pytest, faker, coverage; print('All test dependencies available')"
+python3 -c "import pytest, coverage; print('All test dependencies available')"
 
 # Run unit tests with coverage
 run_test "Unit Tests" "
@@ -67,7 +67,7 @@ echo -e "${YELLOW}Coverage Summary:${NC}"
 coverage report --show-missing --skip-covered
 
 # Check coverage threshold (80%)
-coverage_percent=$(coverage report --format=total)
+coverage_percent=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
 if [ "$coverage_percent" -lt 80 ]; then
     echo -e "${RED}❌ Coverage $coverage_percent% is below 80% threshold${NC}"
     exit 1
