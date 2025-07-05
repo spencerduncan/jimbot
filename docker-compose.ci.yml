@@ -5,7 +5,7 @@ services:
   ci-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci
+      dockerfile: Dockerfile.ci-unified-unified
       target: ci
     image: jimbot-ci:latest
     container_name: jimbot-ci-tests
@@ -23,8 +23,8 @@ services:
   python-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci
-      target: python-test
+      dockerfile: Dockerfile.ci-unified-unified
+      target: ci
     image: jimbot-python-test:latest
     container_name: jimbot-python-tests
     volumes:
@@ -35,11 +35,28 @@ services:
       - CI=true
     command: /run_tests.sh
 
+  # Rust-specific tests
+  rust-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci-unified-unified
+      target: ci
+    image: jimbot-ci:latest
+    container_name: jimbot-rust-tests
+    volumes:
+      - .:/workspace
+      - ./ci/scripts/run-rust-tests.sh:/workspace/run-rust-tests.sh:ro
+    environment:
+      - CI=true
+      - RUST_BACKTRACE=1
+    working_dir: /workspace
+    command: bash /workspace/run-rust-tests.sh
+
   # Format checker
   format-check:
     build:
       context: .
-      dockerfile: Dockerfile.ci
+      dockerfile: Dockerfile.ci-unified
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-format-check
@@ -57,7 +74,7 @@ services:
   lint:
     build:
       context: .
-      dockerfile: Dockerfile.ci
+      dockerfile: Dockerfile.ci-unified
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-lint
@@ -76,7 +93,7 @@ services:
   unit-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci
+      dockerfile: Dockerfile.ci-unified
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-unit-tests
@@ -91,7 +108,7 @@ services:
   integration-tests:
     build:
       context: .
-      dockerfile: Dockerfile.ci
+      dockerfile: Dockerfile.ci-unified
       target: python-test
     image: jimbot-python-test:latest
     container_name: jimbot-integration-tests
@@ -140,7 +157,7 @@ services:
   dev:
     build:
       context: .
-      dockerfile: Dockerfile.ci
+      dockerfile: Dockerfile.ci-unified
       target: dev
     image: jimbot-dev:latest
     container_name: jimbot-dev
