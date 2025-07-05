@@ -214,13 +214,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Run tests with docker-compose
+    - name: Run tests with docker compose
       run: |
-        docker-compose -f docker-compose.ci.yml up --build --abort-on-container-exit ci-tests || true
+        docker compose -f docker-compose.ci.yml up --build --abort-on-container-exit ci-tests || true
 
     - name: Clean up
       if: always()
-      run: docker-compose -f docker-compose.ci.yml down -v
+      run: docker compose -f docker-compose.ci.yml down -v
 
   # Summary job
   ci-summary:

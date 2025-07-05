@@ -1,6 +1,6 @@
 # Docker Compose configuration for Memgraph
 # This can be included in the main docker-compose.yml or used standalone
-# Usage: docker-compose -f docker-compose.memgraph.yml up -d
+# Usage: docker compose -f docker-compose.memgraph.yml up -d
 
 version: '3.8'
 
