@@ -3,7 +3,6 @@
 [![CI Health](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/spencerduncan/jimbot/main/.github/badges/ci-health.json)](https://github.com/spencerduncan/jimbot/actions)
 [![Main CI](https://github.com/spencerduncan/jimbot/workflows/Main%20CI%2FCD%20Pipeline/badge.svg)](https://github.com/spencerduncan/jimbot/actions/workflows/main-ci.yml)
 [![Code Quality](https://github.com/spencerduncan/jimbot/workflows/Code%20Quality/badge.svg)](https://github.com/spencerduncan/jimbot/actions/workflows/code-quality.yml)
-[![Lua CI](https://github.com/spencerduncan/jimbot/workflows/Lua%20CI/badge.svg)](https://github.com/spencerduncan/jimbot/actions/workflows/lua-ci.yml)
 
 A sequential learning system designed to master the card game Balatro by combining knowledge graphs, reinforcement learning, and Claude AI integration.
 
