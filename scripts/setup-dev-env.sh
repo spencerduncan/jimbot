@@ -88,7 +88,7 @@ install_system_deps() {
                 redis-tools \
                 postgresql-client \
                 docker.io \
-                docker-compose
+                docker compose
             ;;
         macos)
             # Check if Homebrew is installed
@@ -112,7 +112,7 @@ install_system_deps() {
                 redis \
                 postgresql \
                 docker \
-                docker-compose
+                docker compose
             ;;
         arch)
             sudo pacman -Syu --noconfirm
@@ -133,7 +133,7 @@ install_system_deps() {
                 redis \
                 postgresql \
                 docker \
-                docker-compose
+                docker compose
             ;;
         *)
             log_error "Unsupported OS. Please install dependencies manually."

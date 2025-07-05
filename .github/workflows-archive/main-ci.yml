@@ -241,8 +241,8 @@ jobs:
 
     - name: Start test services
       run: |
-        docker-compose -f docker-compose.minimal.yml up -d
-        docker-compose -f jimbot/deployment/docker-compose.yml up -d test-services
+        docker compose -f docker compose.minimal.yml up -d
+        docker compose -f jimbot/deployment/docker compose.yml up -d test-services
         
         # Wait for services to be healthy
         timeout 300s bash -c 'until docker ps | grep -E "healthy|running" | wc -l | grep -q "$(docker ps -q | wc -l)"; do sleep 5; done'
@@ -260,7 +260,7 @@ jobs:
     - name: Collect service logs
       if: failure()
       run: |
-        docker-compose logs > docker-logs.txt
+        docker compose logs > docker-logs.txt
         docker ps -a
 
     - name: Upload logs
@@ -273,8 +273,8 @@ jobs:
     - name: Stop services
       if: always()
       run: |
-        docker-compose -f docker-compose.minimal.yml down -v
-        docker-compose -f jimbot/deployment/docker-compose.yml down -v
+        docker compose -f docker compose.minimal.yml down -v
+        docker compose -f jimbot/deployment/docker compose.yml down -v
 
   # Job 5: GPU tests (self-hosted runner required)
   test-gpu:

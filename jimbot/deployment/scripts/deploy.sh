@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 
 # Default values
 ENVIRONMENT=${ENVIRONMENT:-development}
-COMPOSE_FILE="docker-compose.yml"
+COMPOSE_FILE="docker compose.yml"
 ENV_FILE=".env"
 
 # Parse command line arguments
@@ -45,7 +45,7 @@ echo -e "${GREEN}Deploying JimBot - Environment: ${ENVIRONMENT}${NC}"
 # Check prerequisites
 echo "Checking prerequisites..."
 command -v docker >/dev/null 2>&1 || { echo -e "${RED}Docker is required but not installed.${NC}" >&2; exit 1; }
-command -v docker-compose >/dev/null 2>&1 || { echo -e "${RED}Docker Compose is required but not installed.${NC}" >&2; exit 1; }
+command -v docker compose >/dev/null 2>&1 || { echo -e "${RED}Docker Compose is required but not installed.${NC}" >&2; exit 1; }
 
 # Check for NVIDIA GPU if not in CPU-only mode
 if [[ ! -f ".cpu-only" ]]; then
@@ -81,27 +81,27 @@ mkdir -p logs backups checkpoints data/{memgraph,questdb,eventstore,redis}
 if [[ "$NO_BUILD" != true ]]; then
     echo "Building Docker images..."
     if [[ "$DRY_RUN" == true ]]; then
-        echo "[DRY RUN] docker-compose -f $COMPOSE_FILE build"
+        echo "[DRY RUN] docker compose -f $COMPOSE_FILE build"
     else
-        docker-compose -f "$COMPOSE_FILE" build
+        docker compose -f "$COMPOSE_FILE" build
     fi
 fi
 
 # Stop existing services
 echo "Stopping existing services..."
 if [[ "$DRY_RUN" == true ]]; then
-    echo "[DRY RUN] docker-compose -f $COMPOSE_FILE down"
+    echo "[DRY RUN] docker compose -f $COMPOSE_FILE down"
 else
-    docker-compose -f "$COMPOSE_FILE" down
+    docker compose -f "$COMPOSE_FILE" down
 fi
 
 # Start infrastructure services first
 echo "Starting infrastructure services..."
 INFRA_SERVICES="memgraph questdb eventstore redis"
 if [[ "$DRY_RUN" == true ]]; then
-    echo "[DRY RUN] docker-compose -f $COMPOSE_FILE up -d $INFRA_SERVICES"
+    echo "[DRY RUN] docker compose -f $COMPOSE_FILE up -d $INFRA_SERVICES"
 else
-    docker-compose -f "$COMPOSE_FILE" up -d $INFRA_SERVICES
+    docker compose -f "$COMPOSE_FILE" up -d $INFRA_SERVICES
     
     # Wait for services to be healthy
     echo "Waiting for infrastructure services to be healthy..."
@@ -112,9 +112,9 @@ fi
 if [[ ! -f ".initialized" ]]; then
     echo "Initializing databases..."
     if [[ "$DRY_RUN" == true ]]; then
-        echo "[DRY RUN] docker-compose run --rm jimbot-cli python -m jimbot.cli init-db"
+        echo "[DRY RUN] docker compose run --rm jimbot-cli python -m jimbot.cli init-db"
     else
-        docker-compose run --rm jimbot-cli python -m jimbot.cli init-db
+        docker compose run --rm jimbot-cli python -m jimbot.cli init-db
         touch .initialized
     fi
 fi
@@ -123,9 +123,9 @@ fi
 echo "Starting application services..."
 APP_SERVICES="jimbot-mcp jimbot-ray-head jimbot-ray-worker jimbot-claude-gateway jimbot-analytics"
 if [[ "$DRY_RUN" == true ]]; then
-    echo "[DRY RUN] docker-compose -f $COMPOSE_FILE up -d $APP_SERVICES"
+    echo "[DRY RUN] docker compose -f $COMPOSE_FILE up -d $APP_SERVICES"
 else
-    docker-compose -f "$COMPOSE_FILE" up -d $APP_SERVICES
+    docker compose -f "$COMPOSE_FILE" up -d $APP_SERVICES
     
     # Wait for services to be healthy
     echo "Waiting for application services to be healthy..."
@@ -148,7 +148,7 @@ echo -e "${GREEN}Deployment completed successfully!${NC}"
 # Show service status
 echo -e "\nService Status:"
 if [[ "$DRY_RUN" != true ]]; then
-    docker-compose -f "$COMPOSE_FILE" ps
+    docker compose -f "$COMPOSE_FILE" ps
 fi
 
 # Show access information
@@ -162,6 +162,6 @@ echo "- Metrics API: http://localhost:${METRICS_PORT:-8080}"
 
 # Show next steps
 echo -e "\nNext Steps:"
-echo "1. Monitor logs: docker-compose logs -f"
+echo "1. Monitor logs: docker compose logs -f"
 echo "2. Check metrics: curl http://localhost:${METRICS_PORT:-8080}/metrics"
 echo "3. Run tests: ./scripts/test-integration.sh"
