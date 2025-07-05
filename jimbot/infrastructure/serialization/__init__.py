@@ -3,7 +3,7 @@
 Protocol Buffer schemas and serialization utilities.
 """
 
-from .serializer import ProtobufSerializer
 from .schema_registry import SchemaRegistry
+from .serializer import ProtobufSerializer
 
-__all__ = ['ProtobufSerializer', 'SchemaRegistry']
+__all__ = ["ProtobufSerializer", "SchemaRegistry"]
