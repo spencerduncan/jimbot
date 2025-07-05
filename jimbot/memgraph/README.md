@@ -275,20 +275,30 @@ class MemgraphClient:
 ### MAGE Module Usage
 
 ```cypher
-// Call custom C++ algorithm for fast synergy calculation
+// Call Rust MAGE module for fast synergy calculation
 CALL synergy.calculate_all() YIELD joker1, joker2, score
 WHERE score > 0.8
 RETURN joker1, joker2, score
 ORDER BY score DESC
 LIMIT 20;
 
-// Victory path analysis with custom algorithm
+// Victory path analysis with Rust MAGE module
 CALL victory.find_optimal_paths({
     starting_money: 10,
     target_ante: 8,
     max_depth: 5
 }) YIELD path, success_rate, total_cost
 RETURN path, success_rate, total_cost;
+
+// Fallback to pure Cypher if MAGE modules not available
+MATCH path = (start:Joker {rarity: 'common'})-[:LEADS_TO*1..5]->(end:Joker)
+WHERE ALL(r IN relationships(path) WHERE r.win_rate > 0.6)
+WITH path, 
+     REDUCE(s = 1.0, r IN relationships(path) | s * r.win_rate) as success_rate,
+     REDUCE(c = start.cost, n IN nodes(path)[1..] | c + n.cost) as total_cost
+WHERE total_cost <= 30
+RETURN path, success_rate, total_cost
+ORDER BY success_rate DESC;
 ```
 
 ## Development Setup
@@ -306,7 +316,7 @@ services:
       - '3000:3000' # Memgraph Lab (web UI)
     volumes:
       - memgraph_data:/var/lib/memgraph
-      - ./mage_modules:/usr/lib/memgraph/query_modules
+      - ./mage_modules/target/release:/usr/lib/memgraph/query_modules
     environment:
       - MEMGRAPH_LOG_LEVEL=INFO
       - MEMGRAPH_QUERY_TIMEOUT=100
@@ -367,7 +377,7 @@ DELETE n;
 1. **Slow Queries**
    - Check for missing indexes: `PROFILE` your query
    - Reduce traversal depth
-   - Use MAGE modules for complex calculations
+   - Use Rust MAGE modules for complex calculations
 
 2. **Memory Issues**
    - Monitor with: `SHOW STORAGE INFO;`

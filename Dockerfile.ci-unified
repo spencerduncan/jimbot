@@ -30,12 +30,8 @@ RUN /root/.cargo/bin/cargo install cargo-audit && \
     /root/.cargo/bin/cargo install cargo-tarpaulin && \
     /root/.cargo/bin/cargo install cargo-nextest
 
-# C++ toolchain stage
-FROM base AS cpp-tools
-RUN apt-get update && apt-get install -y \
-    cmake clang-15 clang-tidy-15 cppcheck lcov \
-    gcc g++ make ninja-build \
-    && rm -rf /var/lib/apt/lists/*
+# C++ toolchain stage - REMOVED
+# C++ support has been removed as MAGE modules are being rewritten in Rust
 
 # Lua toolchain stage
 FROM base AS lua-tools
@@ -63,14 +59,7 @@ COPY --from=python-tools /usr/local /usr/local
 COPY --from=rust-tools /root/.cargo /root/.cargo
 COPY --from=rust-tools /root/.rustup /root/.rustup
 
-# Copy C++ tools
-COPY --from=cpp-tools /usr/bin/cmake /usr/bin/cmake
-COPY --from=cpp-tools /usr/bin/clang* /usr/bin/
-COPY --from=cpp-tools /usr/bin/cppcheck /usr/bin/cppcheck
-COPY --from=cpp-tools /usr/bin/lcov /usr/bin/lcov
-COPY --from=cpp-tools /usr/bin/gcc /usr/bin/gcc
-COPY --from=cpp-tools /usr/bin/g++ /usr/bin/g++
-COPY --from=cpp-tools /usr/bin/make /usr/bin/make
+# C++ tools removed - MAGE modules are being rewritten in Rust
 
 # Copy Lua tools
 COPY --from=lua-tools /usr/bin/lua5.4 /usr/bin/lua5.4
@@ -113,7 +102,6 @@ RUN mkdir -p /usr/local/bin && \
     echo 'echo "=== Health Check: All Toolchains ==="' >> /usr/local/bin/health-checks.sh && \
     echo 'python3 --version' >> /usr/local/bin/health-checks.sh && \
     echo 'cargo --version' >> /usr/local/bin/health-checks.sh && \
-    echo 'cmake --version' >> /usr/local/bin/health-checks.sh && \
     echo 'lua --version' >> /usr/local/bin/health-checks.sh && \
     echo 'echo "All toolchains available!"' >> /usr/local/bin/health-checks.sh && \
     chmod +x /usr/local/bin/health-checks.sh
@@ -124,4 +112,4 @@ CMD ["/usr/local/bin/health-checks.sh"]
 # Labels for CI tracking
 LABEL maintainer="spencerduncan"
 LABEL version="1.0"
-LABEL description="Unified CI image with Python, Rust, C++, Lua toolchains"
+LABEL description="Unified CI image with Python, Rust, Lua toolchains"

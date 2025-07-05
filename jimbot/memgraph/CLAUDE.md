@@ -25,7 +25,7 @@ memgraph/
 ├── schema/           # Cypher schema definitions
 ├── queries/          # Optimized Cypher queries
 ├── algorithms/       # Python-based graph algorithms
-├── mage_modules/     # C++ MAGE modules for performance
+├── mage_modules/     # Rust MAGE modules for performance
 ├── migrations/       # Schema migration scripts
 └── utils/           # Helper utilities
 ```
@@ -63,69 +63,112 @@ ORDER BY path_strength DESC
 LIMIT 3
 ```
 
-## MAGE Module Development (C++)
+## MAGE Module Development (Rust)
 
-MAGE modules provide high-performance graph algorithms. Follow these patterns:
+MAGE modules provide high-performance graph algorithms implemented in Rust for optimal performance.
 
 ### Module Structure
 
-```cpp
-// mage_modules/synergy_calculator.cpp
-#include <mgp.hpp>
-#include <vector>
-#include <unordered_map>
+```rust
+// mage_modules/src/lib.rs
+use std::os::raw::{c_char, c_int, c_void};
 
-extern "C" {
-    // Register the module
-    int mgp_init_module(mgp_module *module, mgp_memory *memory);
-
-    // Module shutdown
-    int mgp_shutdown_module();
+#[no_mangle]
+pub extern "C" fn mgp_init_module(
+    module: *mut c_void,
+    memory: *mut c_void,
+) -> c_int {
+    // Register Rust functions with Memgraph
+    0 // Success
 }
 
-// Algorithm implementation
-void calculate_synergy_score(mgp_list *args, mgp_graph *graph,
-                           mgp_result *result, mgp_memory *memory) {
-    // Implementation here
+#[no_mangle]
+pub extern "C" fn mgp_shutdown_module() -> c_int {
+    0 // Success
 }
 ```
 
-### Performance Guidelines for MAGE
+### Performance Guidelines for Rust MAGE
 
-1. **Memory Management**: Use mgp_memory for all allocations
-2. **Batch Processing**: Process multiple nodes in single traversal
-3. **Early Termination**: Stop traversal when threshold met
-4. **Caching**: Store frequently accessed values in memory
+1. **Zero-Copy Operations**: Use references and borrowing to avoid data copies
+2. **Parallel Processing**: Leverage Rust's fearless concurrency with rayon
+3. **Memory Safety**: Rust's ownership system ensures no memory leaks
+4. **FFI Optimization**: Minimize data marshaling across the FFI boundary
 
 ### Example: Fast Synergy Calculator
 
-```cpp
-// Calculate synergy scores for all joker combinations
-void calculate_all_synergies(mgp_graph *graph, mgp_result *result,
-                           mgp_memory *memory) {
-    // Get all jokers
-    auto jokers = get_all_nodes_with_label(graph, "Joker", memory);
+```rust
+// mage_modules/src/synergy_calculator.rs
+use std::collections::HashMap;
 
-    // Pre-calculate attribute maps for O(1) lookup
-    std::unordered_map<mgp_vertex*, JokerAttributes> joker_attrs;
-    for (auto j : jokers) {
-        joker_attrs[j] = extract_joker_attributes(j, memory);
+pub struct JokerAttributes {
+    pub name: String,
+    pub rarity: String,
+    pub cost: i32,
+    pub scaling_type: String,
+}
+
+pub fn calculate_synergy(joker1: &JokerAttributes, joker2: &JokerAttributes) -> f64 {
+    let mut score = 0.0;
+
+    // Same scaling type creates strong synergy
+    if joker1.scaling_type == joker2.scaling_type {
+        score += 0.3;
     }
 
-    // Calculate pairwise synergies
-    for (size_t i = 0; i < jokers.size(); ++i) {
-        for (size_t j = i + 1; j < jokers.size(); ++j) {
-            double synergy = calculate_synergy(
-                joker_attrs[jokers[i]],
-                joker_attrs[jokers[j]]
-            );
-            if (synergy > 0.5) {  // Only store significant synergies
-                add_synergy_to_result(result, jokers[i], jokers[j],
-                                    synergy, memory);
+    // Complementary effects
+    match (&joker1.scaling_type.as_str(), &joker2.scaling_type.as_str()) {
+        ("multiplicative", "additive") | ("additive", "multiplicative") => score += 0.25,
+        ("conditional", _) | (_, "conditional") => score += 0.15,
+        _ => {}
+    }
+
+    // Rarity compatibility
+    if joker1.rarity == joker2.rarity {
+        score += 0.2;
+    }
+
+    score.min(1.0) // Cap at 1.0
+}
+
+pub fn calculate_all_synergies(
+    jokers: &[JokerAttributes],
+    min_strength: f64,
+) -> Vec<SynergyResult> {
+    let mut results = Vec::new();
+
+    for i in 0..jokers.len() {
+        for j in (i + 1)..jokers.len() {
+            let synergy = calculate_synergy(&jokers[i], &jokers[j]);
+            
+            if synergy >= min_strength {
+                results.push(SynergyResult {
+                    joker1: jokers[i].name.clone(),
+                    joker2: jokers[j].name.clone(),
+                    strength: synergy,
+                    synergy_type: determine_synergy_type(&jokers[i], &jokers[j]),
+                });
             }
         }
     }
+
+    results.sort_by(|a, b| b.strength.partial_cmp(&a.strength).unwrap());
+    results
 }
+```
+
+### Building and Deploying MAGE Modules
+
+```bash
+# Build the Rust MAGE module
+cd mage_modules
+cargo build --release
+
+# Copy to Memgraph query modules directory
+cp target/release/libmage_modules.so /usr/lib/memgraph/query_modules/
+
+# Register in Memgraph
+mgconsole -e "CALL mg.load_all();"
 ```
 
 ## Query Optimization Techniques
