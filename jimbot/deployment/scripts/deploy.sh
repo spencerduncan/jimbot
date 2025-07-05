@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 
 # Default values
 ENVIRONMENT=${ENVIRONMENT:-development}
-COMPOSE_FILE="docker compose.yml"
+COMPOSE_FILE="docker-compose.yml"
 ENV_FILE=".env"
 
 # Parse command line arguments
@@ -45,7 +45,7 @@ echo -e "${GREEN}Deploying JimBot - Environment: ${ENVIRONMENT}${NC}"
 # Check prerequisites
 echo "Checking prerequisites..."
 command -v docker >/dev/null 2>&1 || { echo -e "${RED}Docker is required but not installed.${NC}" >&2; exit 1; }
-command -v docker compose >/dev/null 2>&1 || { echo -e "${RED}Docker Compose is required but not installed.${NC}" >&2; exit 1; }
+docker compose version >/dev/null 2>&1 || { echo -e "${RED}Docker Compose v2 is required but not installed.${NC}" >&2; exit 1; }
 
 # Check for NVIDIA GPU if not in CPU-only mode
 if [[ ! -f ".cpu-only" ]]; then

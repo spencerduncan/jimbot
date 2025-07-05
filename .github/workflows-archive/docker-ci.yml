@@ -207,7 +207,7 @@ jobs:
           /run_all_tests.sh || true
 
   # Docker Compose alternative
-  docker compose-tests:
+  docker-compose-tests:
     name: Docker Compose Tests
     runs-on: ubuntu-latest
     steps:
@@ -216,11 +216,11 @@ jobs:
 
     - name: Run tests with docker compose
       run: |
-        docker compose -f docker compose.ci.yml up --build --abort-on-container-exit ci-tests || true
+        docker compose -f docker-compose.ci.yml up --build --abort-on-container-exit ci-tests || true
 
     - name: Clean up
       if: always()
-      run: docker compose -f docker compose.ci.yml down -v
+      run: docker compose -f docker-compose.ci.yml down -v
 
   # Summary job
   ci-summary:

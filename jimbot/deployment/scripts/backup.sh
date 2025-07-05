@@ -43,7 +43,7 @@ done
 echo "Backing up configuration..."
 mkdir -p "$TEMP_DIR/config"
 cp .env "$TEMP_DIR/config/" 2>/dev/null || echo "  - No .env file found"
-cp docker compose.yml "$TEMP_DIR/config/"
+cp docker-compose.yml "$TEMP_DIR/config/"
 cp -r scripts "$TEMP_DIR/config/" 2>/dev/null || true
 
 # Backup model checkpoints
