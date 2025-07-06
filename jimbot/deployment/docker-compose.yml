@@ -21,7 +21,8 @@ services:
           memory: ${MEMGRAPH_MEMORY:-12g}
           cpus: '2'
     healthcheck:
-      test: ['CMD', 'echo', 'RETURN 1;', '|', 'mgconsole']
+      # Use HTTP check for reliability - avoids mgconsole dependency
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000']
       interval: 10s
       timeout: 5s
       retries: 5

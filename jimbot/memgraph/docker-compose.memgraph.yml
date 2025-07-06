@@ -53,7 +53,9 @@ services:
       MEMGRAPH_QUERY_MODULES_DIRECTORY: '/usr/lib/memgraph/query_modules'
     command: ['--also-log-to-stderr']
     healthcheck:
-      test: ['CMD', 'mgconsole', '-e', 'MATCH (n) RETURN count(n) LIMIT 1;']
+      # Use HTTP check on Memgraph Lab port for reliability
+      # This avoids dependency on mgconsole which may not be in PATH
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000']
       interval: 30s
       timeout: 10s
       retries: 3
