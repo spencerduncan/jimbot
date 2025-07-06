@@ -1,4 +1,5 @@
-use opentelemetry::{global, trace::{TraceContextExt, Tracer, TracerProvider}, KeyValue};
+use opentelemetry::{global, KeyValue};
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{trace as sdktrace, Resource};
 use opentelemetry_otlp::WithExportConfig;
 use std::time::Duration;
@@ -67,14 +68,14 @@ pub fn extract_trace_context(headers: &std::collections::HashMap<String, String>
     }
     
     // Extract context using W3C Trace Context propagator
-    let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+    let propagator = TraceContextPropagator::new();
     let extractor = HeaderExtractor(&carrier);
     propagator.extract(&extractor)
 }
 
 /// Inject trace context into outgoing event headers
 pub fn inject_trace_context(context: &opentelemetry::Context, headers: &mut std::collections::HashMap<String, String>) {
-    let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+    let propagator = TraceContextPropagator::new();
     let mut injector = HeaderInjector(headers);
     propagator.inject_context(context, &mut injector);
 }

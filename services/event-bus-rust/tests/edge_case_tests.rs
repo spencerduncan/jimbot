@@ -53,10 +53,11 @@ async fn test_malformed_json_events() {
             
         match response {
             Ok(resp) => {
+                let status_code = resp.status();
                 // Server should handle malformed JSON gracefully
-                assert!(resp.status().is_client_error() || resp.status().is_success());
+                assert!(status_code.is_client_error() || status_code.is_success());
                 
-                if resp.status().is_success() {
+                if status_code.is_success() {
                     if let Ok(body) = resp.json::<Value>().await {
                         // If status is success, it should contain an error in the response
                         if let Some(status) = body.get("status") {
@@ -65,7 +66,7 @@ async fn test_malformed_json_events() {
                     }
                 }
                 
-                debug!("Malformed JSON test case {}: Status {}", i, resp.status());
+                debug!("Malformed JSON test case {}: Status {}", i, status_code);
             }
             Err(e) => {
                 // Network errors are acceptable for malformed requests

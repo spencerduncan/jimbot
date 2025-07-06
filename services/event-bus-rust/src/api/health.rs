@@ -2,7 +2,7 @@ use axum::response::Json;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::api::models::{HealthResponse, MetricsResponse};
+use crate::api::models::HealthResponse;
 
 static START_TIME: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
 
