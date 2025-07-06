@@ -549,7 +549,7 @@ import ray
 from ray import tune
 from ray.rllib.agents.ppo import PPOTrainer
 
-class BalatroGymEnv(gym.Env):
+class JimGymEnv(gym.Env):
     def __init__(self, config):
         self.emulator = BalatroEnv(
             deck=config.get("deck", "Red"),
