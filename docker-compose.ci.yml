@@ -99,7 +99,9 @@ services:
       MEMGRAPH_USER: ""
       MEMGRAPH_PASSWORD: ""
     healthcheck:
-      test: ["CMD-SHELL", "echo 'MATCH (n) RETURN n LIMIT 1;' | mgconsole --host localhost --port 7687 || exit 1"]
+      # Check Memgraph Lab HTTP endpoint - most reliable method that doesn't require mgconsole
+      # The Memgraph Docker image includes curl, making this a simple and effective health check
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -120,15 +122,19 @@ services:
         condition: service_healthy
     command: |
       sh -c '
-        apk add --no-cache curl
+        apk add --no-cache curl netcat-openbsd
         echo "=== Health Check: All Services ==="
         echo "Checking QuestDB..."
         curl -f http://questdb:9000/exec?query=SELECT%201 || exit 1
         echo "QuestDB is healthy!"
         
+        echo "Checking Memgraph Bolt port..."
+        nc -z memgraph 7687 || exit 1
+        echo "Memgraph Bolt port is accessible!"
+        
         echo "Checking Memgraph HTTP endpoint..."
         curl -f http://memgraph:3000 || exit 1
-        echo "Memgraph is healthy!"
+        echo "Memgraph HTTP endpoint is healthy!"
         
         echo "All services are healthy and ready!"
       '
