@@ -96,8 +96,11 @@ async fn main() -> Result<()> {
 
     // Wait for servers or shutdown signal
     tokio::select! {
-        _ = tokio::try_join!(rest_server, grpc_server) => {
-            info!("Servers terminated");
+        result = tokio::try_join!(rest_server, grpc_server) => {
+            match result {
+                Ok(_) => info!("Servers terminated successfully"),
+                Err(e) => error!("Server error: {}", e),
+            }
         }
         _ = shutdown_signal => {
             info!("Shutting down gracefully");

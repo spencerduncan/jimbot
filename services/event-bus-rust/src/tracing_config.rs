@@ -33,7 +33,8 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
     global::set_tracer_provider(tracer_provider.clone());
 
     // Configure tracing subscriber with OpenTelemetry layer
-    let telemetry_layer = tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("event-bus-rust"));
+    // TODO: Fix opentelemetry version mismatch
+    // let telemetry_layer = tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("event-bus-rust"));
     
     let fmt_layer = tracing_subscriber::fmt::layer()
         .json()
@@ -47,7 +48,7 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(filter_layer)
         .with(fmt_layer)
-        .with(telemetry_layer)
+        // .with(telemetry_layer)
         .init();
 
     Ok(())

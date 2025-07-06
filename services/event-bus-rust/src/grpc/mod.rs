@@ -92,6 +92,6 @@ impl EventBusGrpc for EventBusService {
 
         // Convert to streaming response
         let stream = UnboundedReceiverStream::new(rx);
-        Ok(Response::new(Box::pin(stream) as tonic::Streaming<Event>))
+        Ok(Response::new(Box::pin(stream)))
     }
 }

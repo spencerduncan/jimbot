@@ -95,17 +95,17 @@ impl EventRouter {
     fn event_to_topic(&self, event: &Event) -> String {
         let event_type = EventType::try_from(event.r#type).ok();
         match event_type {
-            Some(EventType::EventTypeGameState) => "game.state.update".to_string(),
-            Some(EventType::EventTypeHeartbeat) => "system.heartbeat".to_string(),
-            Some(EventType::EventTypeMoneyChanged) => "game.money.changed".to_string(),
-            Some(EventType::EventTypeScoreChanged) => "game.score.changed".to_string(),
-            Some(EventType::EventTypeHandPlayed) => "game.hand.played".to_string(),
-            Some(EventType::EventTypeCardsDiscarded) => "game.cards.discarded".to_string(),
-            Some(EventType::EventTypeJokersChanged) => "game.jokers.changed".to_string(),
-            Some(EventType::EventTypeRoundChanged) => "game.round.changed".to_string(),
-            Some(EventType::EventTypePhaseChanged) => "game.phase.changed".to_string(),
-            Some(EventType::EventTypeRoundComplete) => "game.round.complete".to_string(),
-            Some(EventType::EventTypeConnectionTest) => "system.connection.test".to_string(),
+            Some(EventType::GameState) => "game.state.update".to_string(),
+            Some(EventType::Heartbeat) => "system.heartbeat".to_string(),
+            Some(EventType::MoneyChanged) => "game.money.changed".to_string(),
+            Some(EventType::ScoreChanged) => "game.score.changed".to_string(),
+            Some(EventType::HandPlayed) => "game.hand.played".to_string(),
+            Some(EventType::CardsDiscarded) => "game.cards.discarded".to_string(),
+            Some(EventType::JokersChanged) => "game.jokers.changed".to_string(),
+            Some(EventType::RoundChanged) => "game.round.changed".to_string(),
+            Some(EventType::PhaseChanged) => "game.phase.changed".to_string(),
+            Some(EventType::RoundComplete) => "game.round.complete".to_string(),
+            Some(EventType::ConnectionTest) => "system.connection.test".to_string(),
             _ => "unknown".to_string(),
         }
     }
