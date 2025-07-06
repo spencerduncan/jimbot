@@ -1,0 +1,16 @@
+{
+  "timestamp": "2024-01-01T12:00:00Z",
+  "alert_needed": false,
+  "overall_health": "healthy",
+  "overall_failure_rate": 0.05,
+  "average_duration_minutes": 8.5,
+  "alerts": [],
+  "warnings": [],
+  "recommendations": [],
+  "workflow_health": {
+    "CI Quick Checks": {
+      "status": "healthy",
+      "issues": []
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "timestamp": "2024-01-01T12:00:00Z",
+  "alert_needed": true,
+  "overall_health": "degraded",
+  "overall_failure_rate": 0.2,
+  "average_duration_minutes": 15.5,
+  "alerts": [
+    {
+      "type": "high_failure_rate",
+      "severity": "high",
+      "message": "Overall failure rate (20.0%) exceeds threshold (15.0%)",
+      "value": 0.2
+    }
+  ],
+  "warnings": [
+    {
+      "type": "long_duration",
+      "severity": "medium",
+      "message": "Average duration (15.5 min) exceeds threshold (10.0 min)",
+      "value": 15.5
+    }
+  ],
+  "recommendations": [
+    "Review recent code changes for potential issues",
+    "Check for flaky tests that may be causing intermittent failures"
+  ],
+  "workflow_health": {
+    "CI Quick Checks": {
+      "status": "degraded",
+      "issues": [
+        {"message": "Moderate failure rate detected"}
+      ]
+    }
+  }
+}
