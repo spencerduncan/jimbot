@@ -36,3 +36,6 @@ Thumbs.db
 # Process files
 *.pid
 test_env/
+
+# Mod backups
+mod_backups/
