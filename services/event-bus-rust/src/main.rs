@@ -55,8 +55,10 @@ async fn main() -> Result<()> {
     info!("REST API listening on {}", rest_addr);
 
     let rest_server = tokio::spawn(async move {
-        axum::Server::bind(&rest_addr)
-            .serve(rest_app.into_make_service())
+        let listener = tokio::net::TcpListener::bind(&rest_addr)
+            .await
+            .expect("Failed to bind to address");
+        axum::serve(listener, rest_app)
             .await
             .expect("REST server failed");
     });
