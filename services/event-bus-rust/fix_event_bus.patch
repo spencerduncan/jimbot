@@ -1,0 +1,84 @@
+--- a/services/event-bus-rust/src/proto/converter.rs
++++ b/services/event-bus-rust/src/proto/converter.rs
+@@ -8,17 +8,17 @@ use crate::proto::{event, Event, EventType};
+ /// Convert JSON event from BalatroMCP to Protocol Buffer event
+ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
+     let event_type = match json_event.event_type.as_str() {
+-        "GAME_STATE" => EventType::EventTypeGameState as i32,
+-        "HEARTBEAT" => EventType::EventTypeHeartbeat as i32,
+-        "MONEY_CHANGED" => EventType::EventTypeMoneyChanged as i32,
+-        "SCORE_CHANGED" => EventType::EventTypeScoreChanged as i32,
+-        "HAND_PLAYED" => EventType::EventTypeHandPlayed as i32,
+-        "CARDS_DISCARDED" => EventType::EventTypeCardsDiscarded as i32,
+-        "JOKERS_CHANGED" => EventType::EventTypeJokersChanged as i32,
+-        "ROUND_CHANGED" => EventType::EventTypeRoundChanged as i32,
+-        "PHASE_CHANGED" => EventType::EventTypePhaseChanged as i32,
+-        "ROUND_COMPLETE" => EventType::EventTypeRoundComplete as i32,
+-        "CONNECTION_TEST" => EventType::EventTypeConnectionTest as i32,
++        "GAME_STATE" => EventType::EventTypeGameState as i32,
++        "HEARTBEAT" => EventType::EventTypeHeartbeat as i32,
++        "MONEY_CHANGED" => EventType::EventTypeMoneyChanged as i32,
++        "SCORE_CHANGED" => EventType::EventTypeScoreChanged as i32,
++        "HAND_PLAYED" => EventType::EventTypeHandPlayed as i32,
++        "CARDS_DISCARDED" => EventType::EventTypeCardsDiscarded as i32,
++        "JOKERS_CHANGED" => EventType::EventTypeJokersChanged as i32,
++        "ROUND_CHANGED" => EventType::EventTypeRoundChanged as i32,
++        "PHASE_CHANGED" => EventType::EventTypePhaseChanged as i32,
++        "ROUND_COMPLETE" => EventType::EventTypeRoundComplete as i32,
++        "CONNECTION_TEST" => EventType::EventTypeConnectionTest as i32,
+         _ => return Err(anyhow\!("Unknown event type: {}", json_event.event_type)),
+     };
+ 
+@@ -39,16 +39,16 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
+ 
+     // Convert payload based on event type
+     proto_event.payload = match EventType::try_from(event_type).ok() {
+-        Some(EventType::EventTypeGameState) => Some(event::Payload::GameState(parse_game_state(
++        Some(EventType::EventTypeGameState) => Some(event::Payload::GameState(parse_game_state(
+             json_event.payload,
+         )?)),
+-        Some(EventType::EventTypeHeartbeat) => Some(event::Payload::Heartbeat(parse_heartbeat(
++        Some(EventType::EventTypeHeartbeat) => Some(event::Payload::Heartbeat(parse_heartbeat(
+             json_event.payload,
+         )?)),
+-        Some(EventType::EventTypeMoneyChanged) => Some(event::Payload::MoneyChanged(
++        Some(EventType::EventTypeMoneyChanged) => Some(event::Payload::MoneyChanged(
+             parse_money_changed(json_event.payload)?,
+         )),
+-        Some(EventType::EventTypeConnectionTest) => Some(event::Payload::ConnectionTest(
++        Some(EventType::EventTypeConnectionTest) => Some(event::Payload::ConnectionTest(
+             parse_connection_test(json_event.payload)?,
+         )),
+         // TODO: Implement other event type parsers
+--- a/services/event-bus-rust/src/routing/mod.rs
++++ b/services/event-bus-rust/src/routing/mod.rs
+@@ -95,17 +95,17 @@ impl EventRouter {
+     fn event_to_topic(&self, event: &Event) -> String {
+         let event_type = EventType::try_from(event.r#type).ok();
+         match event_type {
+-            Some(EventType::EventTypeGameState) => "game.state.update".to_string(),
+-            Some(EventType::EventTypeHeartbeat) => "system.heartbeat".to_string(),
+-            Some(EventType::EventTypeMoneyChanged) => "game.money.changed".to_string(),
+-            Some(EventType::EventTypeScoreChanged) => "game.score.changed".to_string(),
+-            Some(EventType::EventTypeHandPlayed) => "game.hand.played".to_string(),
+-            Some(EventType::EventTypeCardsDiscarded) => "game.cards.discarded".to_string(),
+-            Some(EventType::EventTypeJokersChanged) => "game.jokers.changed".to_string(),
+-            Some(EventType::EventTypeRoundChanged) => "game.round.changed".to_string(),
+-            Some(EventType::EventTypePhaseChanged) => "game.phase.changed".to_string(),
+-            Some(EventType::EventTypeRoundComplete) => "game.round.complete".to_string(),
+-            Some(EventType::EventTypeConnectionTest) => "system.connection.test".to_string(),
++            Some(EventType::EventTypeGameState) => "game.state.update".to_string(),
++            Some(EventType::EventTypeHeartbeat) => "system.heartbeat".to_string(),
++            Some(EventType::EventTypeMoneyChanged) => "game.money.changed".to_string(),
++            Some(EventType::EventTypeScoreChanged) => "game.score.changed".to_string(),
++            Some(EventType::EventTypeHandPlayed) => "game.hand.played".to_string(),
++            Some(EventType::EventTypeCardsDiscarded) => "game.cards.discarded".to_string(),
++            Some(EventType::EventTypeJokersChanged) => "game.jokers.changed".to_string(),
++            Some(EventType::EventTypeRoundChanged) => "game.round.changed".to_string(),
++            Some(EventType::EventTypePhaseChanged) => "game.phase.changed".to_string(),
++            Some(EventType::EventTypeRoundComplete) => "game.round.complete".to_string(),
++            Some(EventType::EventTypeConnectionTest) => "system.connection.test".to_string(),
+             _ => "unknown".to_string(),
+         }
+     }
+EOF < /dev/null

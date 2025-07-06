@@ -8,17 +8,17 @@ use crate::proto::{event, Event, EventType};
 /// Convert JSON event from BalatroMCP to Protocol Buffer event
 pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
     let event_type = match json_event.event_type.as_str() {
-        "GAME_STATE" => EventType::EventTypeGameState,
-        "HEARTBEAT" => EventType::EventTypeHeartbeat,
-        "MONEY_CHANGED" => EventType::EventTypeMoneyChanged,
-        "SCORE_CHANGED" => EventType::EventTypeScoreChanged,
-        "HAND_PLAYED" => EventType::EventTypeHandPlayed,
-        "CARDS_DISCARDED" => EventType::EventTypeCardsDiscarded,
-        "JOKERS_CHANGED" => EventType::EventTypeJokersChanged,
-        "ROUND_CHANGED" => EventType::EventTypeRoundChanged,
-        "PHASE_CHANGED" => EventType::EventTypePhaseChanged,
-        "ROUND_COMPLETE" => EventType::EventTypeRoundComplete,
-        "CONNECTION_TEST" => EventType::EventTypeConnectionTest,
+        "GAME_STATE" => EventType::EventTypeGameState as i32,
+        "HEARTBEAT" => EventType::EventTypeHeartbeat as i32,
+        "MONEY_CHANGED" => EventType::EventTypeMoneyChanged as i32,
+        "SCORE_CHANGED" => EventType::EventTypeScoreChanged as i32,
+        "HAND_PLAYED" => EventType::EventTypeHandPlayed as i32,
+        "CARDS_DISCARDED" => EventType::EventTypeCardsDiscarded as i32,
+        "JOKERS_CHANGED" => EventType::EventTypeJokersChanged as i32,
+        "ROUND_CHANGED" => EventType::EventTypeRoundChanged as i32,
+        "PHASE_CHANGED" => EventType::EventTypePhaseChanged as i32,
+        "ROUND_COMPLETE" => EventType::EventTypeRoundComplete as i32,
+        "CONNECTION_TEST" => EventType::EventTypeConnectionTest as i32,
         _ => return Err(anyhow!("Unknown event type: {}", json_event.event_type)),
     };
 
@@ -29,7 +29,7 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
     let mut proto_event = Event {
         event_id: Uuid::new_v4().to_string(),
         timestamp,
-        r#type: event_type as i32,
+        r#type: event_type,
         source: json_event.source,
         version: json_event.version.unwrap_or(1),
         payload: None,
@@ -38,17 +38,17 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
     };
 
     // Convert payload based on event type
-    proto_event.payload = match event_type {
-        EventType::EventTypeGameState => Some(event::Payload::GameState(parse_game_state(
+    proto_event.payload = match EventType::try_from(event_type).ok() {
+        Some(EventType::EventTypeGameState) => Some(event::Payload::GameState(parse_game_state(
             json_event.payload,
         )?)),
-        EventType::EventTypeHeartbeat => Some(event::Payload::Heartbeat(parse_heartbeat(
+        Some(EventType::EventTypeHeartbeat) => Some(event::Payload::Heartbeat(parse_heartbeat(
             json_event.payload,
         )?)),
-        EventType::EventTypeMoneyChanged => Some(event::Payload::MoneyChanged(
+        Some(EventType::EventTypeMoneyChanged) => Some(event::Payload::MoneyChanged(
             parse_money_changed(json_event.payload)?,
         )),
-        EventType::EventTypeConnectionTest => Some(event::Payload::ConnectionTest(
+        Some(EventType::EventTypeConnectionTest) => Some(event::Payload::ConnectionTest(
             parse_connection_test(json_event.payload)?,
         )),
         // TODO: Implement other event type parsers
