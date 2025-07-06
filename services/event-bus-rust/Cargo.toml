@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 # Web framework for REST API
-axum = "0.7"
+axum = "0.8"
 tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
@@ -27,7 +27,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 # Error handling
 anyhow = "1.0"
-thiserror = "1.0"
+thiserror = "2.0"
 
 # Utilities
 uuid = { version = "1.0", features = ["v4", "serde"] }
@@ -36,7 +36,7 @@ dashmap = "5.5"
 futures = "0.3"
 
 # Metrics
-metrics = "0.21"
+metrics = "0.24"
 metrics-exporter-prometheus = "0.17"
 
 [build-dependencies]
