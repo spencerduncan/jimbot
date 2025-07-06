@@ -37,7 +37,7 @@ futures = "0.3"
 
 # Metrics
 metrics = "0.24"
-metrics-exporter-prometheus = "0.12"
+metrics-exporter-prometheus = "0.17"
 
 [build-dependencies]
 tonic-build = "0.11"
