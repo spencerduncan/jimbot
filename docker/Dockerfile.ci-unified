@@ -86,9 +86,9 @@ RUN ln -sf /usr/bin/python3.10 /usr/bin/python3 && \
     ln -sf /usr/bin/python3.10 /usr/bin/python && \
     ln -sf /usr/bin/lua5.4 /usr/bin/lua
 
-# Install Python CI dependencies (fixes #142 - faker missing)
+# Install Python CI dependencies (fixes #142 - faker missing, #198 - pytest-asyncio missing)
 RUN python3 -m pip install --no-cache-dir \
-    faker pytest pytest-cov pytest-xdist \
+    faker pytest pytest-cov pytest-xdist pytest-asyncio \
     black isort flake8 pylint mypy \
     coverage bandit safety pip-audit
 

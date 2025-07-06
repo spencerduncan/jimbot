@@ -11,6 +11,7 @@ tower-http = { version = "0.6", features = ["cors", "trace"] }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
 
 # gRPC
 tonic = "0.11"
