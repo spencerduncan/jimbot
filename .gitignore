@@ -13,6 +13,17 @@ __pycache__/
 venv/
 env/
 ENV/
+.venv/
+virtualenv/
+*.egg-info/
+dist/
+build/
+*.egg
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.pdb
+.ipynb_checkpoints/
 
 # IDE
 .vscode/
@@ -36,6 +47,21 @@ Thumbs.db
 # Process files
 *.pid
 test_env/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup/temporary files
+*.bak
+*.tmp
+*.temp
+*~
+
+# Node Modules
+node_modules/
+package-lock.json
 
 # Mod backups
 mod_backups/
