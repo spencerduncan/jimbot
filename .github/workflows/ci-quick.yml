@@ -24,7 +24,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.ci-unified
+          file: ./docker/Dockerfile.ci-unified
           target: ci
           tags: jimbot-ci:latest
           cache-from: type=gha

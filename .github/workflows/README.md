@@ -32,7 +32,7 @@ This directory contains the consolidated CI/CD workflows for the JimBot project.
 
 ## Unified Docker Image
 
-All workflows use `Dockerfile.ci-unified` which includes:
+All workflows use `docker/Dockerfile.ci-unified` which includes:
 - Python 3.10 with all test dependencies
 - Rust 1.75 with cargo tools
 - C++ 17 with CMake and clang
@@ -54,7 +54,7 @@ To test these workflows locally:
 
 ```bash
 # Quick checks
-docker build -f Dockerfile.ci-unified -t jimbot-ci:latest .
+docker build -f docker/Dockerfile.ci-unified -t jimbot-ci:latest .
 docker run --rm -v $(pwd):/workspace jimbot-ci:latest bash ci/scripts/run-quick-checks.sh
 
 # Test suite
