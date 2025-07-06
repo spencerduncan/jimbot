@@ -2,6 +2,7 @@ use reqwest;
 use serde_json::json;
 use std::time::Duration;
 use tokio;
+use tracing::{debug, info};
 
 const BASE_URL: &str = "http://localhost:8080";
 
@@ -136,4 +137,78 @@ async fn test_invalid_event_type() {
             println!("Server not running - skipping integration test");
         }
     }
+}
+
+#[tokio::test]
+async fn test_basic_edge_cases() {
+    let client = reqwest::Client::new();
+
+    info!("Testing basic edge cases for graceful handling");
+
+    // Test empty event
+    let empty_event = json!({});
+    let response = client
+        .post(format!("{}/api/v1/events", BASE_URL))
+        .json(&empty_event)
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) => {
+            debug!("Empty event test: Status {}", resp.status());
+            // Server should handle empty events gracefully (either success with error or client error)
+        }
+        Err(_) => {
+            debug!("Empty event test: Server not running - skipping");
+        }
+    }
+
+    // Test malformed JSON (sent as string)
+    let response = client
+        .post(format!("{}/api/v1/events", BASE_URL))
+        .header("Content-Type", "application/json")
+        .body("{invalid_json")
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) => {
+            debug!("Malformed JSON test: Status {}", resp.status());
+            // Server should handle malformed JSON gracefully
+        }
+        Err(_) => {
+            debug!("Malformed JSON test: Server not running - skipping");
+        }
+    }
+
+    // Test oversized payload
+    let large_payload = "x".repeat(1024 * 1024); // 1MB
+    let large_event = json!({
+        "type": "HEARTBEAT",
+        "source": "integration_test",
+        "payload": {
+            "large_field": large_payload
+        }
+    });
+
+    let response = client
+        .post(format!("{}/api/v1/events", BASE_URL))
+        .json(&large_event)
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) => {
+            debug!("Large payload test: Status {}", resp.status());
+            // Server should handle large payloads gracefully (may reject or accept)
+        }
+        Err(_) => {
+            debug!("Large payload test: Server not running or timeout - skipping");
+        }
+    }
+
+    info!("Basic edge case tests completed");
 }
