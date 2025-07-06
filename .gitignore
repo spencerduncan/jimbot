@@ -59,6 +59,9 @@ test_env/
 *.temp
 *~
 
-# Node modules (handled in another PR but adding for completeness)
+# Node Modules
 node_modules/
 package-lock.json
+
+# Mod backups
+mod_backups/
