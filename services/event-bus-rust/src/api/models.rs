@@ -10,6 +10,8 @@ pub struct JsonEvent {
     pub timestamp: Option<i64>,
     pub version: Option<i32>,
     pub payload: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub headers: Option<HashMap<String, String>>,
 }
 
 /// Batch event request

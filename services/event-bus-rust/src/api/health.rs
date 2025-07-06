@@ -31,13 +31,10 @@ pub async fn health_check() -> Json<HealthResponse> {
     })
 }
 
-pub async fn metrics() -> Json<MetricsResponse> {
-    // TODO: Integrate with actual metrics collection
-    Json(MetricsResponse {
-        events_received: 0,
-        events_processed: 0,
-        events_failed: 0,
-        current_subscribers: 0,
-        avg_processing_time_ms: 0.0,
-    })
+pub async fn metrics() -> String {
+    // Return Prometheus format metrics
+    // The metrics-exporter-prometheus handles this automatically
+    // through its HTTP endpoint at :9090/metrics
+    // This endpoint is now just a redirect notice
+    "Prometheus metrics available at :9090/metrics".to_string()
 }

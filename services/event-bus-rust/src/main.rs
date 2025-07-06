@@ -2,6 +2,8 @@ mod api;
 mod grpc;
 mod proto;
 mod routing;
+mod metrics;
+mod tracing_config;
 
 use anyhow::Result;
 use axum::{routing::post, Router};
@@ -23,16 +25,23 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "event_bus_rust=debug,tower_http=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer().json())
-        .init();
+    // Initialize metrics subsystem
+    metrics::init_metrics();
+    
+    // Initialize OpenTelemetry tracing (this also sets up the tracing subscriber)
+    if let Err(e) = tracing_config::init_tracing() {
+        eprintln!("Failed to initialize OpenTelemetry tracing: {}", e);
+        // Fall back to basic tracing
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::EnvFilter::try_from_default_env()
+                    .unwrap_or_else(|_| "event_bus_rust=debug,tower_http=debug".into()),
+            )
+            .with(tracing_subscriber::fmt::layer().json())
+            .init();
+    }
 
-    info!("Starting Rust Event Bus");
+    info!("Starting Rust Event Bus with enhanced observability");
 
     // Initialize event router
     let router = Arc::new(EventRouter::new());
@@ -77,8 +86,27 @@ async fn main() -> Result<()> {
         tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
     });
 
-    // Wait for both servers
-    tokio::try_join!(rest_server, grpc_server)?;
+    // Set up graceful shutdown
+    let shutdown_signal = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
+        info!("Received shutdown signal");
+    };
+
+    // Wait for servers or shutdown signal
+    tokio::select! {
+        _ = tokio::try_join!(rest_server, grpc_server) => {
+            info!("Servers terminated");
+        }
+        _ = shutdown_signal => {
+            info!("Shutting down gracefully");
+        }
+    }
+
+    // Shutdown OpenTelemetry
+    tracing_config::shutdown_tracing();
+    info!("Event Bus shutdown complete");
 
     Ok(())
 }

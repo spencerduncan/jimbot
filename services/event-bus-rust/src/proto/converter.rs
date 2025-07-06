@@ -33,6 +33,8 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
         source: json_event.source,
         version: json_event.version.unwrap_or(1),
         payload: None,
+        metadata: json_event.headers.unwrap_or_default(),
+        ..Default::default()
     };
 
     // Convert payload based on event type

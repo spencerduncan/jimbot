@@ -483,24 +483,34 @@ class CardQueryBuilder:
         Returns:
             Tuple of (query, parameters)
         """
+        # Input validation - define allowed suits
+        ALLOWED_SUITS = {"Hearts", "Diamonds", "Clubs", "Spades"}
+        
+        # Validate all suits are allowed values
+        for suit in deck_composition.keys():
+            if suit not in ALLOWED_SUITS:
+                raise ValueError(f"Invalid suit '{suit}'. Allowed suits: {ALLOWED_SUITS}")
+        
         query = QueryBuilder()
 
-        # Build dynamic WHERE conditions for each suit
-        for suit, count in deck_composition.items():
-            param_name = f"deck_{suit.lower()}"
-            query.param(param_name, count)
+        # Build WHERE conditions safely with parameters
+        where_conditions = []
+        for i, (suit, count) in enumerate(deck_composition.items()):
+            suit_param = f"suit_{i}"
+            count_param = f"deck_{i}"
+            
+            query.param(suit_param, suit)
+            query.param(count_param, count)
+            
+            # Use parameters instead of string interpolation
+            where_conditions.append(f"(suit = ${suit_param} AND needed <= ${count_param})")
+        
+        where_clause = " OR ".join(where_conditions)
 
         return (
             query.match("(j:Joker)-[r:REQUIRES_CARD]->(c:PlayingCard)")
             .with_clause("j", "c.suit as suit", "SUM(r.optimal_quantity) as needed")
-            .where(
-                " AND ".join(
-                    [
-                        f"(suit = '{suit}' AND needed <= $deck_{suit.lower()})"
-                        for suit in deck_composition.keys()
-                    ]
-                )
-            )
+            .where(where_clause)
             .with_clause("j", "COUNT(*) as compatible_suits")
             .return_clause("j.name as joker", "j.cost as cost", "compatible_suits")
             .order_by("compatible_suits", OrderDirection.DESC)
