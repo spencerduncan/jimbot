@@ -16,6 +16,7 @@ from websockets.server import WebSocketServerProtocol
 
 from jimbot.mcp.aggregator import EventAggregator
 from jimbot.mcp.utils import MetricsCollector, validate_event
+from jimbot.mcp.utils.validation import sanitize_event_data
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class MCPServer:
         metrics: Performance metrics collector
     """
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 8765):
+    def __init__(self, host: str = "127.0.0.1", port: int = 8765):
         """
         Initialize MCP server.
 
@@ -124,9 +125,13 @@ class MCPServer:
             data = json.loads(message)
 
             # Validate event structure
-            if not validate_event(data):
+            if not validate_event(data, client_id):
                 logger.warning(f"Invalid event from {client_id}: {data}")
+                self.metrics.increment("invalid_events_total")
                 return
+
+            # Sanitize event data to prevent injection attacks
+            data = sanitize_event_data(data)
 
             # Add metadata
             data["_client_id"] = client_id
@@ -153,7 +158,7 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="MCP WebSocket Server")
-    parser.add_argument("--host", default="0.0.0.0", help="Host address")
+    parser.add_argument("--host", default="127.0.0.1", help="Host address")
     parser.add_argument("--port", type=int, default=8765, help="Port number")
     parser.add_argument("--log-level", default="INFO", help="Logging level")
 
