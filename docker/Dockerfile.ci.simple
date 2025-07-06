@@ -12,9 +12,12 @@ WORKDIR /app
 # Copy only requirements first for better caching
 COPY pyproject.toml setup.py ./
 
-# Install Python dependencies directly (not editable)
+# Install Python dependencies from pyproject.toml (CI tools only)
+# Use a script to extract CI-specific dev dependencies and avoid heavy main dependencies
 RUN pip install --upgrade pip && \
-    pip install black isort flake8 mypy pylint pytest pytest-cov coverage || \
+    pip install toml && \
+    python -c "import toml; data = toml.load('pyproject.toml'); dev_deps = data['project']['optional-dependencies']['dev']; ci_tools = [dep for dep in dev_deps if any(tool in dep.lower() for tool in ['black', 'isort', 'flake8', 'mypy', 'pylint', 'pytest', 'coverage', 'faker'])]; print(' '.join(ci_tools))" > /tmp/ci_deps.txt && \
+    pip install $(cat /tmp/ci_deps.txt) || \
     echo "Some packages failed to install"
 
 # Copy application code
