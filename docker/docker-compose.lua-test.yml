@@ -1,0 +1,150 @@
+# Docker Compose for Lua Testing Environment
+# Provides isolated and reproducible Lua testing infrastructure
+
+version: '3.8'
+
+services:
+  # Main Lua testing service
+  lua-test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.lua-test
+      target: base
+    container_name: jimbot-lua-test
+    volumes:
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:ro
+      - ../.luacheckrc:/app/.luacheckrc:ro
+      - ../.stylua.toml:/app/.stylua.toml:ro
+      - lua-test-cache:/app/.luarocks
+    environment:
+      - LUA_PATH=/app/?.lua;/app/?/init.lua;;
+      - LUA_CPATH=/app/?.so;;
+      - CI=${CI:-false}
+    working_dir: /app
+    command: ["/app/run_lua_tests.sh"]
+    networks:
+      - lua-test-network
+
+  # Development version for interactive debugging
+  lua-test-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.lua-test
+      target: dev
+    container_name: jimbot-lua-test-dev
+    volumes:
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:cached
+      - ../.luacheckrc:/app/.luacheckrc:cached
+      - ../.stylua.toml:/app/.stylua.toml:cached
+      - lua-test-cache:/app/.luarocks
+    environment:
+      - LUA_PATH=/app/?.lua;/app/?/init.lua;;
+      - LUA_CPATH=/app/?.so;;
+      - CI=false
+    working_dir: /app
+    command: ["/app/run_lua_tests_dev.sh"]
+    networks:
+      - lua-test-network
+    profiles:
+      - dev
+
+  # Performance testing service
+  lua-test-perf:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.lua-test
+      target: base
+    container_name: jimbot-lua-test-perf
+    volumes:
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:ro
+      - ../.luacheckrc:/app/.luacheckrc:ro
+      - ../.stylua.toml:/app/.stylua.toml:ro
+      - lua-test-cache:/app/.luarocks
+    environment:
+      - LUA_PATH=/app/?.lua;/app/?/init.lua;;
+      - LUA_CPATH=/app/?.so;;
+      - CI=true
+      - PERF_TESTING=true
+    working_dir: /app
+    command: |
+      bash -c "
+        echo '=== Performance Testing Mode ==='
+        echo 'Running tests with timing measurements...'
+        time /app/run_lua_tests.sh
+        echo 'Performance test completed.'
+      "
+    networks:
+      - lua-test-network
+    profiles:
+      - perf
+
+  # Code coverage service
+  lua-test-coverage:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.lua-test
+      target: base
+    container_name: jimbot-lua-test-coverage
+    volumes:
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:ro
+      - ../.luacheckrc:/app/.luacheckrc:ro
+      - ../.stylua.toml:/app/.stylua.toml:ro
+      - lua-test-cache:/app/.luarocks
+      - coverage-reports:/app/coverage
+    environment:
+      - LUA_PATH=/app/?.lua;/app/?/init.lua;;
+      - LUA_CPATH=/app/?.so;;
+      - CI=true
+      - COVERAGE_ENABLED=true
+    working_dir: /app
+    command: |
+      bash -c "
+        echo '=== Coverage Testing Mode ==='
+        echo 'Running tests with coverage reporting...'
+        
+        # Create coverage configuration
+        cat > .luacov << 'EOF'
+        -- Configuration for LuaCov
+        exclude = {
+          'tests/test_helper',
+          'tests/.*_spec',
+        }
+        
+        reporter = 'lcov'
+        reportfile = 'coverage/lcov.info'
+        EOF
+        
+        # Run tests with coverage
+        lua -lluacov tests/run_tests.lua || true
+        lua -lluacov tests/run_all_tests.lua || true
+        
+        # Generate coverage reports
+        mkdir -p coverage
+        luacov
+        
+        # Generate LCOV report if available
+        if command -v luacov-reporter-lcov >/dev/null 2>&1; then
+          luacov-reporter-lcov
+        fi
+        
+        echo 'Coverage reports generated in coverage/ directory'
+        ls -la coverage/ || true
+      "
+    networks:
+      - lua-test-network
+    profiles:
+      - coverage
+
+volumes:
+  lua-test-cache:
+    driver: local
+  coverage-reports:
+    driver: local
+
+networks:
+  lua-test-network:
+    driver: bridge
