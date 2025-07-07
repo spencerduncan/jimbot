@@ -61,7 +61,10 @@ class AlertSender:
             logger.info("No webhook URL provided, skipping webhook alert")
             
         # Create GitHub issue for critical alerts
-        if self.github_token and self.repo:
+        create_issues = os.environ.get('CREATE_GITHUB_ISSUES', 'true').lower() == 'true'
+        if not create_issues:
+            logger.info("GitHub issue creation is disabled via CREATE_GITHUB_ISSUES environment variable")
+        elif self.github_token and self.repo:
             try:
                 issue_success = self._create_github_issue(analysis, run_id)
                 if not issue_success:
@@ -157,6 +160,32 @@ class AlertSender:
             logger.info("No critical/high severity alerts, skipping GitHub issue creation")
             return True
             
+        # Check for existing open CI health alert issues
+        try:
+            search_url = f"https://api.github.com/repos/{self.repo}/issues"
+            search_params = {
+                'state': 'open',
+                'labels': 'ci,health-alert',
+                'per_page': 100
+            }
+            
+            response = requests.get(search_url, params=search_params, headers=self.github_headers, timeout=30)
+            response.raise_for_status()
+            
+            existing_issues = response.json()
+            
+            # Check if there's already an open CI health alert issue
+            for issue in existing_issues:
+                if '[CI Health Alert]' in issue.get('title', ''):
+                    # Update the existing issue instead of creating a new one
+                    logger.info(f"Found existing CI health alert issue #{issue['number']}, updating it")
+                    return self._update_github_issue(issue['number'], analysis, critical_alerts, run_id)
+                    
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Failed to check for existing issues: {e}")
+            # Continue to create a new issue if we can't check for existing ones
+            
+        # No existing issue found, create a new one
         issue_title = f"[CI Health Alert] {analysis.get('overall_health', 'degraded').title()} - {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
         issue_body = self._build_issue_body(analysis, critical_alerts, run_id)
         
@@ -177,6 +206,83 @@ class AlertSender:
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to create GitHub issue: {e}")
+            return False
+            
+    def _update_github_issue(self, issue_number: int, analysis: Dict[str, Any], alerts: List[Dict[str, Any]], run_id: Optional[str] = None) -> bool:
+        """Update existing GitHub issue with new alert information."""
+        try:
+            # Get current issue to preserve original content
+            issue_url = f"https://api.github.com/repos/{self.repo}/issues/{issue_number}"
+            response = requests.get(issue_url, headers=self.github_headers, timeout=30)
+            response.raise_for_status()
+            
+            current_issue = response.json()
+            current_body = current_issue.get('body', '')
+            
+            # Build update section
+            update_parts = [
+                "",
+                "---",
+                "",
+                f"## Update - {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
+                "",
+                f"**Overall Health:** {analysis.get('overall_health', 'unknown').title()}",
+                f"**Failure Rate:** {analysis.get('overall_failure_rate', 0):.1%}",
+                f"**Average Duration:** {analysis.get('average_duration_minutes', 0):.1f} minutes",
+                ""
+            ]
+            
+            if run_id:
+                update_parts.extend([
+                    f"**Related Run:** https://github.com/{self.repo}/actions/runs/{run_id}",
+                    ""
+                ])
+                
+            # Add new critical issues
+            if alerts:
+                update_parts.extend([
+                    "### Latest Critical Issues",
+                    ""
+                ])
+                
+                for alert in alerts:
+                    severity_emoji = {
+                        'critical': '🔴',
+                        'high': '🟠',
+                        'medium': '🟡'
+                    }.get(alert.get('severity', 'medium'), '🟡')
+                    
+                    update_parts.extend([
+                        f"- {severity_emoji} **{alert.get('type', 'Unknown Issue').replace('_', ' ').title()}**: {alert.get('message', 'No message provided')}",
+                    ])
+                update_parts.append("")
+                
+            # Combine original body with update
+            updated_body = current_body + '\n' + '\n'.join(update_parts)
+            
+            # Update the issue
+            update_data = {
+                'body': updated_body,
+                'state': 'open'  # Ensure it stays open
+            }
+            
+            response = requests.patch(issue_url, json=update_data, headers=self.github_headers, timeout=30)
+            response.raise_for_status()
+            
+            logger.info(f"Updated existing issue #{issue_number}")
+            
+            # Add a comment for visibility
+            comment_url = f"{issue_url}/comments"
+            comment_data = {
+                'body': f"🔄 CI Health Alert updated at {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}\n\nOverall health: **{analysis.get('overall_health', 'unknown').title()}**\nFailure rate: **{analysis.get('overall_failure_rate', 0):.1%}**"
+            }
+            
+            requests.post(comment_url, json=comment_data, headers=self.github_headers, timeout=30)
+            
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to update GitHub issue: {e}")
             return False
             
     def _build_issue_body(self, analysis: Dict[str, Any], alerts: List[Dict[str, Any]], run_id: Optional[str] = None) -> str:

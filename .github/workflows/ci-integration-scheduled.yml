@@ -6,6 +6,9 @@ on:
     - cron: '0 */4 * * *'
   workflow_dispatch:  # Allow manual triggering
 
+env:
+  CREATE_GITHUB_ISSUES: false  # Disable automatic issue creation to prevent spam
+
 jobs:
   integration-tests:
     name: Full Integration Test Suite
@@ -47,17 +50,64 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
-      - name: Create issue for failed tests
+      - name: Check for existing issue or create new one
         uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const date = new Date().toISOString();
-            const issue = await github.rest.issues.create({
+            // Check if issue creation is disabled
+            if (process.env.CREATE_GITHUB_ISSUES === 'false') {
+              console.log('Issue creation is disabled via CREATE_GITHUB_ISSUES environment variable');
+              return;
+            }
+            
+            // Check for existing open issues
+            const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Scheduled Integration Tests Failed - ${date}`,
-              body: `The scheduled integration tests failed at ${date}.\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              labels: ['bug', 'ci-failure', 'integration-tests']
+              state: 'open',
+              labels: 'ci-failure,integration-tests',
+              per_page: 100
             });
-            console.log(`Created issue #${issue.data.number}`);
+            
+            const existingIssue = issues.data.find(issue => 
+              issue.title.includes('Scheduled Integration Tests Failed')
+            );
+            
+            const date = new Date().toISOString();
+            const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            
+            if (existingIssue) {
+              // Update existing issue
+              console.log(`Found existing issue #${existingIssue.number}, updating it`);
+              
+              // Add comment to existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `🔴 Integration tests failed again at ${date}\n\nWorkflow run: ${workflowUrl}`
+              });
+              
+              // Update issue body with latest failure
+              const currentBody = existingIssue.body || '';
+              const updateSection = `\n\n---\n\n## Update - ${date}\n\nTests failed again. Latest workflow run: ${workflowUrl}`;
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: currentBody + updateSection
+              });
+              
+            } else {
+              // Create new issue
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Scheduled Integration Tests Failed - ${date}`,
+                body: `The scheduled integration tests failed at ${date}.\n\nWorkflow run: ${workflowUrl}\n\n## Details\n\nThis issue will be automatically updated if the tests continue to fail. Once the tests pass, please close this issue.`,
+                labels: ['bug', 'ci-failure', 'integration-tests']
+              });
+              console.log(`Created issue #${issue.data.number}`);
+            }

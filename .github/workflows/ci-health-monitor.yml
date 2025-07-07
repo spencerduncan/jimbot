@@ -21,6 +21,7 @@ env:
   METRICS_RETENTION_DAYS: 90
   ALERT_THRESHOLD_FAILURE_RATE: 0.3  # Alert if >30% failure rate
   ALERT_THRESHOLD_DURATION_INCREASE: 1.5  # Alert if duration increases by >50%
+  CREATE_GITHUB_ISSUES: false  # Disable automatic issue creation to prevent spam
 
 jobs:
   collect-metrics:
