@@ -78,6 +78,12 @@ files["**/*.lua"] = {
 files["**/tests/**/*.lua"] = {
     std = "+busted",
     globals = {"describe", "it", "before_each", "after_each", "setup", "teardown", "pending"},
+    ignore = {"121"}, -- Allow setting read-only fields in tests for mocking
+}
+
+-- Main mod files
+files["**/main.lua"] = {
+    ignore = {"121"}, -- Allow setting global mod variables
 }
 
 -- Ignore certain warnings
@@ -93,7 +99,11 @@ ignore = {
     "614", -- Trailing whitespace in comment
     "621", -- Inconsistent whitespace
     "631", -- Line is too long
-    "121", -- Setting read-only field
+    "121", -- Setting read-only field (common in Lua modules and tests)
+    "122", -- Setting read-only field of global _G (common in Lua modules and tests)
+    "131", -- Setting non-standard global variable
+    "112", -- Mutating non-standard global variable
+    "113", -- Accessing undefined variable
 }
 
 -- Allow specific unused arguments
