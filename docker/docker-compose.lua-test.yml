@@ -20,7 +20,7 @@ services:
       - LUA_CPATH=/app/?.so;;
       - CI=${CI:-false}
     working_dir: /app
-    command: ["/app/run_lua_tests.sh"]
+    command: ["/usr/local/bin/run_lua_tests.sh"]
     networks:
       - lua-test-network
 
@@ -42,7 +42,7 @@ services:
       - LUA_CPATH=/app/?.so;;
       - CI=false
     working_dir: /app
-    command: ["/app/run_lua_tests_dev.sh"]
+    command: ["/usr/local/bin/run_lua_tests_dev.sh"]
     networks:
       - lua-test-network
     profiles:
@@ -71,7 +71,7 @@ services:
       bash -c "
         echo '=== Performance Testing Mode ==='
         echo 'Running tests with timing measurements...'
-        time /app/run_lua_tests.sh
+        time /usr/local/bin/run_lua_tests.sh
         echo 'Performance test completed.'
       "
     networks:
