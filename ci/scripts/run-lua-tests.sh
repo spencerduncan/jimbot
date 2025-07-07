@@ -33,6 +33,9 @@ TIMEOUT=${TIMEOUT:-600}  # 10 minutes timeout
 COVERAGE=${COVERAGE:-false}
 PERFORMANCE=${PERFORMANCE:-false}
 
+# Change to project root for correct docker compose context
+cd "$PROJECT_ROOT"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
