@@ -39,5 +39,8 @@ pub trait EventBusGrpc: Send + Sync + 'static {
     async fn subscribe(
         &self,
         request: Request<SubscribeRequest>,
-    ) -> Result<Response<std::pin::Pin<Box<dyn futures::Stream<Item = Event> + Send + 'static>>>, Status>;
+    ) -> Result<
+        Response<std::pin::Pin<Box<dyn futures::Stream<Item = Event> + Send + 'static>>>,
+        Status,
+    >;
 }

@@ -1,4 +1,8 @@
-use axum::{extract::{rejection::JsonRejection, State}, http::StatusCode, response::Json};
+use axum::{
+    extract::{rejection::JsonRejection, State},
+    http::StatusCode,
+    response::Json,
+};
 use tracing::{debug, error, info};
 
 use crate::{
@@ -17,10 +21,7 @@ pub async fn handle_single_event(
         Ok(Json(event)) => event,
         Err(err) => {
             error!("Failed to parse event JSON: {}", err);
-            return Json(ApiResponse::error(format!(
-                "Invalid JSON: {}",
-                err
-            )));
+            return Json(ApiResponse::error(format!("Invalid JSON: {}", err)));
         }
     };
 
@@ -43,10 +44,7 @@ pub async fn handle_single_event(
         }
         Err(e) => {
             error!("Failed to convert JSON to protobuf: {}", e);
-            Json(ApiResponse::error(format!(
-                "Invalid event format: {}",
-                e
-            )))
+            Json(ApiResponse::error(format!("Invalid event format: {}", e)))
         }
     }
 }
@@ -61,10 +59,7 @@ pub async fn handle_batch_events(
         Ok(Json(batch)) => batch,
         Err(err) => {
             error!("Failed to parse batch JSON: {}", err);
-            return Json(ApiResponse::error(format!(
-                "Invalid JSON: {}",
-                err
-            )));
+            return Json(ApiResponse::error(format!("Invalid JSON: {}", err)));
         }
     };
     let event_count = batch.events.len();

@@ -1,8 +1,8 @@
-use opentelemetry::{global, KeyValue};
 use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry::{global, KeyValue};
+use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{trace as sdktrace, Resource};
-use opentelemetry_otlp::WithExportConfig;
 use std::time::Duration;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -11,7 +11,7 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
     // Create OTLP exporter
     let otlp_endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
-    
+
     let exporter = opentelemetry_otlp::new_exporter()
         .tonic()
         .with_endpoint(otlp_endpoint)
@@ -37,7 +37,7 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
     // Configure tracing subscriber with OpenTelemetry layer
     // TODO: Fix opentelemetry version mismatch
     // let telemetry_layer = tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("event-bus-rust"));
-    
+
     let fmt_layer = tracing_subscriber::fmt::layer()
         .json()
         .with_target(true)
@@ -57,9 +57,11 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Extract trace context from incoming event headers
-pub fn extract_trace_context(headers: &std::collections::HashMap<String, String>) -> opentelemetry::Context {
+pub fn extract_trace_context(
+    headers: &std::collections::HashMap<String, String>,
+) -> opentelemetry::Context {
     let mut carrier = std::collections::HashMap::new();
-    
+
     // Copy relevant trace headers
     if let Some(traceparent) = headers.get("traceparent") {
         carrier.insert("traceparent".to_string(), traceparent.clone());
@@ -67,7 +69,7 @@ pub fn extract_trace_context(headers: &std::collections::HashMap<String, String>
     if let Some(tracestate) = headers.get("tracestate") {
         carrier.insert("tracestate".to_string(), tracestate.clone());
     }
-    
+
     // Extract context using W3C Trace Context propagator
     let propagator = TraceContextPropagator::new();
     let extractor = HeaderExtractor(&carrier);
@@ -75,7 +77,10 @@ pub fn extract_trace_context(headers: &std::collections::HashMap<String, String>
 }
 
 /// Inject trace context into outgoing event headers
-pub fn inject_trace_context(context: &opentelemetry::Context, headers: &mut std::collections::HashMap<String, String>) {
+pub fn inject_trace_context(
+    context: &opentelemetry::Context,
+    headers: &mut std::collections::HashMap<String, String>,
+) {
     let propagator = TraceContextPropagator::new();
     let mut injector = HeaderInjector(headers);
     propagator.inject_context(context, &mut injector);
