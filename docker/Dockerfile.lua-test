@@ -81,7 +81,7 @@ RUN echo '#!/bin/bash' > /usr/local/bin/run_lua_tests.sh && \
     echo 'print_section "LUA TESTING ENVIRONMENT"' >> /usr/local/bin/run_lua_tests.sh && \
     echo 'print_color "$GREEN" "Lua version: $(lua -v)"' >> /usr/local/bin/run_lua_tests.sh && \
     echo 'print_color "$GREEN" "LuaRocks version: $(luarocks --version | head -1)"' >> /usr/local/bin/run_lua_tests.sh && \
-    echo 'luarocks list --installed' >> /usr/local/bin/run_lua_tests.sh && \
+    echo 'luarocks list' >> /usr/local/bin/run_lua_tests.sh && \
     echo 'print_section "STYLE CHECKS"' >> /usr/local/bin/run_lua_tests.sh && \
     echo 'if find . -name "*.lua" -type f | xargs stylua --check 2>/dev/null; then print_color "$GREEN" "✓ Style check passed"; else print_color "$RED" "✗ Style check failed"; OVERALL_SUCCESS=false; FAILED_TESTS+=("style-check"); fi' >> /usr/local/bin/run_lua_tests.sh && \
     echo 'print_section "LINT CHECKS"' >> /usr/local/bin/run_lua_tests.sh && \
