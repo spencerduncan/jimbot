@@ -54,13 +54,7 @@ WORKDIR /app
 COPY .luacheckrc .stylua.toml ./
 COPY tests/ ./tests/
 
-# Set ownership for test user
-RUN chown -R luatest:luatest /app
-
-# Switch to test user
-USER luatest
-
-# Create comprehensive test runner script
+# Create comprehensive test runner script (as root)
 RUN cat > /app/run_lua_tests.sh << 'EOF'
 #!/bin/bash
 set -e
@@ -208,6 +202,12 @@ tail -f /dev/null
 EOF
 
 RUN chmod +x /app/run_lua_tests_dev.sh
+
+# Set ownership for test user
+RUN chown -R luatest:luatest /app
+
+# Switch to test user
+USER luatest
 
 # Default command runs all tests
 CMD ["/app/run_lua_tests.sh"]

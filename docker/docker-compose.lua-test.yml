@@ -1,8 +1,6 @@
 # Docker Compose for Lua Testing Environment
 # Provides isolated and reproducible Lua testing infrastructure
 
-version: '3.8'
-
 services:
   # Main Lua testing service
   lua-test:
