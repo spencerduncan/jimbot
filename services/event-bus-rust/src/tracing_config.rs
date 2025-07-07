@@ -1,4 +1,6 @@
-use opentelemetry::{global, trace::{TraceContextExt, Tracer, TracerProvider}, KeyValue};
+use opentelemetry::{global, KeyValue};
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{trace as sdktrace, Resource};
 use opentelemetry_otlp::WithExportConfig;
 use std::time::Duration;
@@ -33,7 +35,8 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
     global::set_tracer_provider(tracer_provider.clone());
 
     // Configure tracing subscriber with OpenTelemetry layer
-    let telemetry_layer = tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("event-bus-rust"));
+    // TODO: Fix opentelemetry version mismatch
+    // let telemetry_layer = tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("event-bus-rust"));
     
     let fmt_layer = tracing_subscriber::fmt::layer()
         .json()
@@ -47,7 +50,7 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(filter_layer)
         .with(fmt_layer)
-        .with(telemetry_layer)
+        // .with(telemetry_layer)
         .init();
 
     Ok(())
@@ -66,14 +69,14 @@ pub fn extract_trace_context(headers: &std::collections::HashMap<String, String>
     }
     
     // Extract context using W3C Trace Context propagator
-    let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+    let propagator = TraceContextPropagator::new();
     let extractor = HeaderExtractor(&carrier);
     propagator.extract(&extractor)
 }
 
 /// Inject trace context into outgoing event headers
 pub fn inject_trace_context(context: &opentelemetry::Context, headers: &mut std::collections::HashMap<String, String>) {
-    let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+    let propagator = TraceContextPropagator::new();
     let mut injector = HeaderInjector(headers);
     propagator.inject_context(context, &mut injector);
 }

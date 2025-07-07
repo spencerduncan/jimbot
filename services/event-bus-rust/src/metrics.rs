@@ -1,48 +1,5 @@
-use lazy_static::lazy_static;
-use metrics::{counter, gauge, histogram, register_counter, register_gauge, register_histogram, Unit};
+use metrics::{counter, gauge, histogram};
 use std::time::Instant;
-
-lazy_static! {
-    /// Total number of events received by type
-    static ref EVENTS_RECEIVED: metrics::Counter = {
-        register_counter!("event_bus_events_received_total", Unit::Count, "Total number of events received by type")
-    };
-    
-    /// Total number of events processed successfully by type  
-    static ref EVENTS_PROCESSED: metrics::Counter = {
-        register_counter!("event_bus_events_processed_total", Unit::Count, "Total number of events processed successfully by type")
-    };
-    
-    /// Total number of events failed by type and error
-    static ref EVENTS_FAILED: metrics::Counter = {
-        register_counter!("event_bus_events_failed_total", Unit::Count, "Total number of events failed by type and error")
-    };
-    
-    /// Event processing latency histogram in milliseconds
-    static ref PROCESSING_LATENCY: metrics::Histogram = {
-        register_histogram!("event_bus_processing_latency_ms", Unit::Milliseconds, "Event processing latency in milliseconds")
-    };
-    
-    /// Current number of active subscribers by topic pattern
-    static ref ACTIVE_SUBSCRIBERS: metrics::Gauge = {
-        register_gauge!("event_bus_active_subscribers", Unit::Count, "Current number of active subscribers by topic pattern")
-    };
-    
-    /// Current queue depth by event type
-    static ref QUEUE_DEPTH: metrics::Gauge = {
-        register_gauge!("event_bus_queue_depth", Unit::Count, "Current queue depth by event type")
-    };
-    
-    /// Number of events routed to subscribers
-    static ref EVENTS_ROUTED: metrics::Counter = {
-        register_counter!("event_bus_events_routed_total", Unit::Count, "Total number of events routed to subscribers")
-    };
-    
-    /// Batch size histogram
-    static ref BATCH_SIZE: metrics::Histogram = {
-        register_histogram!("event_bus_batch_size", Unit::Count, "Batch size distribution")
-    };
-}
 
 pub struct EventMetrics;
 

@@ -36,7 +36,12 @@ run_test() {
 }
 
 # Check if Rust components exist
-if [ ! -f "Cargo.toml" ] && [ ! -d "services/event-bus-rust" ]; then
+RUST_COMPONENTS_FOUND=false
+if [ -f "Cargo.toml" ] || [ -f "services/event-bus-rust/Cargo.toml" ] || [ -f "jimbot/memgraph/mage_modules/Cargo.toml" ]; then
+    RUST_COMPONENTS_FOUND=true
+fi
+
+if [ "$RUST_COMPONENTS_FOUND" = false ]; then
     echo -e "${YELLOW}No Rust components found, skipping Rust tests${NC}"
     exit 0
 fi
@@ -85,46 +90,64 @@ for service_dir in services/*/; do
         
         cd "$service_dir"
         
+        # Run unit tests only for lightweight CI
         run_test "$service_name Unit Tests" "
-            cargo test --verbose
+            cargo test --bins --verbose
         "
-        
-        # Run integration tests if they exist
-        if [ -d "tests" ]; then
-            run_test "$service_name Integration Tests" "
-                cargo test --test '*integration*' --verbose
-            "
-        fi
-        
-        # Run benchmarks if they exist
-        if [ -d "benches" ]; then
-            run_test "$service_name Benchmarks" "
-                cargo bench --verbose
-            "
-        fi
         
         cd /workspace
     fi
 done
 
-# Security audit
-echo -e "${YELLOW}Running security audit...${NC}"
-if cargo audit --version >/dev/null 2>&1; then
-    run_test "Security Audit" "
-        cargo audit --deny warnings
+# Test memgraph mage modules if they exist
+if [ -f "jimbot/memgraph/mage_modules/Cargo.toml" ]; then
+    echo -e "${YELLOW}Testing Memgraph MAGE modules${NC}"
+    cd jimbot/memgraph/mage_modules
+    
+    run_test "MAGE Modules Tests" "
+        cargo test --verbose
     "
-else
-    echo -e "${YELLOW}cargo-audit not available, skipping security audit${NC}"
+    
+    cd /workspace
 fi
 
-# Check formatting
-run_test "Format Check" "
-    cargo fmt --all -- --check
-"
+# Run security audit, formatting, and linting for each Rust component
+echo -e "${YELLOW}Running security audit, formatting, and linting checks...${NC}"
 
-# Run clippy lints
-run_test "Clippy Lints" "
-    cargo clippy --all-targets --all-features -- -D warnings
-"
+# Function to run checks on a specific Rust project
+run_checks_for_project() {
+    local project_dir="$1"
+    local project_name="$2"
+    
+    if [ -f "$project_dir/Cargo.toml" ]; then
+        echo -e "${YELLOW}Running checks for $project_name${NC}"
+        cd "$project_dir"
+        
+        # Security audit
+        if cargo audit --version >/dev/null 2>&1; then
+            run_test "$project_name Security Audit" "
+                cargo audit --deny warnings
+            "
+        fi
+        
+        # Check formatting
+        run_test "$project_name Format Check" "
+            cargo fmt -- --check
+        "
+        
+        # Run clippy lints
+        run_test "$project_name Clippy Lints" "
+            cargo clippy --all-targets --all-features -- -D warnings
+        "
+        
+        cd /workspace
+    fi
+}
+
+# Run checks for event-bus-rust
+run_checks_for_project "services/event-bus-rust" "Event Bus"
+
+# Run checks for memgraph mage modules
+run_checks_for_project "jimbot/memgraph/mage_modules" "MAGE Modules"
 
 echo -e "${GREEN}=== Rust tests completed successfully! ===${NC}"

@@ -99,12 +99,45 @@ The Event Bus is optimized for high throughput:
 - Efficient Protocol Buffer serialization
 - Connection pooling for downstream services
 
-### Benchmarks
+## Testing
 
-Run performance benchmarks:
+The Event Bus uses a two-tier testing strategy:
+
+### Merge CI (Unit Tests Only)
+
+Fast unit tests that run on every PR:
 
 ```bash
-cargo bench
+# Run unit tests
+cargo test --bins
+```
+
+### Scheduled Integration Tests
+
+Comprehensive integration tests run every 4 hours:
+- Full API endpoint testing
+- Edge case validation
+- Security tests (appropriate for LAN deployment)
+- Performance validation
+
+To run integration tests locally:
+
+```bash
+# Option 1: Use the test runner script
+./run-integration-tests.sh
+
+# Option 2: Manual testing
+cargo run &
+cargo test --tests
+# Don't forget to stop the service
+
+# Option 3: Test individual endpoints
+cargo run
+
+# Test with curl
+curl -X POST http://localhost:8080/api/v1/events \
+  -H "Content-Type: application/json" \
+  -d '{"type": "HEARTBEAT", "source": "test", "payload": {}}'
 ```
 
 ## Topic Routing

@@ -77,7 +77,7 @@ impl EventBusGrpc for EventBusService {
     async fn subscribe(
         &self,
         request: Request<SubscribeRequest>,
-    ) -> Result<Response<tonic::Streaming<Event>>, Status> {
+    ) -> Result<Response<std::pin::Pin<Box<dyn futures::Stream<Item = Event> + Send + 'static>>>, Status> {
         let req = request.into_inner();
         info!(
             "gRPC: New subscription for pattern '{}' from subscriber '{}'",
@@ -92,6 +92,7 @@ impl EventBusGrpc for EventBusService {
 
         // Convert to streaming response
         let stream = UnboundedReceiverStream::new(rx);
-        Ok(Response::new(Box::pin(stream) as tonic::Streaming<Event>))
+        
+        Ok(Response::new(Box::pin(stream)))
     }
 }
