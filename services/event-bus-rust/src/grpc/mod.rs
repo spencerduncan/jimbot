@@ -37,7 +37,7 @@ impl EventBusGrpc for EventBusService {
                 error!("Failed to route event: {}", e);
                 Ok(Response::new(PublishResponse {
                     success: false,
-                    message: format!("Failed to route event: {}", e),
+                    message: format!("Failed to route event: {e}"),
                 }))
             }
         }
@@ -57,14 +57,14 @@ impl EventBusGrpc for EventBusService {
         let mut errors = Vec::new();
         for (idx, event) in batch.events.into_iter().enumerate() {
             if let Err(e) = self.router.route_event(event).await {
-                errors.push(format!("Event {}: {}", idx, e));
+                errors.push(format!("Event {idx}: {e}"));
             }
         }
 
         if errors.is_empty() {
             Ok(Response::new(PublishResponse {
                 success: true,
-                message: format!("All {} events published successfully", event_count),
+                message: format!("All {event_count} events published successfully"),
             }))
         } else {
             Ok(Response::new(PublishResponse {

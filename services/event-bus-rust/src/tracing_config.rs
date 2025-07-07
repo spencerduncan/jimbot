@@ -57,6 +57,7 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Extract trace context from incoming event headers
+#[allow(dead_code)]
 pub fn extract_trace_context(
     headers: &std::collections::HashMap<String, String>,
 ) -> opentelemetry::Context {
@@ -77,6 +78,7 @@ pub fn extract_trace_context(
 }
 
 /// Inject trace context into outgoing event headers
+#[allow(dead_code)]
 pub fn inject_trace_context(
     context: &opentelemetry::Context,
     headers: &mut std::collections::HashMap<String, String>,
@@ -87,6 +89,7 @@ pub fn inject_trace_context(
 }
 
 /// Helper struct for extracting headers
+#[allow(dead_code)]
 struct HeaderExtractor<'a>(&'a std::collections::HashMap<String, String>);
 
 impl<'a> opentelemetry::propagation::Extractor for HeaderExtractor<'a> {
@@ -100,6 +103,7 @@ impl<'a> opentelemetry::propagation::Extractor for HeaderExtractor<'a> {
 }
 
 /// Helper struct for injecting headers
+#[allow(dead_code)]
 struct HeaderInjector<'a>(&'a mut std::collections::HashMap<String, String>);
 
 impl<'a> opentelemetry::propagation::Injector for HeaderInjector<'a> {

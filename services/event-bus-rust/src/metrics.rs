@@ -1,8 +1,10 @@
 use metrics::{counter, gauge, histogram};
 use std::time::Instant;
 
+#[allow(dead_code)]
 pub struct EventMetrics;
 
+#[allow(dead_code)]
 impl EventMetrics {
     /// Record that an event was received
     pub fn record_event_received(event_type: &str, source: &str) {
@@ -47,11 +49,13 @@ impl EventMetrics {
 }
 
 /// Timer for measuring event processing duration
+#[allow(dead_code)]
 pub struct ProcessingTimer {
     start: Instant,
     event_type: String,
 }
 
+#[allow(dead_code)]
 impl ProcessingTimer {
     pub fn new(event_type: String) -> Self {
         Self {

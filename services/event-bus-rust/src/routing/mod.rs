@@ -17,6 +17,12 @@ pub struct EventRouter {
     channels: DashMap<String, Vec<EventChannel>>,
 }
 
+impl Default for EventRouter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EventRouter {
     pub fn new() -> Self {
         Self {
@@ -78,7 +84,7 @@ impl EventRouter {
         info!("Adding handler subscription for pattern: {}", pattern);
         self.handlers
             .entry(pattern)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(handler);
     }
 
@@ -87,7 +93,7 @@ impl EventRouter {
         info!("Adding channel subscription for pattern: {}", pattern);
         self.channels
             .entry(pattern)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(channel);
     }
 

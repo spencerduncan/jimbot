@@ -30,7 +30,7 @@ async fn main() -> Result<()> {
 
     // Initialize OpenTelemetry tracing (this also sets up the tracing subscriber)
     if let Err(e) = tracing_config::init_tracing() {
-        eprintln!("Failed to initialize OpenTelemetry tracing: {}", e);
+        eprintln!("Failed to initialize OpenTelemetry tracing: {e}");
         // Fall back to basic tracing
         tracing_subscriber::registry()
             .with(
@@ -74,7 +74,7 @@ async fn main() -> Result<()> {
 
     // Start gRPC server
     let grpc_addr = "[::]:50051";
-    let grpc_service = EventBusService::new(router);
+    let _grpc_service = EventBusService::new(router);
 
     info!("gRPC server listening on {}", grpc_addr);
 

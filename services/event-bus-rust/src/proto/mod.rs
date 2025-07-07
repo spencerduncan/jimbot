@@ -1,6 +1,7 @@
 pub mod converter;
 
 // Include the generated protobuf code
+#[allow(clippy::enum_variant_names)]
 pub mod jimbot {
     tonic::include_proto!("jimbot");
 }
@@ -12,6 +13,7 @@ pub use jimbot::*;
 use tonic::{Request, Response, Status};
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct PublishResponse {
     pub success: bool,
     pub message: String,
@@ -25,6 +27,7 @@ pub struct SubscribeRequest {
 
 // Custom trait for Event Bus gRPC service
 #[tonic::async_trait]
+#[allow(dead_code)]
 pub trait EventBusGrpc: Send + Sync + 'static {
     async fn publish_event(
         &self,

@@ -20,10 +20,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let resource_proto = proto_root.join("resource_coordinator.proto");
 
     if !balatro_proto.exists() {
-        panic!("Proto file not found: {:?}", balatro_proto);
+        panic!("Proto file not found: {balatro_proto:?}");
     }
     if !resource_proto.exists() {
-        panic!("Proto file not found: {:?}", resource_proto);
+        panic!("Proto file not found: {resource_proto:?}");
     }
 
     // Tell cargo to recompile if proto files change
@@ -34,6 +34,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure()
         .build_client(true)
         .build_server(true)
+        // Disable clippy warnings for generated code
+        .emit_rerun_if_changed(false)
         .compile(
             &[
                 balatro_proto.to_str().unwrap(),

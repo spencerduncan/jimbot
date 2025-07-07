@@ -1,6 +1,5 @@
 use axum::{
     extract::{rejection::JsonRejection, State},
-    http::StatusCode,
     response::Json,
 };
 use tracing::{debug, error, info};
@@ -21,7 +20,7 @@ pub async fn handle_single_event(
         Ok(Json(event)) => event,
         Err(err) => {
             error!("Failed to parse event JSON: {}", err);
-            return Json(ApiResponse::error(format!("Invalid JSON: {}", err)));
+            return Json(ApiResponse::error(format!("Invalid JSON: {err}")));
         }
     };
 
@@ -36,7 +35,7 @@ pub async fn handle_single_event(
             // Route the event
             if let Err(e) = state.router.route_event(proto_event).await {
                 error!("Failed to route event: {}", e);
-                return Json(ApiResponse::error(format!("Routing failed: {}", e)));
+                return Json(ApiResponse::error(format!("Routing failed: {e}")));
             }
 
             info!("Successfully processed single event");
@@ -44,7 +43,7 @@ pub async fn handle_single_event(
         }
         Err(e) => {
             error!("Failed to convert JSON to protobuf: {}", e);
-            Json(ApiResponse::error(format!("Invalid event format: {}", e)))
+            Json(ApiResponse::error(format!("Invalid event format: {e}")))
         }
     }
 }
@@ -59,7 +58,7 @@ pub async fn handle_batch_events(
         Ok(Json(batch)) => batch,
         Err(err) => {
             error!("Failed to parse batch JSON: {}", err);
-            return Json(ApiResponse::error(format!("Invalid JSON: {}", err)));
+            return Json(ApiResponse::error(format!("Invalid JSON: {err}")));
         }
     };
     let event_count = batch.events.len();
@@ -73,14 +72,14 @@ pub async fn handle_batch_events(
             Ok(proto_event) => {
                 if let Err(e) = state.router.route_event(proto_event).await {
                     error!("Failed to route event {}: {}", idx, e);
-                    errors.push(format!("Event {}: {}", idx, e));
+                    errors.push(format!("Event {idx}: {e}"));
                 } else {
                     processed += 1;
                 }
             }
             Err(e) => {
                 error!("Failed to convert event {} to protobuf: {}", idx, e);
-                errors.push(format!("Event {}: Invalid format - {}", idx, e));
+                errors.push(format!("Event {idx}: Invalid format - {e}"));
             }
         }
     }
