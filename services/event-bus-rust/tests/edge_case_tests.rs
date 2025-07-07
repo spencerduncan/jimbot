@@ -1,4 +1,6 @@
-use reqwest;
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::useless_vec)]
+
 use serde_json::{json, Value};
 use std::time::Duration;
 use tokio::time::timeout;

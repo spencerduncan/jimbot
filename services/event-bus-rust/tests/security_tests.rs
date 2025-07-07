@@ -1,7 +1,8 @@
-use reqwest;
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::useless_vec)]
+
 use serde_json::json;
 use std::time::Duration;
-use tokio::time::timeout;
 use tracing::{debug, info, warn};
 
 const BASE_URL: &str = "http://localhost:8080";
