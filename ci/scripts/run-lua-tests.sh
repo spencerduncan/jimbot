@@ -88,7 +88,7 @@ fi
 # Build the Docker image
 print_section "BUILDING LUA TEST IMAGE"
 print_color "$YELLOW" "Building Docker image for Lua testing..."
-if docker compose -f "$DOCKER_COMPOSE_FILE" build lua-test; then
+if docker compose -f "$DOCKER_COMPOSE_FILE" build --no-cache lua-test; then
     print_color "$GREEN" "✓ Docker image built successfully"
 else
     print_color "$RED" "✗ Failed to build Docker image"

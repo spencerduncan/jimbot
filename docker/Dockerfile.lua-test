@@ -58,8 +58,10 @@ COPY tests/ ./tests/
 COPY docker/scripts/run_lua_tests.sh /app/run_lua_tests.sh
 COPY docker/scripts/run_lua_tests_dev.sh /app/run_lua_tests_dev.sh
 
-# Make the scripts executable
-RUN chmod +x /app/run_lua_tests.sh /app/run_lua_tests_dev.sh
+# Make the scripts executable and verify they exist
+RUN chmod +x /app/run_lua_tests.sh /app/run_lua_tests_dev.sh && \
+    ls -la /app/run_lua_tests*.sh && \
+    echo "Script files copied and made executable"
 
 # Set ownership for test user
 RUN chown -R luatest:luatest /app
