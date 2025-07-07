@@ -90,15 +90,54 @@ for service_dir in services/*/; do
         
         cd "$service_dir"
         
+        # Run unit tests first (these don't need the service running)
         run_test "$service_name Unit Tests" "
-            cargo test --verbose
+            cargo test --lib --bins --verbose
         "
         
-        # Run integration tests if they exist
+        # For services with integration tests, start the service first
         if [ -d "tests" ]; then
-            run_test "$service_name Integration Tests" "
-                cargo test --test '*integration*' --verbose
-            "
+            # Special handling for event-bus-rust which needs to be running for integration tests
+            if [ "$service_name" = "event-bus-rust" ]; then
+                echo -e "${YELLOW}Building and starting $service_name for integration tests...${NC}"
+                
+                # Build the service
+                cargo build --release
+                
+                # Start the service in the background
+                ./target/release/event-bus-rust &
+                SERVICE_PID=$!
+                
+                # Give the service time to start
+                echo "Waiting for service to start..."
+                for i in {1..30}; do
+                    if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+                        echo "Service is ready!"
+                        break
+                    fi
+                    if [ $i -eq 30 ]; then
+                        echo "Service failed to start within 30 seconds"
+                        kill $SERVICE_PID 2>/dev/null || true
+                        exit 1
+                    fi
+                    sleep 1
+                done
+                
+                # Run integration tests
+                run_test "$service_name Integration Tests" "
+                    cargo test --test '*' --verbose
+                "
+                
+                # Stop the service
+                echo "Stopping $service_name..."
+                kill $SERVICE_PID 2>/dev/null || true
+                wait $SERVICE_PID 2>/dev/null || true
+            else
+                # For other services, just run integration tests normally
+                run_test "$service_name Integration Tests" "
+                    cargo test --test '*integration*' --verbose
+                "
+            fi
         fi
         
         # Run benchmarks if they exist
