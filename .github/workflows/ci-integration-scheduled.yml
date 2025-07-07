@@ -1,0 +1,63 @@
+name: Scheduled Integration Tests
+
+on:
+  schedule:
+    # Run every 4 hours
+    - cron: '0 */4 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  integration-tests:
+    name: Full Integration Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build CI Docker image
+        run: |
+          docker build -f docker/Dockerfile.ci-unified -t jimbot-ci:latest .
+      
+      - name: Run full integration test suite
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            --network host \
+            jimbot-ci:latest \
+            bash ci/scripts/run-integration-tests.sh
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ github.run_number }}
+          path: |
+            services/*/target/debug/deps/*.json
+            services/*/test-results/
+            **/test-results/
+      
+  notify-failures:
+    name: Notify on Failures
+    needs: integration-tests
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue for failed tests
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const date = new Date().toISOString();
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Scheduled Integration Tests Failed - ${date}`,
+              body: `The scheduled integration tests failed at ${date}.\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['bug', 'ci-failure', 'integration-tests']
+            });
+            console.log(`Created issue #${issue.data.number}`);

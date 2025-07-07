@@ -101,23 +101,37 @@ The Event Bus is optimized for high throughput:
 
 ## Testing
 
-The Event Bus includes lightweight unit tests suitable for CI.
+The Event Bus uses a two-tier testing strategy:
 
-### Running Tests
+### Merge CI (Unit Tests Only)
+
+Fast unit tests that run on every PR:
 
 ```bash
 # Run unit tests
-cargo test
+cargo test --bins
 ```
 
-### Test Coverage
+### Scheduled Integration Tests
 
-- **Unit Tests**: Pattern matching, routing logic (runs quickly in CI)
+Comprehensive integration tests run every 4 hours:
+- Full API endpoint testing
+- Edge case validation
+- Security tests (appropriate for LAN deployment)
+- Performance validation
 
-For local development and testing the API endpoints:
+To run integration tests locally:
 
 ```bash
-# Start the service
+# Option 1: Use the test runner script
+./run-integration-tests.sh
+
+# Option 2: Manual testing
+cargo run &
+cargo test --tests
+# Don't forget to stop the service
+
+# Option 3: Test individual endpoints
 cargo run
 
 # Test with curl
