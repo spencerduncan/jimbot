@@ -13,7 +13,14 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}=== Rust Test Suite (Docker CI) ===${NC}"
 
 # Ensure we're in the right directory
-cd /workspace
+if [ -d "/workspace" ]; then
+    cd /workspace
+else
+    # If not in Docker, use the script's directory as reference
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    cd "$PROJECT_ROOT"
+fi
 
 # Set up Rust environment
 export RUST_BACKTRACE=1
@@ -37,8 +44,15 @@ run_test() {
 
 # Check if Rust components exist
 RUST_COMPONENTS_FOUND=false
+echo -e "${YELLOW}Checking for Rust components...${NC}"
+echo "Current directory: $(pwd)"
+echo "Directory contents:"
+ls -la
 if [ -f "Cargo.toml" ] || [ -f "services/event-bus-rust/Cargo.toml" ] || [ -f "jimbot/memgraph/mage_modules/Cargo.toml" ]; then
     RUST_COMPONENTS_FOUND=true
+    echo -e "${GREEN}Found Rust components${NC}"
+else
+    echo -e "${YELLOW}No Rust components found in current directory${NC}"
 fi
 
 if [ "$RUST_COMPONENTS_FOUND" = false ]; then
