@@ -88,7 +88,7 @@ fi
 # Build the Docker image
 print_section "BUILDING LUA TEST IMAGE"
 print_color "$YELLOW" "Building Docker image for Lua testing..."
-if docker-compose -f "$DOCKER_COMPOSE_FILE" build lua-test; then
+if docker compose -f "$DOCKER_COMPOSE_FILE" build lua-test; then
     print_color "$GREEN" "✓ Docker image built successfully"
 else
     print_color "$RED" "✗ Failed to build Docker image"
@@ -98,7 +98,7 @@ fi
 # Clean up any existing containers
 print_section "CLEANING UP EXISTING CONTAINERS"
 print_color "$YELLOW" "Removing any existing test containers..."
-docker-compose -f "$DOCKER_COMPOSE_FILE" down -v 2>/dev/null || true
+docker compose -f "$DOCKER_COMPOSE_FILE" down -v 2>/dev/null || true
 
 # Determine which service to run
 SERVICE="lua-test"
@@ -120,7 +120,7 @@ EXIT_CODE_FILE=$(mktemp)
 trap 'rm -f "$EXIT_CODE_FILE"' EXIT
 
 # Run tests with timeout
-if timeout "$TIMEOUT" docker-compose -f "$DOCKER_COMPOSE_FILE" run --rm "$SERVICE"; then
+if timeout "$TIMEOUT" docker compose -f "$DOCKER_COMPOSE_FILE" run --rm "$SERVICE"; then
     echo "0" > "$EXIT_CODE_FILE"
     print_color "$GREEN" "✓ Lua tests completed successfully"
 else
@@ -136,7 +136,7 @@ fi
 # Clean up containers
 print_section "CLEANING UP"
 print_color "$YELLOW" "Cleaning up Docker containers..."
-docker-compose -f "$DOCKER_COMPOSE_FILE" down -v 2>/dev/null || true
+docker compose -f "$DOCKER_COMPOSE_FILE" down -v 2>/dev/null || true
 
 # Copy coverage reports if enabled
 if [[ "$COVERAGE" == "true" ]]; then
@@ -147,7 +147,7 @@ if [[ "$COVERAGE" == "true" ]]; then
     mkdir -p coverage/lua
     
     # Copy coverage files from Docker volume
-    CONTAINER_ID=$(docker-compose -f "$DOCKER_COMPOSE_FILE" ps -q lua-test-coverage 2>/dev/null || true)
+    CONTAINER_ID=$(docker compose -f "$DOCKER_COMPOSE_FILE" ps -q lua-test-coverage 2>/dev/null || true)
     if [[ -n "$CONTAINER_ID" ]]; then
         docker cp "$CONTAINER_ID:/app/coverage/." coverage/lua/ 2>/dev/null || true
         print_color "$GREEN" "✓ Coverage reports extracted to coverage/lua/"

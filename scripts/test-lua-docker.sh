@@ -24,8 +24,8 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! command -v docker-compose >/dev/null 2>&1; then
-    print_color "\033[0;31m" "Error: Docker Compose is not installed"
+if ! docker compose version >/dev/null 2>&1; then
+    print_color "\033[0;31m" "Error: Docker Compose is not available"
     exit 1
 fi
 
@@ -54,7 +54,7 @@ done
 # Validate Docker Compose file
 print_section "VALIDATING DOCKER COMPOSE"
 
-if docker-compose -f docker/docker-compose.lua-test.yml config >/dev/null 2>&1; then
+if docker compose -f docker/docker-compose.lua-test.yml config >/dev/null 2>&1; then
     print_color "\033[0;32m" "✓ Docker Compose file is valid"
 else
     print_color "\033[0;31m" "✗ Docker Compose file is invalid"
