@@ -82,7 +82,7 @@ jobs:
           esac
       
       - name: Upload Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         if: matrix.component == 'python' || matrix.component == 'rust'
         with:
           files: ./coverage.xml
