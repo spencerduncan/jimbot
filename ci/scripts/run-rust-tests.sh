@@ -91,8 +91,9 @@ for service_dir in services/*/; do
         cd "$service_dir"
         
         # Run unit tests first (these don't need the service running)
+        # This runs tests in the src/ directory but not in tests/
         run_test "$service_name Unit Tests" "
-            cargo test --lib --bins --verbose
+            cargo test --bins --verbose
         "
         
         # For services with integration tests, start the service first
