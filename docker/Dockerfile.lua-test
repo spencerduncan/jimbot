@@ -54,6 +54,20 @@ WORKDIR /app
 COPY .luacheckrc .stylua.toml ./
 COPY tests/ ./tests/
 
+# Debug: Show what files are available in build context
+RUN echo "=== BUILD CONTEXT DEBUG ===" && \
+    pwd && \
+    echo "Current directory contents:" && \
+    ls -la && \
+    echo "Looking for docker/scripts directory:" && \
+    ls -la docker/ 2>/dev/null || echo "docker/ directory not found" && \
+    ls -la docker/scripts/ 2>/dev/null || echo "docker/scripts/ directory not found" && \
+    echo "=== END BUILD CONTEXT DEBUG ==="
+
+# Verify script files exist before copying
+RUN test -f docker/scripts/run_lua_tests.sh || (echo "ERROR: docker/scripts/run_lua_tests.sh not found in build context" && exit 1)
+RUN test -f docker/scripts/run_lua_tests_dev.sh || (echo "ERROR: docker/scripts/run_lua_tests_dev.sh not found in build context" && exit 1)
+
 # Copy test runner scripts to /usr/local/bin (not affected by volume mounts)
 COPY docker/scripts/run_lua_tests.sh /usr/local/bin/run_lua_tests.sh
 COPY docker/scripts/run_lua_tests_dev.sh /usr/local/bin/run_lua_tests_dev.sh
@@ -61,7 +75,7 @@ COPY docker/scripts/run_lua_tests_dev.sh /usr/local/bin/run_lua_tests_dev.sh
 # Make the scripts executable and verify they exist
 RUN chmod +x /usr/local/bin/run_lua_tests.sh /usr/local/bin/run_lua_tests_dev.sh && \
     ls -la /usr/local/bin/run_lua_tests*.sh && \
-    echo "Script files copied to /usr/local/bin and made executable"
+    echo "=== SCRIPT FILES SUCCESSFULLY COPIED AND MADE EXECUTABLE ==="
 
 # Set ownership for test user
 RUN chown -R luatest:luatest /app

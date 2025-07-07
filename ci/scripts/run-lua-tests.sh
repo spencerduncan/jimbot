@@ -91,7 +91,11 @@ fi
 # Build the Docker image
 print_section "BUILDING LUA TEST IMAGE"
 print_color "$YELLOW" "Building Docker image for Lua testing..."
-if docker compose -f "$DOCKER_COMPOSE_FILE" build --no-cache lua-test; then
+print_color "$YELLOW" "Removing any existing images and containers..."
+docker compose -f "$DOCKER_COMPOSE_FILE" down --rmi all -v 2>/dev/null || true
+docker system prune -f 2>/dev/null || true
+print_color "$YELLOW" "Starting fresh build with no cache..."
+if docker compose -f "$DOCKER_COMPOSE_FILE" build --no-cache --pull lua-test; then
     print_color "$GREEN" "✓ Docker image built successfully"
 else
     print_color "$RED" "✗ Failed to build Docker image"
