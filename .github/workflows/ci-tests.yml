@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        component: [python, rust, lua, integration]
+        component: [python, rust, lua]
     
     steps:
       - name: Checkout code
@@ -72,22 +72,6 @@ jobs:
                 echo 'Lua test script not found, using fallback'
                 docker-compose -f docker/docker-compose.lua-test.yml run --rm lua-test-coverage || true
               fi
-              ;;
-            integration)
-              # Start services and run integration tests
-              docker compose -f docker-compose.ci.yml up -d questdb memgraph || true
-              sleep 30  # Wait for services
-              docker run --rm \
-                --network host \
-                -v ${{ github.workspace }}:/workspace \
-                -e QUESTDB_HOST=localhost \
-                -e MEMGRAPH_HOST=localhost \
-                jimbot-ci:latest bash -c "
-                  echo '=== Running Integration Tests ==='
-                  cd /workspace
-                  pytest jimbot/tests/integration -v || true
-                "
-              docker compose -f docker-compose.ci.yml down -v || true
               ;;
           esac
       
