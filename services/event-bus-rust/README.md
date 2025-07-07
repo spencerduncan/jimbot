@@ -107,6 +107,57 @@ Run performance benchmarks:
 cargo bench
 ```
 
+## Testing
+
+The Event Bus includes comprehensive unit and integration tests.
+
+### Running Tests
+
+Use the provided test runner script for easy testing:
+
+```bash
+# Run all tests (unit + integration)
+./run-tests.sh
+
+# Run only unit tests
+./run-tests.sh --unit-only
+
+# Run only integration tests
+./run-tests.sh --integration-only
+
+# Run tests with release build
+./run-tests.sh --release
+```
+
+The test runner automatically:
+- Builds the service
+- Starts it on localhost:8080
+- Waits for health check
+- Runs integration tests
+- Cleans up by stopping the service
+
+### Manual Testing
+
+If you prefer to run tests manually:
+
+```bash
+# Unit tests only
+cargo test --bins
+
+# Integration tests (requires running service)
+cargo build && ./target/debug/event-bus-rust &
+cargo test --test '*'
+# Don't forget to stop the service afterward
+```
+
+### Test Coverage
+
+- **Unit Tests**: Pattern matching, routing logic
+- **Integration Tests**: 
+  - Edge cases (malformed JSON, oversized payloads, etc.)
+  - Security tests (injection attempts, DoS resistance, etc.)
+  - Protocol compliance
+
 ## Topic Routing
 
 Events are routed based on their type to specific topics:

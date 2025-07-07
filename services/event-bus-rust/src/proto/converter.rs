@@ -7,6 +7,14 @@ use crate::proto::{event, Event, EventType};
 
 /// Convert JSON event from BalatroMCP to Protocol Buffer event
 pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
+    // Validate required fields are not empty
+    if json_event.event_type.is_empty() {
+        return Err(anyhow!("Event type cannot be empty"));
+    }
+    if json_event.source.is_empty() {
+        return Err(anyhow!("Event source cannot be empty"));
+    }
+    
     let event_type = match json_event.event_type.as_str() {
         "GAME_STATE" => EventType::GameState as i32,
         "HEARTBEAT" => EventType::Heartbeat as i32,

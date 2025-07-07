@@ -196,6 +196,10 @@ async fn test_missing_required_fields() {
                 if status.is_success() {
                     if let Ok(json_body) = serde_json::from_str::<Value>(&body) {
                         if let Some(status_field) = json_body.get("status") {
+                            if status_field != "error" {
+                                eprintln!("Test case {}: Expected error status, got: {}", i, body);
+                                eprintln!("Event was: {:?}", event);
+                            }
                             assert_eq!(status_field, "error");
                         }
                     }

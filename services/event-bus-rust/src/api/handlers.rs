@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, response::Json};
+use axum::{extract::{rejection::JsonRejection, State}, http::StatusCode, response::Json};
 use tracing::{debug, error, info};
 
 use crate::{
@@ -7,11 +7,23 @@ use crate::{
     AppState,
 };
 
-/// Handle single event endpoint
+/// Handle single event endpoint with custom JSON extraction
 pub async fn handle_single_event(
     State(state): State<AppState>,
-    Json(event): Json<JsonEvent>,
-) -> Result<Json<ApiResponse>, StatusCode> {
+    event_result: Result<Json<JsonEvent>, JsonRejection>,
+) -> Json<ApiResponse> {
+    // Handle JSON parsing errors (including missing required fields)
+    let event = match event_result {
+        Ok(Json(event)) => event,
+        Err(err) => {
+            error!("Failed to parse event JSON: {}", err);
+            return Json(ApiResponse::error(format!(
+                "Invalid JSON: {}",
+                err
+            )));
+        }
+    };
+
     debug!(
         "Received single event: type={}, source={}",
         event.event_type, event.source
@@ -23,18 +35,18 @@ pub async fn handle_single_event(
             // Route the event
             if let Err(e) = state.router.route_event(proto_event).await {
                 error!("Failed to route event: {}", e);
-                return Ok(Json(ApiResponse::error(format!("Routing failed: {}", e))));
+                return Json(ApiResponse::error(format!("Routing failed: {}", e)));
             }
 
             info!("Successfully processed single event");
-            Ok(Json(ApiResponse::ok()))
+            Json(ApiResponse::ok())
         }
         Err(e) => {
             error!("Failed to convert JSON to protobuf: {}", e);
-            Ok(Json(ApiResponse::error(format!(
+            Json(ApiResponse::error(format!(
                 "Invalid event format: {}",
                 e
-            ))))
+            )))
         }
     }
 }
@@ -42,8 +54,19 @@ pub async fn handle_single_event(
 /// Handle batch events endpoint
 pub async fn handle_batch_events(
     State(state): State<AppState>,
-    Json(batch): Json<BatchEventRequest>,
-) -> Result<Json<ApiResponse>, StatusCode> {
+    batch_result: Result<Json<BatchEventRequest>, JsonRejection>,
+) -> Json<ApiResponse> {
+    // Handle JSON parsing errors
+    let batch = match batch_result {
+        Ok(Json(batch)) => batch,
+        Err(err) => {
+            error!("Failed to parse batch JSON: {}", err);
+            return Json(ApiResponse::error(format!(
+                "Invalid JSON: {}",
+                err
+            )));
+        }
+    };
     let event_count = batch.events.len();
     info!("Received batch with {} events", event_count);
 
@@ -69,7 +92,7 @@ pub async fn handle_batch_events(
 
     if errors.is_empty() {
         info!("Successfully processed all {} events", processed);
-        Ok(Json(ApiResponse::ok()))
+        Json(ApiResponse::ok())
     } else {
         let error_msg = format!(
             "Processed {}/{} events. Errors: {}",
@@ -77,6 +100,6 @@ pub async fn handle_batch_events(
             event_count,
             errors.join(", ")
         );
-        Ok(Json(ApiResponse::error(error_msg)))
+        Json(ApiResponse::error(error_msg))
     }
 }
