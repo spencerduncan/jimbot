@@ -56,7 +56,7 @@ pub fn find_optimal_paths(
 
             // Check transitions from current joker
             if let Some(next_jokers) = transitions.get(&last_joker.name) {
-                for (next_name, win_rate) in next_jokers {
+                for (next_name, _win_rate) in next_jokers {
                     if let Some(next_joker) = jokers.iter().find(|j| &j.name == next_name) {
                         let new_cost = current_cost + next_joker.cost;
                         

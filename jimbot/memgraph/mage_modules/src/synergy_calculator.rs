@@ -1,6 +1,6 @@
 //! High-performance synergy calculation algorithms
 
-use std::collections::HashMap;
+// use std::collections::HashMap; // Unused import
 
 /// Card representation for fast operations
 #[derive(Debug, Clone)]
@@ -45,7 +45,7 @@ pub struct SynergyResult {
 
 /// Calculate synergy score between two jokers
 pub fn calculate_synergy(joker1: &JokerAttributes, joker2: &JokerAttributes) -> f64 {
-    let mut score = 0.0;
+    let mut score: f64 = 0.0;
 
     // Same scaling type creates strong synergy
     if joker1.scaling_type == joker2.scaling_type {
@@ -53,7 +53,7 @@ pub fn calculate_synergy(joker1: &JokerAttributes, joker2: &JokerAttributes) -> 
     }
 
     // Complementary effects
-    match (&joker1.scaling_type.as_str(), &joker2.scaling_type.as_str()) {
+    match (joker1.scaling_type.as_str(), joker2.scaling_type.as_str()) {
         ("multiplicative", "additive") | ("additive", "multiplicative") => score += 0.25,
         ("conditional", _) | (_, "conditional") => score += 0.15,
         _ => {}
