@@ -70,7 +70,7 @@ jobs:
                 bash ci/scripts/run-lua-tests.sh --coverage
               else
                 echo 'Lua test script not found, using fallback'
-                docker-compose -f docker/docker-compose.lua-test.yml run --rm lua-test-coverage || true
+                docker compose -f docker/docker-compose.lua-test.yml run --rm lua-test-coverage || true
               fi
               ;;
           esac

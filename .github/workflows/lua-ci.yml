@@ -79,7 +79,7 @@ jobs:
       - name: Build Lua test image
         run: |
           echo "Building Docker image for Lua testing..."
-          docker-compose -f docker/docker-compose.lua-test.yml build lua-test
+          docker compose -f docker/docker-compose.lua-test.yml build lua-test
           
           echo "Verifying image was built..."
           docker images | grep lua-test || {
@@ -153,7 +153,7 @@ jobs:
           echo "Testing Docker Compose configuration..."
           
           # Validate compose file
-          docker-compose -f docker/docker-compose.lua-test.yml config > /tmp/compose-config.yml
+          docker compose -f docker/docker-compose.lua-test.yml config > /tmp/compose-config.yml
           
           echo "Compose file is valid:"
           head -20 /tmp/compose-config.yml
@@ -163,10 +163,10 @@ jobs:
           echo "Testing development environment setup..."
           
           # Build and start dev environment
-          docker-compose -f docker/docker-compose.lua-test.yml build lua-test-dev
+          docker compose -f docker/docker-compose.lua-test.yml build lua-test-dev
           
           # Test that dev environment can be started
-          docker-compose -f docker/docker-compose.lua-test.yml run --rm -d lua-test-dev tail -f /dev/null
+          docker compose -f docker/docker-compose.lua-test.yml run --rm -d lua-test-dev tail -f /dev/null
           
           echo "Development environment test completed successfully"
       
@@ -175,16 +175,16 @@ jobs:
           echo "Testing all Docker Compose profiles..."
           
           # Test base profile
-          docker-compose -f docker/docker-compose.lua-test.yml run --rm lua-test echo "Base profile works"
+          docker compose -f docker/docker-compose.lua-test.yml run --rm lua-test echo "Base profile works"
           
           # Test dev profile
-          docker-compose -f docker/docker-compose.lua-test.yml --profile dev run --rm lua-test-dev echo "Dev profile works"
+          docker compose -f docker/docker-compose.lua-test.yml --profile dev run --rm lua-test-dev echo "Dev profile works"
           
           # Test coverage profile
-          docker-compose -f docker/docker-compose.lua-test.yml --profile coverage run --rm lua-test-coverage echo "Coverage profile works"
+          docker compose -f docker/docker-compose.lua-test.yml --profile coverage run --rm lua-test-coverage echo "Coverage profile works"
           
           # Test performance profile
-          docker-compose -f docker/docker-compose.lua-test.yml --profile perf run --rm lua-test-perf echo "Performance profile works"
+          docker compose -f docker/docker-compose.lua-test.yml --profile perf run --rm lua-test-perf echo "Performance profile works"
           
           echo "All profiles tested successfully"
       
@@ -192,7 +192,7 @@ jobs:
         if: always()
         run: |
           echo "Cleaning up Docker resources..."
-          docker-compose -f docker/docker-compose.lua-test.yml down -v --remove-orphans 2>/dev/null || true
+          docker compose -f docker/docker-compose.lua-test.yml down -v --remove-orphans 2>/dev/null || true
           docker system prune -f || true
 
   lua-test-summary:
