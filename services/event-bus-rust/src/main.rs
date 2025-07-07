@@ -73,7 +73,7 @@ async fn main() -> Result<()> {
     });
 
     // Start gRPC server
-    let grpc_addr = "[::]:50051".parse()?;
+    let grpc_addr = "[::]:50051";
     let grpc_service = EventBusService::new(router);
 
     info!("gRPC server listening on {}", grpc_addr);
@@ -94,9 +94,9 @@ async fn main() -> Result<()> {
         info!("Received shutdown signal");
     };
 
-    // Wait for servers or shutdown signal
+    // Wait for servers or shutdown signal    
     tokio::select! {
-        result = tokio::try_join!(rest_server, grpc_server) => {
+        result = async { tokio::try_join!(rest_server, grpc_server) } => {
             match result {
                 Ok(_) => info!("Servers terminated successfully"),
                 Err(e) => error!("Server error: {}", e),

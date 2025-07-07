@@ -1,9 +1,8 @@
 use reqwest;
-use serde_json::{json, Value};
-use std::collections::HashMap;
+use serde_json::json;
 use std::time::Duration;
 use tokio::time::timeout;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 const BASE_URL: &str = "http://localhost:8080";
 const TIMEOUT_DURATION: Duration = Duration::from_secs(10);

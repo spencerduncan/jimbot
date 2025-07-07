@@ -1,4 +1,5 @@
 use opentelemetry::{global, KeyValue};
+use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{trace as sdktrace, Resource};
 use opentelemetry_otlp::WithExportConfig;
