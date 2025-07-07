@@ -5,15 +5,15 @@ services:
   # Main Lua testing service
   lua-test:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.lua-test
       target: base
     container_name: jimbot-lua-test
     volumes:
-      - ./tests:/app/tests:cached
-      - ./mods:/app/mods:ro
-      - ./.luacheckrc:/app/.luacheckrc:ro
-      - ./.stylua.toml:/app/.stylua.toml:ro
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:ro
+      - ../.luacheckrc:/app/.luacheckrc:ro
+      - ../.stylua.toml:/app/.stylua.toml:ro
       - lua-test-cache:/app/.luarocks
     environment:
       - LUA_PATH=/app/?.lua;/app/?/init.lua;;
@@ -27,15 +27,15 @@ services:
   # Development version for interactive debugging
   lua-test-dev:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.lua-test
       target: dev
     container_name: jimbot-lua-test-dev
     volumes:
-      - ./tests:/app/tests:cached
-      - ./mods:/app/mods:cached
-      - ./.luacheckrc:/app/.luacheckrc:cached
-      - ./.stylua.toml:/app/.stylua.toml:cached
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:cached
+      - ../.luacheckrc:/app/.luacheckrc:cached
+      - ../.stylua.toml:/app/.stylua.toml:cached
       - lua-test-cache:/app/.luarocks
     environment:
       - LUA_PATH=/app/?.lua;/app/?/init.lua;;
@@ -51,15 +51,15 @@ services:
   # Performance testing service
   lua-test-perf:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.lua-test
       target: base
     container_name: jimbot-lua-test-perf
     volumes:
-      - ./tests:/app/tests:cached
-      - ./mods:/app/mods:ro
-      - ./.luacheckrc:/app/.luacheckrc:ro
-      - ./.stylua.toml:/app/.stylua.toml:ro
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:ro
+      - ../.luacheckrc:/app/.luacheckrc:ro
+      - ../.stylua.toml:/app/.stylua.toml:ro
       - lua-test-cache:/app/.luarocks
     environment:
       - LUA_PATH=/app/?.lua;/app/?/init.lua;;
@@ -82,15 +82,15 @@ services:
   # Code coverage service
   lua-test-coverage:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.lua-test
       target: base
     container_name: jimbot-lua-test-coverage
     volumes:
-      - ./tests:/app/tests:cached
-      - ./mods:/app/mods:ro
-      - ./.luacheckrc:/app/.luacheckrc:ro
-      - ./.stylua.toml:/app/.stylua.toml:ro
+      - ../tests:/app/tests:cached
+      - ../mods:/app/mods:ro
+      - ../.luacheckrc:/app/.luacheckrc:ro
+      - ../.stylua.toml:/app/.stylua.toml:ro
       - lua-test-cache:/app/.luarocks
       - coverage-reports:/app/coverage
     environment:

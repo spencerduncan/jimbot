@@ -70,7 +70,7 @@ RUN chown -R luatest:luatest /app
 USER luatest
 
 # Default command runs all tests
-CMD ["/app/run_lua_tests.sh"]
+CMD ["/usr/local/bin/run_lua_tests.sh"]
 
 # Development stage for interactive debugging
 FROM base AS dev
@@ -92,4 +92,4 @@ RUN apt-get update && apt-get install -y \
 USER luatest
 
 # Development command keeps container alive
-CMD ["/app/run_lua_tests_dev.sh"]
+CMD ["/usr/local/bin/run_lua_tests_dev.sh"]
