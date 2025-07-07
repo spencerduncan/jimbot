@@ -45,8 +45,7 @@ function HeadlessOverride:enable()
     end
 
     -- Override shader compilation (performance optimization)
-    local newShader = love.graphics.newShader
-    love.graphics.newShader = function(...)
+    love.graphics.newShader = function()
         -- Return a dummy shader that does nothing
         return {
             send = function() end,

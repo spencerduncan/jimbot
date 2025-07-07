@@ -95,7 +95,6 @@ test("queued shop navigation actions process without triggering bug", function()
 
     -- Track state transitions
     local state_history = {}
-    local original_go_to_shop = nil
 
     G.FUNCS.evaluate_round = function()
         table.insert(state_history, "evaluate_round_called")
@@ -186,7 +185,7 @@ test("graceful handling when shop functions are unavailable", function()
     }
 
     -- This should not crash and should not call evaluate_round
-    local success, error = pcall(function()
+    local success = pcall(function()
         ActionExecutor:go_to_shop()
     end)
 

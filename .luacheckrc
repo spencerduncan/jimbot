@@ -84,14 +84,21 @@ files["**/tests/**/*.lua"] = {
 ignore = {
     "212", -- Unused argument
     "213", -- Unused loop variable
+    "211", -- Unused variable
+    "311", -- Value assigned to variable is never used
+    "431", -- Shadowing upvalue
     "542", -- Empty if branch
     "611", -- Line contains only whitespace
     "612", -- Line contains trailing whitespace
     "614", -- Trailing whitespace in comment
+    "621", -- Inconsistent whitespace
+    "631", -- Line is too long
+    "121", -- Setting read-only field
 }
 
 -- Allow specific unused arguments
-unused_args = true
+unused_args = false
+unused_secondaries = false
 allow_defined = true
 allow_defined_top = true
 

@@ -127,7 +127,6 @@ test("go_to_shop tries direct shop functions before falling back to navigate_men
     G.STATE = G.STATES.ROUND_EVAL
 
     -- Mock navigate_menu to track if it's called
-    local original_navigate = ActionExecutor.navigate_menu
     ActionExecutor.navigate_menu = mock_function("navigate_menu")
 
     -- Test with go_to_shop available
