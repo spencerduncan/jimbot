@@ -22,68 +22,67 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Check CI Health
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          pip install aiohttp asyncio
+          
+      - name: Check CI Health with Enhanced Monitoring
         id: health_check
         run: |
-          # Get recent workflow runs via GitHub API
-          echo "Checking CI health for last $HEALTH_CHECK_LOOKBACK_HOURS hours..."
+          echo "Running enhanced CI health monitoring..."
           
-          # Calculate time threshold
-          threshold_time=$(date -d "$HEALTH_CHECK_LOOKBACK_HOURS hours ago" --iso-8601)
+          # Run the enhanced CI status reporter
+          python scripts/ci-status-report.py > ci-health-output.txt 2>&1
           
-          # Use GitHub CLI to get recent workflow runs
-          echo "Getting workflow runs since $threshold_time"
-          
-          # Get runs for main CI workflows
-          main_runs=$(gh run list --workflow="Main CI/CD Pipeline" --limit 20 --json conclusion,createdAt | jq -r ".[] | select(.createdAt > \"$threshold_time\") | .conclusion")
-          lua_runs=$(gh run list --workflow="Lua CI" --limit 20 --json conclusion,createdAt | jq -r ".[] | select(.createdAt > \"$threshold_time\") | .conclusion")
-          
-          # Calculate success rates
-          total_main=$(echo "$main_runs" | wc -l)
-          success_main=$(echo "$main_runs" | grep -c "success" || echo "0")
-          
-          total_lua=$(echo "$lua_runs" | wc -l)
-          success_lua=$(echo "$lua_runs" | grep -c "success" || echo "0")
-          
-          # Calculate overall metrics
-          total_runs=$((total_main + total_lua))
-          success_runs=$((success_main + success_lua))
-          
-          if [ $total_runs -gt 0 ]; then
-            success_rate=$((success_runs * 100 / total_runs))
-          else
-            success_rate=100
-          fi
-          
-          echo "CI Health Summary:"
-          echo "- Total runs: $total_runs"
-          echo "- Successful runs: $success_runs"
-          echo "- Success rate: $success_rate%"
-          
-          # Set outputs
-          echo "total_runs=$total_runs" >> $GITHUB_OUTPUT
-          echo "success_runs=$success_runs" >> $GITHUB_OUTPUT
-          echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
-          
-          # Determine health status
-          if [ $success_rate -ge 80 ]; then
+          # Parse the output for GitHub Actions
+          if grep -q "Overall Status: HEALTHY" ci-health-output.txt; then
             echo "health_status=healthy" >> $GITHUB_OUTPUT
             echo "health_color=green" >> $GITHUB_OUTPUT
-          elif [ $success_rate -ge 50 ]; then
+          elif grep -q "Overall Status: DEGRADED" ci-health-output.txt; then
             echo "health_status=degraded" >> $GITHUB_OUTPUT
             echo "health_color=yellow" >> $GITHUB_OUTPUT
           else
             echo "health_status=unhealthy" >> $GITHUB_OUTPUT
             echo "health_color=red" >> $GITHUB_OUTPUT
           fi
+          
+          # Extract success rate from the output
+          success_rate=$(grep -o "Success Rate: [0-9.]*%" ci-health-output.txt | grep -o "[0-9.]*" | head -1)
+          if [ -z "$success_rate" ]; then
+            success_rate="0"
+          fi
+          
+          # Extract run counts
+          total_runs=$(grep -o "([0-9]*/[0-9]* runs)" ci-health-output.txt | grep -o "[0-9]*/[0-9]*" | cut -d'/' -f2 | head -1)
+          success_runs=$(grep -o "([0-9]*/[0-9]* runs)" ci-health-output.txt | grep -o "[0-9]*/[0-9]*" | cut -d'/' -f1 | head -1)
+          
+          if [ -z "$total_runs" ]; then
+            total_runs="0"
+          fi
+          if [ -z "$success_runs" ]; then
+            success_runs="0"
+          fi
+          
+          echo "total_runs=$total_runs" >> $GITHUB_OUTPUT
+          echo "success_runs=$success_runs" >> $GITHUB_OUTPUT
+          echo "success_rate=${success_rate%.*}" >> $GITHUB_OUTPUT
+          
+          # Display the full report
+          cat ci-health-output.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Create CI Health Badge
+      - name: Create Enhanced CI Health Artifacts
         run: |
           mkdir -p .github/badges
+          mkdir -p ci-reports
           
-          # Create a simple badge JSON for shields.io
+          # Create enhanced badge JSON for shields.io
           cat > .github/badges/ci-health.json << EOF
           {
             "schemaVersion": 1,
@@ -92,6 +91,12 @@ jobs:
             "color": "${{ steps.health_check.outputs.health_color }}"
           }
           EOF
+          
+          # Copy the detailed report if it exists
+          if [ -f "ci-health-report.json" ]; then
+            cp ci-health-report.json ci-reports/
+            echo "Detailed CI health report saved to ci-reports/"
+          fi
           
           echo "Created CI health badge with ${{ steps.health_check.outputs.success_rate }}% success rate"
           
