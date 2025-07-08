@@ -95,9 +95,6 @@ services:
     ports:
       - "7687:7687"
       - "3000:3000"
-    environment:
-      MEMGRAPH_USER: ""
-      MEMGRAPH_PASSWORD: ""
     healthcheck:
       # Check Memgraph Lab HTTP endpoint - most reliable method that doesn't require mgconsole
       # The Memgraph Docker image includes curl, making this a simple and effective health check
