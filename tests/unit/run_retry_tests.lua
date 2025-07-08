@@ -10,8 +10,9 @@ dofile("test_retry_manager.lua")
 
 print("\n")
 
--- Run event bus client tests  
+-- Run event bus client tests
 dofile("test_event_bus_client.lua")
 
 print("\n============================")
 print("All retry logic tests completed!")
+

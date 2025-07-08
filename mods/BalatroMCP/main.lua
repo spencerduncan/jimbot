@@ -106,7 +106,7 @@ function BalatroMCP:update(dt)
 
     -- Process event queue
     self.components.aggregator:update(dt)
-    
+
     -- Update event bus client (for retry coroutines)
     if self.components.event_bus then
         self.components.event_bus:update(dt)

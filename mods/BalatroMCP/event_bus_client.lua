@@ -12,7 +12,7 @@ local EventBusClient = {
     event_queue = {},
     sending = false,
     retry_manager = nil,
-    local_buffer = {},  -- Buffer for events when event bus is unavailable
+    local_buffer = {}, -- Buffer for events when event bus is unavailable
     max_buffer_size = 1000,
 }
 
@@ -98,31 +98,26 @@ function EventBusClient:send_event(event)
     event.version = 1
 
     -- Use non-blocking retry mechanism
-    self.retry_manager:execute_with_retry(
-        function()
-            -- This function will be called with retry logic
-            local json = self:event_to_json(event)
-            return self:http_post(self.url, json)
-        end,
-        { type = event.type, event_id = event.event_id },
-        function(result)
-            -- Success callback
-            self.connected = true
-            self.logger:debug("Event sent successfully", { 
-                type = event.type, 
-                event_id = event.event_id 
-            })
-        end,
-        function(error)
-            -- Failure callback
-            self.logger:error("Failed to send event after retries", { 
-                type = event.type,
-                event_id = event.event_id,
-                error = error
-            })
-            self:buffer_event(event)
-        end
-    )
+    self.retry_manager:execute_with_retry(function()
+        -- This function will be called with retry logic
+        local json = self:event_to_json(event)
+        return self:http_post(self.url, json)
+    end, { type = event.type, event_id = event.event_id }, function(result)
+        -- Success callback
+        self.connected = true
+        self.logger:debug("Event sent successfully", {
+            type = event.type,
+            event_id = event.event_id,
+        })
+    end, function(error)
+        -- Failure callback
+        self.logger:error("Failed to send event after retries", {
+            type = event.type,
+            event_id = event.event_id,
+            error = error,
+        })
+        self:buffer_event(event)
+    end)
 
     return true -- Return immediately, actual send happens asynchronously
 end
@@ -199,35 +194,30 @@ function EventBusClient:send_batch(events)
     end
 
     -- Use non-blocking retry mechanism
-    self.retry_manager:execute_with_retry(
-        function()
-            local json = self:batch_to_json(batch)
-            return self:http_post(self.url .. "/batch", json)
-        end,
-        { type = "batch", batch_id = batch.batch_id, count = #events },
-        function(result)
-            -- Success callback
-            self.connected = true
-            self.logger:debug("Batch sent successfully", { 
-                batch_id = batch.batch_id,
-                count = #events 
-            })
-            -- Try to flush buffered events
-            self:flush_buffer()
-        end,
-        function(error)
-            -- Failure callback
-            self.logger:error("Failed to send batch after retries", { 
-                batch_id = batch.batch_id,
-                count = #events,
-                error = error
-            })
-            -- Buffer events for later
-            for _, event in ipairs(events) do
-                self:buffer_event(event)
-            end
+    self.retry_manager:execute_with_retry(function()
+        local json = self:batch_to_json(batch)
+        return self:http_post(self.url .. "/batch", json)
+    end, { type = "batch", batch_id = batch.batch_id, count = #events }, function(result)
+        -- Success callback
+        self.connected = true
+        self.logger:debug("Batch sent successfully", {
+            batch_id = batch.batch_id,
+            count = #events,
+        })
+        -- Try to flush buffered events
+        self:flush_buffer()
+    end, function(error)
+        -- Failure callback
+        self.logger:error("Failed to send batch after retries", {
+            batch_id = batch.batch_id,
+            count = #events,
+            error = error,
+        })
+        -- Buffer events for later
+        for _, event in ipairs(events) do
+            self:buffer_event(event)
         end
-    )
+    end)
 
     return true -- Return immediately, actual send happens asynchronously
 end
@@ -238,15 +228,15 @@ function EventBusClient:http_post(url, data)
     if not self.https then
         self.logger:error("https module not available", {
             url = url,
-            context = "HTTP POST attempt without loaded https module"
+            context = "HTTP POST attempt without loaded https module",
         })
         return false, "https module not available"
     end
 
-    self.logger:debug("HTTP POST via https module", { 
-        url = url, 
+    self.logger:debug("HTTP POST via https module", {
+        url = url,
         size = #data,
-        first_100_chars = string.sub(data, 1, 100)
+        first_100_chars = string.sub(data, 1, 100),
     })
 
     -- The https module in SMODS uses data instead of body
@@ -268,11 +258,11 @@ function EventBusClient:http_post(url, data)
     local duration = (love.timer.getTime() - start_time) * 1000 -- Convert to ms
 
     if not success then
-        self.logger:error("HTTP request failed", { 
+        self.logger:error("HTTP request failed", {
             error = tostring(status_or_error),
             url = url,
             duration_ms = duration,
-            context = "Network request exception"
+            context = "Network request exception",
         })
         return false, tostring(status_or_error)
     end
@@ -283,20 +273,20 @@ function EventBusClient:http_post(url, data)
 
     -- Check response status
     if status and status >= 200 and status < 300 then
-        self.logger:debug("HTTP POST successful", { 
+        self.logger:debug("HTTP POST successful", {
             status = status,
             duration_ms = duration,
-            response_size = body and #body or 0
+            response_size = body and #body or 0,
         })
         return true, body or "OK"
     else
         local error_msg = string.format("HTTP %d: %s", status or 0, body or "no response body")
-        self.logger:error("HTTP POST failed", { 
+        self.logger:error("HTTP POST failed", {
             error = error_msg,
             status = status,
             url = url,
             duration_ms = duration,
-            response_body = body and string.sub(body, 1, 200) or "none"
+            response_body = body and string.sub(body, 1, 200) or "none",
         })
         return false, error_msg
     end
@@ -368,12 +358,12 @@ function EventBusClient:buffer_event(event)
         self.logger:warn("Local buffer full, dropping oldest event")
         table.remove(self.local_buffer, 1)
     end
-    
+
     -- Add to buffer
     table.insert(self.local_buffer, event)
     self.logger:debug("Event buffered locally", {
         type = event.type,
-        buffer_size = #self.local_buffer
+        buffer_size = #self.local_buffer,
     })
 end
 
@@ -382,23 +372,23 @@ function EventBusClient:flush_buffer()
     if #self.local_buffer == 0 then
         return
     end
-    
+
     -- Check if we can attempt to send
     if not self.retry_manager:can_attempt() then
         return
     end
-    
+
     self.logger:info("Flushing local buffer", { count = #self.local_buffer })
-    
+
     -- Take events from buffer in batches
     while #self.local_buffer > 0 do
         local batch_size = math.min(10, #self.local_buffer)
         local batch = {}
-        
+
         for i = 1, batch_size do
             table.insert(batch, table.remove(self.local_buffer, 1))
         end
-        
+
         -- Send batch (non-blocking)
         self:send_batch(batch)
     end
@@ -410,7 +400,7 @@ function EventBusClient:update(dt)
     if self.retry_manager then
         self.retry_manager:update(dt)
     end
-    
+
     -- Try to flush buffer periodically
     if #self.local_buffer > 0 and self.retry_manager:can_attempt() then
         self:flush_buffer()
@@ -497,13 +487,13 @@ end
 -- Get client status
 function EventBusClient:get_status()
     local retry_status = self.retry_manager and self.retry_manager:get_status() or {}
-    
+
     return {
         connected = self.connected,
         event_queue_size = #self.event_queue,
         local_buffer_size = #self.local_buffer,
         circuit_breaker = retry_status,
-        url = self.url
+        url = self.url,
     }
 end
 
@@ -512,10 +502,10 @@ function EventBusClient:check_health()
     if not self.retry_manager:can_attempt() then
         return false, "Circuit breaker is open"
     end
-    
+
     -- Try a simple health check request
     local success, response = self:http_post(self.url .. "/health", "{}")
-    
+
     if success then
         self.retry_manager:record_success()
         return true, "Healthy"
