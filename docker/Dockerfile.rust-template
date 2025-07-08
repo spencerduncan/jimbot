@@ -2,7 +2,7 @@
 # This is a template file. Copy this to your Rust component directory and customize as needed.
 
 # Build stage
-FROM rust:1.70-slim as builder
+FROM rust:1.88-slim as builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
