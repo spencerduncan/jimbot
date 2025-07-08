@@ -96,7 +96,7 @@ dev = [
     # Security
     "bandit==1.8.6",
     "safety==3.0.1",
-    "pip-audit==2.6.3",
+    "pip-audit==2.9.0",
     
     # Documentation
     "sphinx==7.2.6",
