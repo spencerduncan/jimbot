@@ -1,0 +1,50 @@
+[package]
+name = "balatro-emulator"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance Balatro game emulator in Rust"
+authors = ["JimBot Team"]
+license = "MIT"
+
+[dependencies]
+# Random number generation
+rand = "0.8"
+rand_chacha = "0.3"
+rand_pcg = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4", "serde"] }
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Collections
+ahash = { version = "0.8", features = ["serde"] }
+indexmap = "2.0"
+
+# Async runtime (for future API integration)
+tokio = { version = "1", features = ["full"], optional = true }
+
+# gRPC and protobuf (for future API integration)
+tonic = { version = "0.11", optional = true }
+prost = { version = "0.12", optional = true }
+
+# Python bindings (for future RL integration)
+pyo3 = { version = "0.20", optional = true }
+
+[features]
+default = ["api", "python"]
+api = ["dep:tokio", "dep:tonic", "dep:prost"]
+python = ["dep:pyo3"]
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1.0"
+insta = "1.0"
+
+[[bench]]
+name = "rng_performance"
+harness = false
