@@ -70,8 +70,8 @@ async fn main() -> Result<()> {
         config.environment
     );
 
-    // Initialize event router with configuration
-    let router = Arc::new(EventRouter::new_with_config(config.clone()));
+    // Initialize event router
+    let router = Arc::new(EventRouter::new());
     let app_state = AppState {
         router: router.clone(),
         config: config.clone(),
@@ -144,7 +144,7 @@ async fn main() -> Result<()> {
         config.server.grpc.host, config.server.grpc.port
     )
     .parse()?;
-    let grpc_service = EventBusService::new(router);
+    let _grpc_service = EventBusService::new(router);
     
     info!("gRPC server listening on {}", grpc_addr);
 
@@ -162,7 +162,7 @@ async fn main() -> Result<()> {
         match config_manager.enable_hot_reload().await {
             Ok(mut config_rx) => {
                 tokio::spawn(async move {
-                    while let Some(new_config) = config_rx.recv().await {
+                    while let Some(_new_config) = config_rx.recv().await {
                         info!("Configuration reloaded, some changes may require restart");
                         // Note: Some configuration changes would require server restart
                         // This is a notification mechanism for now
