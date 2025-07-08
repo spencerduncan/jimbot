@@ -35,7 +35,7 @@ pub fn find_optimal_paths(
     config: PathConfig,
 ) -> Vec<ProgressionPath> {
     let mut paths = Vec::new();
-    
+
     // Find all common jokers as starting points
     let starting_jokers: Vec<_> = jokers
         .iter()
@@ -59,7 +59,7 @@ pub fn find_optimal_paths(
                 for (next_name, _win_rate) in next_jokers {
                     if let Some(next_joker) = jokers.iter().find(|j| &j.name == next_name) {
                         let new_cost = current_cost + next_joker.cost;
-                        
+
                         // Check budget constraint
                         if new_cost > config.starting_money {
                             continue;
@@ -75,10 +75,10 @@ pub fn find_optimal_paths(
 
                         // Calculate path success rate
                         let path_success = calculate_path_success(&new_path, transitions);
-                        
+
                         if path_success >= config.min_success_rate {
                             let expected_ante = calculate_expected_ante(&new_path);
-                            
+
                             if expected_ante >= config.target_ante {
                                 paths.push(ProgressionPath {
                                     jokers: new_path.clone(),
@@ -98,7 +98,7 @@ pub fn find_optimal_paths(
 
     // Sort by success rate descending
     paths.sort_by(|a, b| b.success_rate.partial_cmp(&a.success_rate).unwrap());
-    
+
     // Return top 10 paths
     paths.into_iter().take(10).collect()
 }
@@ -172,10 +172,7 @@ mod tests {
         ];
 
         let mut transitions = HashMap::new();
-        transitions.insert(
-            "Joker".to_string(),
-            vec![("Greedy Joker".to_string(), 0.7)],
-        );
+        transitions.insert("Joker".to_string(), vec![("Greedy Joker".to_string(), 0.7)]);
         transitions.insert(
             "Greedy Joker".to_string(),
             vec![("Lusty Joker".to_string(), 0.8)],

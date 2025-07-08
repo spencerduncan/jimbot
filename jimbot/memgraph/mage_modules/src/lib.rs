@@ -10,10 +10,7 @@ use std::os::raw::{c_int, c_void};
 
 /// FFI wrapper for Memgraph module initialization
 #[no_mangle]
-pub extern "C" fn mgp_init_module(
-    _module: *mut c_void,
-    _memory: *mut c_void,
-) -> c_int {
+pub extern "C" fn mgp_init_module(_module: *mut c_void, _memory: *mut c_void) -> c_int {
     // Register our Rust functions with Memgraph
     // This will be implemented when Rust MAGE bindings are available
     0 // Success

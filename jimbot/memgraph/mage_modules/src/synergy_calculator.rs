@@ -90,7 +90,7 @@ pub fn calculate_all_synergies(
     for i in 0..jokers.len() {
         for j in (i + 1)..jokers.len() {
             let synergy = calculate_synergy(&jokers[i], &jokers[j]);
-            
+
             if synergy >= min_strength {
                 results.push(SynergyResult {
                     joker1: jokers[i].name.clone(),
