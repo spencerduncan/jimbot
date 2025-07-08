@@ -59,9 +59,9 @@ function EventBusClient:test_connection()
     }
 
     local json = self:event_to_json(test_event)
-    local success, response = self:http_post(self.url, json)
+    local post_success, response = self:http_post(self.url, json)
 
-    if success then
+    if post_success then
         self.connected = true
         self.logger:info("Event bus connection established", { response = response })
     else
@@ -179,7 +179,7 @@ function EventBusClient:http_post(url, data)
 
     -- Send the request using the https module
     -- Returns: status, body, headers
-    local success, status_or_error, response_body, response_headers = pcall(function()
+    local success, status_or_error, response_body = pcall(function()
         return self.https.request(url, options)
     end)
 

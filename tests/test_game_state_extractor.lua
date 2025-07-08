@@ -223,7 +223,6 @@ function test_runner.test_available_actions_by_phase()
     -- Test PLAYING state actions
     G.STATE = G.STATES.PLAYING
     local actions = GameStateExtractor:get_available_actions()
-    local has_play_hand = false
     local has_sort_hand = false
     for _, action in ipairs(actions) do
         if action == "sort_hand" then

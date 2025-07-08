@@ -14,7 +14,7 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
     if json_event.source.is_empty() {
         return Err(anyhow!("Event source cannot be empty"));
     }
-    
+
     let event_type = match json_event.event_type.as_str() {
         "GAME_STATE" => EventType::GameState as i32,
         "HEARTBEAT" => EventType::Heartbeat as i32,
@@ -53,9 +53,9 @@ pub fn json_to_proto_event(json_event: JsonEvent) -> Result<Event> {
         Some(EventType::Heartbeat) => Some(event::Payload::Heartbeat(parse_heartbeat(
             json_event.payload,
         )?)),
-        Some(EventType::MoneyChanged) => Some(event::Payload::MoneyChanged(
-            parse_money_changed(json_event.payload)?,
-        )),
+        Some(EventType::MoneyChanged) => Some(event::Payload::MoneyChanged(parse_money_changed(
+            json_event.payload,
+        )?)),
         Some(EventType::ConnectionTest) => Some(event::Payload::ConnectionTest(
             parse_connection_test(json_event.payload)?,
         )),

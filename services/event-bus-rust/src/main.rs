@@ -1,8 +1,8 @@
 mod api;
 mod grpc;
+mod metrics;
 mod proto;
 mod routing;
-mod metrics;
 mod tracing_config;
 
 use anyhow::Result;
@@ -27,10 +27,10 @@ pub struct AppState {
 async fn main() -> Result<()> {
     // Initialize metrics subsystem
     metrics::init_metrics();
-    
+
     // Initialize OpenTelemetry tracing (this also sets up the tracing subscriber)
     if let Err(e) = tracing_config::init_tracing() {
-        eprintln!("Failed to initialize OpenTelemetry tracing: {}", e);
+        eprintln!("Failed to initialize OpenTelemetry tracing: {e}");
         // Fall back to basic tracing
         tracing_subscriber::registry()
             .with(
@@ -74,7 +74,7 @@ async fn main() -> Result<()> {
 
     // Start gRPC server
     let grpc_addr = "[::]:50051";
-    let grpc_service = EventBusService::new(router);
+    let _grpc_service = EventBusService::new(router);
 
     info!("gRPC server listening on {}", grpc_addr);
 
@@ -94,7 +94,7 @@ async fn main() -> Result<()> {
         info!("Received shutdown signal");
     };
 
-    // Wait for servers or shutdown signal    
+    // Wait for servers or shutdown signal
     tokio::select! {
         result = async { tokio::try_join!(rest_server, grpc_server) } => {
             match result {

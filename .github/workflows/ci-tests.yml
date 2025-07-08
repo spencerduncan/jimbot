@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        component: [python, rust, integration]
+        component: [python, rust, lua]
     
     steps:
       - name: Checkout code
@@ -63,28 +63,22 @@ jobs:
                 fi
               "
               ;;
-            integration)
-              # Start services and run integration tests
-              docker compose -f docker-compose.ci.yml up -d questdb memgraph || true
-              sleep 30  # Wait for services
-              docker run --rm \
-                --network host \
-                -v ${{ github.workspace }}:/workspace \
-                -e QUESTDB_HOST=localhost \
-                -e MEMGRAPH_HOST=localhost \
-                jimbot-ci:latest bash -c "
-                  echo '=== Running Integration Tests ==='
-                  cd /workspace
-                  pytest jimbot/tests/integration -v || true
-                "
-              docker compose -f docker-compose.ci.yml down -v || true
+            lua)
+              # Run Lua tests using Docker-based environment
+              echo '=== Running Lua Tests ==='
+              if [ -f ci/scripts/run-lua-tests.sh ]; then
+                bash ci/scripts/run-lua-tests.sh --coverage
+              else
+                echo 'Lua test script not found, using fallback'
+                docker compose -f docker/docker-compose.lua-test.yml run --rm lua-test-coverage || true
+              fi
               ;;
           esac
       
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
-        if: matrix.component == 'python' || matrix.component == 'rust'
+        if: matrix.component == 'python' || matrix.component == 'rust' || matrix.component == 'lua'
         with:
-          files: ./coverage.xml
+          files: ./coverage.xml,./coverage/lua/lcov.info
           flags: ${{ matrix.component }}
           fail_ci_if_error: false

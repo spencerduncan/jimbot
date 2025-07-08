@@ -34,8 +34,7 @@ pub async fn health_check() -> Json<HealthResponse> {
 pub async fn metrics() -> String {
     // Return basic Prometheus format metrics
     // In a real implementation, this would come from the metrics registry
-    format!(
-        "# HELP event_bus_events_received_total Total number of events received\n\
+    "# HELP event_bus_events_received_total Total number of events received\n\
          # TYPE event_bus_events_received_total counter\n\
          event_bus_events_received_total 0\n\
          \n\
@@ -45,12 +44,12 @@ pub async fn metrics() -> String {
          \n\
          # HELP event_bus_processing_latency_seconds Event processing latency\n\
          # TYPE event_bus_processing_latency_seconds histogram\n\
-         event_bus_processing_latency_seconds_bucket{{le=\"0.001\"}} 0\n\
-         event_bus_processing_latency_seconds_bucket{{le=\"0.01\"}} 0\n\
-         event_bus_processing_latency_seconds_bucket{{le=\"0.1\"}} 0\n\
-         event_bus_processing_latency_seconds_bucket{{le=\"1\"}} 0\n\
-         event_bus_processing_latency_seconds_bucket{{le=\"+Inf\"}} 0\n\
+         event_bus_processing_latency_seconds_bucket{le=\"0.001\"} 0\n\
+         event_bus_processing_latency_seconds_bucket{le=\"0.01\"} 0\n\
+         event_bus_processing_latency_seconds_bucket{le=\"0.1\"} 0\n\
+         event_bus_processing_latency_seconds_bucket{le=\"1\"} 0\n\
+         event_bus_processing_latency_seconds_bucket{le=\"+Inf\"} 0\n\
          event_bus_processing_latency_seconds_sum 0\n\
          event_bus_processing_latency_seconds_count 0\n"
-    )
+        .to_string()
 }

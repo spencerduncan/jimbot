@@ -17,6 +17,12 @@ pub struct EventRouter {
     channels: DashMap<String, Vec<EventChannel>>,
 }
 
+impl Default for EventRouter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EventRouter {
     pub fn new() -> Self {
         Self {
@@ -76,19 +82,13 @@ impl EventRouter {
     /// Subscribe a handler to a topic pattern
     pub fn subscribe_handler(&self, pattern: String, handler: EventHandler) {
         info!("Adding handler subscription for pattern: {}", pattern);
-        self.handlers
-            .entry(pattern)
-            .or_insert_with(Vec::new)
-            .push(handler);
+        self.handlers.entry(pattern).or_default().push(handler);
     }
 
     /// Subscribe a channel to a topic pattern (for gRPC streaming)
     pub fn subscribe_channel(&self, pattern: String, channel: EventChannel) {
         info!("Adding channel subscription for pattern: {}", pattern);
-        self.channels
-            .entry(pattern)
-            .or_insert_with(Vec::new)
-            .push(channel);
+        self.channels.entry(pattern).or_default().push(channel);
     }
 
     /// Convert event to topic string

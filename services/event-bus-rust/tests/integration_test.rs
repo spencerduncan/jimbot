@@ -1,7 +1,7 @@
-use reqwest;
+#![allow(clippy::uninlined_format_args)]
+
 use serde_json::json;
 use std::time::Duration;
-use tokio;
 use tracing::{debug, info};
 
 const BASE_URL: &str = "http://localhost:8080";
@@ -11,7 +11,7 @@ async fn test_health_endpoint() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("{}/health", BASE_URL))
+        .get(format!("{BASE_URL}/health"))
         .timeout(Duration::from_secs(5))
         .send()
         .await;
@@ -44,7 +44,7 @@ async fn test_single_event_endpoint() {
     });
 
     let response = client
-        .post(format!("{}/api/v1/events", BASE_URL))
+        .post(format!("{BASE_URL}/api/v1/events"))
         .json(&event)
         .timeout(Duration::from_secs(5))
         .send()
@@ -88,7 +88,7 @@ async fn test_batch_events_endpoint() {
     });
 
     let response = client
-        .post(format!("{}/api/v1/events/batch", BASE_URL))
+        .post(format!("{BASE_URL}/api/v1/events/batch"))
         .json(&batch)
         .timeout(Duration::from_secs(5))
         .send()
@@ -117,7 +117,7 @@ async fn test_invalid_event_type() {
     });
 
     let response = client
-        .post(format!("{}/api/v1/events", BASE_URL))
+        .post(format!("{BASE_URL}/api/v1/events"))
         .json(&event)
         .timeout(Duration::from_secs(5))
         .send()
@@ -148,7 +148,7 @@ async fn test_basic_edge_cases() {
     // Test empty event
     let empty_event = json!({});
     let response = client
-        .post(format!("{}/api/v1/events", BASE_URL))
+        .post(format!("{BASE_URL}/api/v1/events"))
         .json(&empty_event)
         .timeout(Duration::from_secs(5))
         .send()
@@ -166,7 +166,7 @@ async fn test_basic_edge_cases() {
 
     // Test malformed JSON (sent as string)
     let response = client
-        .post(format!("{}/api/v1/events", BASE_URL))
+        .post(format!("{BASE_URL}/api/v1/events"))
         .header("Content-Type", "application/json")
         .body("{invalid_json")
         .timeout(Duration::from_secs(5))
@@ -194,7 +194,7 @@ async fn test_basic_edge_cases() {
     });
 
     let response = client
-        .post(format!("{}/api/v1/events", BASE_URL))
+        .post(format!("{BASE_URL}/api/v1/events"))
         .json(&large_event)
         .timeout(Duration::from_secs(10))
         .send()
