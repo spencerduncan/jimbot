@@ -45,7 +45,7 @@ metrics-exporter-prometheus = "0.17"
 # OpenTelemetry for distributed tracing
 opentelemetry = { version = "0.26", features = ["trace", "metrics"] }
 opentelemetry_sdk = { version = "0.26", features = ["rt-tokio", "trace"] }
-opentelemetry-otlp = { version = "0.26", features = ["tonic", "metrics", "logs"] }
+opentelemetry-otlp = { version = "0.30", features = ["tonic", "metrics", "logs"] }
 opentelemetry-semantic-conventions = "0.26"
 
 [build-dependencies]
