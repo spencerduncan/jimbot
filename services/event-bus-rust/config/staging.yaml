@@ -1,0 +1,44 @@
+# Staging environment configuration
+# Overrides default.yaml for staging
+
+environment: staging
+
+server:
+  worker_threads: 4
+  
+  rest:
+    cors_enabled: true
+    cors_allowed_origins:
+      - "https://staging.example.com"
+      - "https://staging-admin.example.com"
+  
+  grpc:
+    reflection_enabled: false
+
+routing:
+  event_buffer_size: 5000
+  max_subscribers_per_topic: 500
+  dead_letter_enabled: true
+  max_retry_attempts: 5
+
+logging:
+  level: info
+  format: json
+  file_enabled: true
+  file_path: "/var/log/event-bus/staging.log"
+
+metrics:
+  enabled: true
+  export_interval_secs: 30
+
+security:
+  auth_enabled: true
+  rate_limit:
+    requests_per_second: 100
+    burst_size: 500
+    per_ip_enabled: true
+  tls:
+    cert_path: "/etc/ssl/certs/staging.crt"
+    key_path: "/etc/ssl/private/staging.key"
+    ca_path: null
+    mutual_tls: false

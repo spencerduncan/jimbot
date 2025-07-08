@@ -1,0 +1,55 @@
+# Default configuration for Event Bus
+# This file contains default values that apply to all environments
+# Environment-specific files (dev.yaml, staging.yaml, prod.yaml) will override these values
+
+environment: dev
+
+server:
+  worker_threads: null  # Use tokio default
+  shutdown_timeout_secs: 30
+  
+  rest:
+    host: "0.0.0.0"
+    port: 8080
+    request_timeout_secs: 30
+    max_body_size: 10485760  # 10MB
+    cors_enabled: true
+    cors_allowed_origins:
+      - "*"
+  
+  grpc:
+    host: "0.0.0.0"
+    port: 50051
+    max_message_size: 4194304  # 4MB
+    connection_timeout_secs: 10
+    reflection_enabled: false
+
+routing:
+  event_buffer_size: 1000
+  max_subscribers_per_topic: 100
+  event_ttl_secs: 0  # No expiry by default
+  dead_letter_enabled: false
+  max_retry_attempts: 3
+  retry_backoff:
+    initial_ms: 1000
+    max_ms: 30000
+    multiplier: 2.0
+
+logging:
+  level: info
+  format: json
+  file_enabled: false
+  file_path: null
+  rotation_size_mb: 100
+  rotation_keep: 5
+
+metrics:
+  enabled: true
+  export_interval_secs: 60
+  prometheus_path: "/metrics"
+
+security:
+  auth_enabled: false
+  api_key_header: "X-API-Key"
+  rate_limit: null
+  tls: null

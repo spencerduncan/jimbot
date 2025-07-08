@@ -1,0 +1,4 @@
+# Local configuration override (not in version control)
+local.yaml
+local.toml
+local.json

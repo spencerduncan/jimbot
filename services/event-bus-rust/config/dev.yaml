@@ -1,0 +1,25 @@
+# Development environment configuration
+# Overrides default.yaml for development
+
+environment: dev
+
+server:
+  rest:
+    cors_allowed_origins:
+      - "http://localhost:3000"
+      - "http://localhost:3001"
+      - "http://127.0.0.1:3000"
+  
+  grpc:
+    reflection_enabled: true  # Enable for debugging with grpcui/grpcurl
+
+logging:
+  level: debug
+  format: pretty  # Human-readable format for development
+
+security:
+  auth_enabled: false  # Disable auth for easier development
+  rate_limit:
+    requests_per_second: 1000
+    burst_size: 2000
+    per_ip_enabled: false
