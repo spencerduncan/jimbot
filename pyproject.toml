@@ -61,30 +61,30 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     # Formatting
-    "black==23.12.1",
-    "isort==5.13.2",
-    "ruff==0.1.11",
+    "black==25.1.0",
+    "isort==6.0.1",
+    "ruff==0.12.2",
     
     # Linting
-    "flake8==7.0.0",
+    "flake8==7.3.0",
     "flake8-docstrings==1.7.0",
-    "flake8-bugbear==24.1.17",
-    "flake8-comprehensions==3.14.0",
-    "flake8-simplify==0.21.0",
-    "mypy==1.8.0",
+    "flake8-bugbear==24.12.12",
+    "flake8-comprehensions==3.16.0",
+    "flake8-simplify==0.22.0",
+    "mypy==1.16.1",
     "pylint==3.0.3",
     "pydocstyle==6.3.0",
     
     # Testing
-    "pytest==7.4.4",
-    "pytest-asyncio==0.23.3",
-    "pytest-cov==4.1.0",
-    "pytest-mock==3.12.0",
-    "pytest-timeout==2.2.0",
-    "pytest-benchmark==4.0.0",
-    "pytest-xdist==3.5.0",
-    "coverage[toml]==7.4.0",
-    "hypothesis==6.96.1",
+    "pytest==8.4.1",
+    "pytest-asyncio==1.0.0",
+    "pytest-cov==6.2.1",
+    "pytest-mock==3.14.1",
+    "pytest-timeout==2.4.0",
+    "pytest-benchmark==5.1.0",
+    "pytest-xdist==3.8.0",
+    "coverage[toml]==7.9.2",
+    "hypothesis==6.135.26",
     "faker==22.2.0",
     
     # Type stubs
