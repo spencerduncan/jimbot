@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package jimbot.events.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// Base event message that all events extend
+message Event {
+  // Unique identifier for this event
+  string event_id = 1;
+  
+  // Type of event (e.g., "game_state", "trigger", "action")
+  string event_type = 2;
+  
+  // When the event occurred
+  google.protobuf.Timestamp timestamp = 3;
+  
+  // Source that generated the event
+  string source = 4;
+  
+  // Correlation ID for tracking related events
+  string correlation_id = 5;
+  
+  // Event-specific payload
+  google.protobuf.Any payload = 6;
+  
+  // Additional metadata
+  map<string, string> metadata = 7;
+}
+
+// Base game state event
+message GameStateEvent {
+  // Current game phase
+  string phase = 1;
+  
+  // Current score/chips
+  int64 score = 2;
+  
+  // Current money
+  int32 money = 3;
+  
+  // Number of hands remaining
+  int32 hands_remaining = 4;
+  
+  // Number of discards remaining
+  int32 discards_remaining = 5;
+  
+  // Current blind information
+  BlindInfo blind = 6;
+  
+  // Game session ID
+  string session_id = 7;
+}
+
+// Blind information
+message BlindInfo {
+  // Blind name
+  string name = 1;
+  
+  // Required score to beat
+  int64 required_score = 2;
+  
+  // Blind type (small, big, boss)
+  string blind_type = 3;
+  
+  // Special effects/modifiers
+  map<string, string> modifiers = 4;
+}
