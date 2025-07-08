@@ -51,7 +51,7 @@ opentelemetry-semantic-conventions = "0.26"
 # Configuration management
 config = { version = "0.14", default-features = false, features = ["yaml", "toml", "json"] }
 figment = { version = "0.10", features = ["yaml", "toml", "json", "env"] }
-notify = "7.0"
+notify = "8.1"
 validator = { version = "0.19", features = ["derive"] }
 
 [build-dependencies]
