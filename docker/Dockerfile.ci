@@ -2,7 +2,7 @@
 # This provides a consistent environment that bypasses local dependency issues
 
 # Base stage with common dependencies
-FROM ubuntu:22.04 AS base
+FROM python:3.13-slim AS base
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -15,11 +15,6 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     pkg-config \
-    # Python and pip
-    python3.10 \
-    python3.10-dev \
-    python3.10-venv \
-    python3-pip \
     # Version control
     git \
     # Network tools
@@ -38,10 +33,6 @@ RUN apt-get update && apt-get install -y \
     jq \
     unzip \
     && rm -rf /var/lib/apt/lists/*
-
-# Create Python symlinks
-RUN ln -sf /usr/bin/python3.10 /usr/bin/python && \
-    ln -sf /usr/bin/python3.10 /usr/bin/python3
 
 # Upgrade pip and install build tools
 RUN python -m pip install --upgrade pip setuptools wheel
