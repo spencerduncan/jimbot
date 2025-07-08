@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     git curl wget vim nano htop \
     docker.io \
     # GPU tools
-    nvidia-utils-515 \
+    nvidia-utils-535 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python development tools
@@ -29,7 +29,7 @@ RUN pip3 install --upgrade pip setuptools wheel && \
     pytest pytest-cov pytest-asyncio pytest-benchmark \
     pre-commit \
     jupyter notebook ipython \
-    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # Install Lua development tools
 RUN luarocks install luacheck && \

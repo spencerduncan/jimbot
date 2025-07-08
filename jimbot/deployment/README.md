@@ -287,7 +287,7 @@ docker system prune -a
 
 ```bash
 # Check NVIDIA runtime
-docker run --rm --gpus all nvidia/cuda:11.8.0-base nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.2.2-base nvidia-smi
 
 # Verify compose GPU config
 docker-compose config | grep -A5 gpu
