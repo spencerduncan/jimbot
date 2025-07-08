@@ -84,7 +84,7 @@ dev = [
     "pytest-benchmark==4.0.0",
     "pytest-xdist==3.5.0",
     "coverage[toml]==7.4.0",
-    "hypothesis==6.96.1",
+    "hypothesis==6.135.26",
     "faker==22.2.0",
     
     # Type stubs
