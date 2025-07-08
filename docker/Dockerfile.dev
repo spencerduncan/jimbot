@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     git curl wget vim nano htop \
     docker.io \
     # GPU tools
-    nvidia-utils-515 \
+    nvidia-utils-535 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Python 3.13 as default

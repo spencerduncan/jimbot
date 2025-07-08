@@ -71,7 +71,7 @@ System: 2 cores
 FROM python:3.10-slim as python-base
 
 # CUDA base for GPU-enabled services
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 as cuda-base
+FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04 as cuda-base
 ```
 
 ### Service Isolation
