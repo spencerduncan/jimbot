@@ -1,6 +1,6 @@
 # Dockerfile.ci-unified
 # Multi-stage Docker image for unified CI with all language toolchains
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive

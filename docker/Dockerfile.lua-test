@@ -1,7 +1,7 @@
 # Dockerfile for Lua Testing Environment
 # Provides a containerized environment for running Lua tests in CI
 
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
