@@ -94,7 +94,7 @@ dev = [
     "types-protobuf==4.24.0.4",
     
     # Security
-    "bandit==1.7.6",
+    "bandit==1.8.6",
     "safety==3.0.1",
     "pip-audit==2.6.3",
     
