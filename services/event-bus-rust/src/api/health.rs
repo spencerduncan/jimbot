@@ -50,5 +50,6 @@ pub async fn metrics() -> String {
          event_bus_processing_latency_seconds_bucket{le=\"1\"} 0\n\
          event_bus_processing_latency_seconds_bucket{le=\"+Inf\"} 0\n\
          event_bus_processing_latency_seconds_sum 0\n\
-         event_bus_processing_latency_seconds_count 0\n".to_string()
+         event_bus_processing_latency_seconds_count 0\n"
+        .to_string()
 }
