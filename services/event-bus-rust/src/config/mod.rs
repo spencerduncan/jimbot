@@ -1,10 +1,9 @@
 use anyhow::{Context, Result};
-use config::{Config, ConfigError, Environment, File};
+use config::{Config, Environment, File};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::{Arc, RwLock};
-use std::time::Duration;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 use validator::{Validate, ValidationError};
@@ -155,7 +154,7 @@ pub struct LoggingConfig {
     pub level: String,
     
     /// Log format (json, pretty)
-    #[validate(custom = "validate_log_format")]
+    #[validate(custom(function = "validate_log_format"))]
     pub format: String,
     
     /// Enable file logging
@@ -294,7 +293,10 @@ impl ConfigManager {
     
     /// Get current configuration
     pub fn get(&self) -> AppConfig {
-        self.config.read().unwrap().clone()
+        self.config
+            .read()
+            .expect("Failed to acquire read lock on configuration")
+            .clone()
     }
     
     /// Enable hot-reload for configuration files
@@ -335,7 +337,15 @@ impl ConfigManager {
                                 }
                                 
                                 // Update configuration
-                                *config.write().unwrap() = new_config.clone();
+                                match config.write() {
+                                    Ok(mut config_guard) => {
+                                        *config_guard = new_config.clone();
+                                    }
+                                    Err(e) => {
+                                        error!("Failed to acquire write lock on configuration: {}", e);
+                                        continue;
+                                    }
+                                }
                                 
                                 // Notify subscribers
                                 if tx.send(new_config).await.is_err() {

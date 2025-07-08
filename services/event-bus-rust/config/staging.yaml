@@ -9,8 +9,8 @@ server:
   rest:
     cors_enabled: true
     cors_allowed_origins:
-      - "https://staging.example.com"
-      - "https://staging-admin.example.com"
+      - "${STAGING_CORS_ORIGIN_1:https://localhost:3001}"
+      - "${STAGING_CORS_ORIGIN_2:}"
   
   grpc:
     reflection_enabled: false
@@ -25,7 +25,7 @@ logging:
   level: info
   format: json
   file_enabled: true
-  file_path: "/var/log/event-bus/staging.log"
+  file_path: "${STAGING_LOG_PATH:/var/log/event-bus/staging.log}"
 
 metrics:
   enabled: true
@@ -38,7 +38,7 @@ security:
     burst_size: 500
     per_ip_enabled: true
   tls:
-    cert_path: "/etc/ssl/certs/staging.crt"
-    key_path: "/etc/ssl/private/staging.key"
-    ca_path: null
-    mutual_tls: false
+    cert_path: "${STAGING_TLS_CERT_PATH:/etc/ssl/certs/staging.crt}"
+    key_path: "${STAGING_TLS_KEY_PATH:/etc/ssl/private/staging.key}"
+    ca_path: ${STAGING_TLS_CA_PATH:null}
+    mutual_tls: ${STAGING_TLS_MUTUAL_ENABLED:false}

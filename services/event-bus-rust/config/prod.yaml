@@ -12,9 +12,9 @@ server:
     max_body_size: 52428800  # 50MB
     cors_enabled: true
     cors_allowed_origins:
-      - "https://app.example.com"
-      - "https://admin.example.com"
-      - "https://api.example.com"
+      - "${CORS_ALLOWED_ORIGIN_1:https://localhost}"
+      - "${CORS_ALLOWED_ORIGIN_2:}"
+      - "${CORS_ALLOWED_ORIGIN_3:}"
   
   grpc:
     max_message_size: 10485760  # 10MB
@@ -36,7 +36,7 @@ logging:
   level: warn
   format: json
   file_enabled: true
-  file_path: "/var/log/event-bus/prod.log"
+  file_path: "${LOG_FILE_PATH:/var/log/event-bus/prod.log}"
   rotation_size_mb: 500
   rotation_keep: 10
 
@@ -53,7 +53,7 @@ security:
     burst_size: 200
     per_ip_enabled: true
   tls:
-    cert_path: "/etc/ssl/certs/prod.crt"
-    key_path: "/etc/ssl/private/prod.key"
-    ca_path: "/etc/ssl/certs/ca-bundle.crt"
-    mutual_tls: true
+    cert_path: "${TLS_CERT_PATH:/etc/ssl/certs/server.crt}"
+    key_path: "${TLS_KEY_PATH:/etc/ssl/private/server.key}"
+    ca_path: "${TLS_CA_PATH:/etc/ssl/certs/ca-bundle.crt}"
+    mutual_tls: ${TLS_MUTUAL_ENABLED:true}

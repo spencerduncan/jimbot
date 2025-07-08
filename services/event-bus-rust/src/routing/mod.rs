@@ -5,6 +5,7 @@ use tokio::sync::mpsc;
 use tracing::{debug, info};
 
 use crate::proto::{Event, EventType};
+use crate::config::AppConfig;
 
 pub type EventHandler = Arc<dyn Fn(Event) + Send + Sync>;
 pub type EventChannel = mpsc::UnboundedSender<Event>;
@@ -15,6 +16,9 @@ pub struct EventRouter {
     handlers: DashMap<String, Vec<EventHandler>>,
     /// Map of topic patterns to channels (for gRPC streaming)
     channels: DashMap<String, Vec<EventChannel>>,
+    /// Configuration
+    #[allow(dead_code)]
+    config: Option<Arc<AppConfig>>,
 }
 
 impl Default for EventRouter {
@@ -28,6 +32,16 @@ impl EventRouter {
         Self {
             handlers: DashMap::new(),
             channels: DashMap::new(),
+            config: None,
+        }
+    }
+    
+    /// Create a new EventRouter with configuration
+    pub fn new_with_config(config: Arc<AppConfig>) -> Self {
+        Self {
+            handlers: DashMap::new(),
+            channels: DashMap::new(),
+            config: Some(config),
         }
     }
 
