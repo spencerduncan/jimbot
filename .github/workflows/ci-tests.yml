@@ -21,6 +21,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      # Cache Rust dependencies when testing Rust component
+      - name: Cache Rust dependencies
+        if: matrix.component == 'rust'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            jimbot/memgraph/mage_modules -> target
+            services/balatro-emulator -> target
+            services/event-bus-rust -> target
+            jimbot/infrastructure/resource_coordinator_rust -> target
+          cache-on-failure: true
+          shared-key: "rust-ci-tests"
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         
@@ -50,7 +65,12 @@ jobs:
               "
               ;;
             rust)
-              docker run --rm -v ${{ github.workspace }}:/workspace jimbot-ci:latest bash -c "
+              # Mount cargo cache directories into Docker container
+              docker run --rm \
+                -v ${{ github.workspace }}:/workspace \
+                -v $HOME/.cargo/registry:/root/.cargo/registry \
+                -v $HOME/.cargo/git:/root/.cargo/git \
+                jimbot-ci:latest bash -c "
                 echo '=== Running Rust Tests ==='
                 cd /workspace
                 if [ -f ci/scripts/run-rust-tests.sh ]; then

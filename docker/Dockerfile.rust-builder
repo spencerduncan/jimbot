@@ -1,0 +1,54 @@
+# Dockerfile.rust-builder
+# Optimized Rust builder with cargo caching support
+FROM rust:1.75 AS rust-builder
+
+# Install additional tools
+RUN cargo install cargo-audit cargo-tarpaulin cargo-nextest
+
+# Set up cache mount points for cargo
+# These will be cached between builds when using BuildKit
+WORKDIR /workspace
+
+# Copy workspace Cargo files first for dependency caching
+COPY Cargo.toml Cargo.lock* ./
+COPY jimbot/memgraph/mage_modules/Cargo.toml jimbot/memgraph/mage_modules/
+COPY services/balatro-emulator/Cargo.toml services/balatro-emulator/
+COPY services/event-bus-rust/Cargo.toml services/event-bus-rust/
+COPY jimbot/infrastructure/resource_coordinator_rust/Cargo.toml jimbot/infrastructure/resource_coordinator_rust/
+
+# Create dummy main.rs files to build dependencies
+RUN mkdir -p jimbot/memgraph/mage_modules/src && \
+    echo "fn main() {}" > jimbot/memgraph/mage_modules/src/main.rs && \
+    mkdir -p services/balatro-emulator/src && \
+    echo "fn main() {}" > services/balatro-emulator/src/main.rs && \
+    mkdir -p services/event-bus-rust/src && \
+    echo "fn main() {}" > services/event-bus-rust/src/main.rs && \
+    mkdir -p jimbot/infrastructure/resource_coordinator_rust/src && \
+    echo "fn main() {}" > jimbot/infrastructure/resource_coordinator_rust/src/main.rs
+
+# Build dependencies with cache mounts
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/workspace/target \
+    cargo build --release --all
+
+# Remove dummy files
+RUN rm -rf jimbot/memgraph/mage_modules/src \
+    services/balatro-emulator/src \
+    services/event-bus-rust/src \
+    jimbot/infrastructure/resource_coordinator_rust/src
+
+# Now copy actual source files
+COPY . .
+
+# Build the actual projects with cache mounts
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/workspace/target \
+    cargo build --release --all && \
+    cargo test --all-features --no-run
+
+# Export stage - copies built artifacts without cache mounts
+FROM rust-builder AS export
+RUN --mount=type=cache,target=/workspace/target \
+    cp -r /workspace/target /workspace/target-export

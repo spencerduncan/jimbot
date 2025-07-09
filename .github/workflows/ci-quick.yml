@@ -17,6 +17,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      # Cache Rust dependencies for faster linting/formatting
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            jimbot/memgraph/mage_modules -> target
+            services/balatro-emulator -> target
+            services/event-bus-rust -> target
+            jimbot/infrastructure/resource_coordinator_rust -> target
+          cache-on-failure: true
+          shared-key: "rust-ci-quick"
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         
@@ -33,7 +47,12 @@ jobs:
           
       - name: Run Quick Checks
         run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace jimbot-ci:latest bash -c "
+          # Mount cargo cache directories into Docker container
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -v $HOME/.cargo/registry:/root/.cargo/registry \
+            -v $HOME/.cargo/git:/root/.cargo/git \
+            jimbot-ci:latest bash -c "
             set -e
             echo '=== Python Format Check ==='
             black --check /workspace/jimbot /workspace/scripts /workspace/services || true
