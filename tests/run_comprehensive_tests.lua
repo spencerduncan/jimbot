@@ -7,14 +7,20 @@ print("====================================================\n")
 
 local test_files = {
     -- Unit tests
-    { name = "Action Executor Shop Navigation Tests", file = "tests/unit/test_action_executor_shop_navigation.lua" },
+    {
+        name = "Action Executor Shop Navigation Tests",
+        file = "tests/unit/test_action_executor_shop_navigation.lua",
+    },
     { name = "Retry Manager Tests", file = "tests/unit/test_retry_manager.lua" },
     { name = "Event Bus Client Tests", file = "tests/unit/test_event_bus_client.lua" },
-    
+
     -- Integration tests
-    { name = "Round Eval to Shop Flow Tests", file = "tests/integration/test_round_eval_to_shop_flow.lua" },
+    {
+        name = "Round Eval to Shop Flow Tests",
+        file = "tests/integration/test_round_eval_to_shop_flow.lua",
+    },
     { name = "Retry Integration Tests", file = "tests/integration/test_retry_integration.lua" },
-    
+
     -- Game state tests
     { name = "Game State Extractor Tests", file = "tests/test_game_state_extractor.lua" },
     { name = "Game State Integration Tests", file = "tests/test_game_state_integration.lua" },
@@ -28,21 +34,21 @@ local suite_results = {}
 local function capture_test_output(test_file)
     local output = {}
     local original_print = print
-    
+
     -- Override print to capture output
     _G.print = function(...)
-        local args = {...}
+        local args = { ... }
         local str = table.concat(args, "\t")
         table.insert(output, str)
         original_print(...)
     end
-    
+
     -- Run the test file
     local success, err = pcall(dofile, test_file)
-    
+
     -- Restore original print
     _G.print = original_print
-    
+
     return success, err, output
 end
 
@@ -50,14 +56,14 @@ end
 for _, test in ipairs(test_files) do
     print(string.format("\nRunning: %s", test.name))
     print(string.rep("-", 60))
-    
+
     local success, err, output = capture_test_output(test.file)
-    
+
     if success then
         -- Parse output to find pass/fail counts
         local passed = 0
         local failed = 0
-        
+
         for _, line in ipairs(output) do
             if line:match("✓") then
                 passed = passed + 1
@@ -72,16 +78,16 @@ for _, test in ipairs(test_files) do
                 failed = failed + test_failed
             end
         end
-        
+
         suite_results[test.name] = {
             success = failed == 0,
             passed = passed,
-            failed = failed
+            failed = failed,
         }
-        
+
         total_passed = total_passed + passed
         total_failed = total_failed + failed
-        
+
         print(string.format("Result: %d passed, %d failed", passed, failed))
     else
         print(string.format("ERROR: Failed to run test - %s", err))
@@ -89,7 +95,7 @@ for _, test in ipairs(test_files) do
             success = false,
             passed = 0,
             failed = 1,
-            error = err
+            error = err,
         }
         total_failed = total_failed + 1
     end

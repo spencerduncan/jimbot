@@ -16,8 +16,10 @@ local mock_time = 0
 if not _G.love then
     _G.love = {
         timer = {
-            getTime = function() return mock_time end
-        }
+            getTime = function()
+                return mock_time
+            end,
+        },
     }
 end
 
@@ -331,4 +333,3 @@ _G.require = original_require
 
 -- Report results
 TestHelper.report()
-

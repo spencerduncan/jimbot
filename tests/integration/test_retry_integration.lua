@@ -16,8 +16,10 @@ local mock_time = 0
 if not _G.love then
     _G.love = {
         timer = {
-            getTime = function() return mock_time end
-        }
+            getTime = function()
+                return mock_time
+            end,
+        },
     }
 end
 
@@ -64,7 +66,7 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     }
 
     EventBusClient:init(config)
-    
+
     -- Mark connection as tested to skip initial test
     EventBusClient.connection_tested = true
 
@@ -75,17 +77,17 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     -- Track what happens
     local http_calls = 0
     local success_called = false
-    
+
     -- Create event
     local event = { type = "TEST_EVENT", data = { value = 42 } }
-    
+
     -- Mock http_post to use our mock_https
     EventBusClient.http_post = function(self, url, json)
         http_calls = http_calls + 1
         local code, response = mock_https.request(url, { body = json })
         return code == 200, response
     end
-    
+
     -- Direct test of retry logic
     local attempts = 0
     local function test_func()
@@ -93,19 +95,14 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
         local code, response = mock_https.request("test", {})
         return code == 200, response
     end
-    
+
     -- Execute with retry manager directly
-    EventBusClient.retry_manager:execute_with_retry(
-        test_func,
-        { test = "retry" },
-        function(result)
-            success_called = true
-        end,
-        function(error)
-            -- Should not be called
-        end
-    )
-    
+    EventBusClient.retry_manager:execute_with_retry(test_func, { test = "retry" }, function(result)
+        success_called = true
+    end, function(error)
+        -- Should not be called
+    end)
+
     -- Process the coroutine
     local co_data = EventBusClient.retry_manager.active_coroutines[1]
     if co_data then
@@ -115,7 +112,7 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
             mock_time = mock_time + 0.2 -- Advance time for delays
         end
     end
-    
+
     -- Verify results
     TestHelper.assert_equal(attempts, 3) -- 2 failures + 1 success
     TestHelper.assert_equal(mock_https.failure_count, 3)
@@ -213,7 +210,7 @@ TestHelper.test(
         -- Mock complete failure
         mock_https.failure_count = 0
         mock_https.max_failures = 999
-        
+
         -- Mock http_post to always fail
         EventBusClient.http_post = function(self, url, json)
             local code, response = mock_https.request(url, { body = json })
@@ -222,13 +219,13 @@ TestHelper.test(
 
         -- Send first event to trigger circuit breaker
         EventBusClient:send_event({ type = "TRIGGER_FAILURE" })
-        
+
         -- Record failure to open circuit breaker
         EventBusClient.retry_manager:record_failure()
-        
+
         -- Now send multiple events - they should all be buffered
         local initial_buffer_size = #EventBusClient.local_buffer
-        
+
         for i = 1, 10 do
             EventBusClient:send_event({
                 type = "EVENT_" .. i,
@@ -249,4 +246,3 @@ _G.require = original_require
 
 -- Report results
 TestHelper.report()
-

@@ -13,7 +13,9 @@ local mock_time = 0
 TestHelper.create_mock_globals()
 
 -- Override the love.timer.getTime to use our mock_time
-_G.love.timer.getTime = function() return mock_time end
+_G.love.timer.getTime = function()
+    return mock_time
+end
 
 -- Load the retry manager
 local RetryManager = require("mods.BalatroMCP.retry_manager")
@@ -72,7 +74,7 @@ TestHelper.test("RetryManager:can_attempt - should allow attempt after reset tim
     -- Set initial failure time
     mock_time = 0
     RetryManager.last_failure_time = mock_time
-    
+
     -- Mock time to be past reset timeout
     mock_time = 2 -- 2 seconds later
 
@@ -181,7 +183,7 @@ TestHelper.test("RetryManager:execute_with_retry - should retry on failure", fun
     -- Process coroutine - with 0 delays it should complete quickly
     local max_iterations = 10 -- Should only need a few
     local iterations = 0
-    
+
     while coroutine.status(co_data.coroutine) ~= "dead" and iterations < max_iterations do
         iterations = iterations + 1
         coroutine.resume(co_data.coroutine)
@@ -222,11 +224,11 @@ TestHelper.test("RetryManager:execute_with_retry - should fail after max retries
     -- Get the coroutine
     local co_data = RetryManager.active_coroutines[1]
     TestHelper.assert_not_nil(co_data)
-    
+
     -- Process coroutine - with 0 delays it should complete quickly
     local max_iterations = 10 -- Should only need a few
     local iterations = 0
-    
+
     while coroutine.status(co_data.coroutine) ~= "dead" and iterations < max_iterations do
         iterations = iterations + 1
         coroutine.resume(co_data.coroutine)
@@ -315,4 +317,3 @@ end)
 
 -- Report results
 TestHelper.report()
-
