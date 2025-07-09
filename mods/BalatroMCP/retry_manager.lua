@@ -183,16 +183,25 @@ function RetryManager:update(dt)
 
     -- Resume all active coroutines
     for i, co_data in ipairs(self.active_coroutines) do
-        if coroutine.status(co_data.coroutine) ~= "dead" then
-            local success, err = coroutine.resume(co_data.coroutine)
-            if not success then
-                self.logger:error("Coroutine error", {
-                    error = err,
-                    context = co_data.context,
-                })
+        if co_data.coroutine and type(co_data.coroutine) == "thread" then
+            if coroutine.status(co_data.coroutine) ~= "dead" then
+                local success, err = coroutine.resume(co_data.coroutine)
+                if not success then
+                    self.logger:error("Coroutine error", {
+                        error = err,
+                        context = co_data.context,
+                    })
+                    table.insert(completed, i)
+                end
+            else
                 table.insert(completed, i)
             end
         else
+            -- Invalid coroutine, remove it
+            self.logger:error("Invalid coroutine in active_coroutines", {
+                co_data = co_data,
+                type = type(co_data.coroutine)
+            })
             table.insert(completed, i)
         end
     end
