@@ -4,7 +4,7 @@
 local TestHelper = require("tests.test_helper")
 
 -- Load modules
-package.path = package.path .. ";../../mods/BalatroMCP/?.lua"
+package.path = package.path .. ";./?.lua;./?/init.lua"
 
 -- Set up environment
 TestHelper.create_mock_globals()

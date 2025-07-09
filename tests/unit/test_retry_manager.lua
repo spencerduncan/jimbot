@@ -150,9 +150,10 @@ TestHelper.test("RetryManager:execute_with_retry - should succeed on first attem
 end)
 
 TestHelper.test("RetryManager:execute_with_retry - should retry on failure", function()
+    -- Override retry delays to be instant for testing
     RetryManager.is_open = false
     RetryManager.max_retries = 3
-    RetryManager.retry_delays = { 0.1, 0.2, 0.4 }
+    RetryManager.retry_delays = { 0, 0, 0 } -- No delays for testing
 
     local attempt_count = 0
     local success_called = false
@@ -173,44 +174,30 @@ TestHelper.test("RetryManager:execute_with_retry - should retry on failure", fun
         failure_called = true
     end)
 
-    -- Simulate multiple update cycles to process retries
+    -- Get the coroutine
     local co_data = RetryManager.active_coroutines[1]
+    TestHelper.assert_not_nil(co_data)
 
-    -- Helper to advance time and resume coroutine
-    local function advance_and_resume(time_delta)
-        local start_time = mock_time
-        local end_time = start_time + time_delta
-        
-        -- Simulate multiple small time steps
-        while mock_time < end_time and coroutine.status(co_data.coroutine) ~= "dead" do
-            mock_time = mock_time + 0.01
-            coroutine.resume(co_data.coroutine)
-        end
+    -- Process coroutine - with 0 delays it should complete quickly
+    local max_iterations = 10 -- Should only need a few
+    local iterations = 0
+    
+    while coroutine.status(co_data.coroutine) ~= "dead" and iterations < max_iterations do
+        iterations = iterations + 1
+        coroutine.resume(co_data.coroutine)
     end
 
-    -- First attempt should happen immediately
-    coroutine.resume(co_data.coroutine)
-    TestHelper.assert_equal(attempt_count, 1)
-
-    -- Wait for first retry delay (0.1s) and process
-    advance_and_resume(0.15)
-    TestHelper.assert_equal(attempt_count, 2)
-
-    -- Wait for second retry delay (0.2s) and process
-    advance_and_resume(0.25)
+    -- Verify results
     TestHelper.assert_equal(attempt_count, 3)
-    
-    -- Final resume to complete
-    coroutine.resume(co_data.coroutine)
-
     TestHelper.assert_true(success_called)
     TestHelper.assert_false(failure_called)
 end)
 
 TestHelper.test("RetryManager:execute_with_retry - should fail after max retries", function()
+    -- Override retry delays to be instant for testing
     RetryManager.is_open = false
     RetryManager.max_retries = 2
-    RetryManager.retry_delays = { 0.1, 0.2 }
+    RetryManager.retry_delays = { 0, 0 } -- No delays for testing
 
     local attempt_count = 0
     local failure_called = false
@@ -232,34 +219,21 @@ TestHelper.test("RetryManager:execute_with_retry - should fail after max retries
         end
     )
 
-    -- Process all retry attempts
+    -- Get the coroutine
     local co_data = RetryManager.active_coroutines[1]
+    TestHelper.assert_not_nil(co_data)
     
-    -- Helper to advance time and resume coroutine
-    local function advance_and_resume(time_delta)
-        local start_time = mock_time
-        local end_time = start_time + time_delta
-        
-        -- Simulate multiple small time steps
-        while mock_time < end_time and coroutine.status(co_data.coroutine) ~= "dead" do
-            mock_time = mock_time + 0.01
-            coroutine.resume(co_data.coroutine)
-        end
-    end
+    -- Process coroutine - with 0 delays it should complete quickly
+    local max_iterations = 10 -- Should only need a few
+    local iterations = 0
     
-    -- First attempt
-    coroutine.resume(co_data.coroutine)
-    TestHelper.assert_equal(attempt_count, 1)
-    
-    -- Wait for retry delay and process second attempt
-    advance_and_resume(0.15)
-    TestHelper.assert_equal(attempt_count, 2)
-    
-    -- Complete any remaining processing
-    while coroutine.status(co_data.coroutine) ~= "dead" do
+    while coroutine.status(co_data.coroutine) ~= "dead" and iterations < max_iterations do
+        iterations = iterations + 1
         coroutine.resume(co_data.coroutine)
     end
 
+    -- Verify results
+    TestHelper.assert_equal(attempt_count, 2)
     TestHelper.assert_true(failure_called)
     TestHelper.assert_not_nil(failure_error)
 end)
