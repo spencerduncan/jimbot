@@ -37,10 +37,10 @@ async fn main() -> Result<()> {
     // Load configuration first
     let mut config_manager = ConfigManager::load()?;
     let config = Arc::new(config_manager.get());
-    
+
     // Initialize metrics subsystem
     metrics::init_metrics();
-    
+
     // Initialize tracing based on configuration
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new(&config.logging.level));
@@ -86,7 +86,7 @@ async fn main() -> Result<()> {
         .route("/api/v1/events", post(handlers::handle_single_event))
         .route("/api/v1/events/batch", post(handlers::handle_batch_events))
         .route("/health", axum::routing::get(health::health_check));
-    
+
     // Add metrics endpoint if enabled
     if config.metrics.enabled {
         rest_app = rest_app.route(
@@ -94,10 +94,15 @@ async fn main() -> Result<()> {
             axum::routing::get(health::metrics),
         );
     }
-    
+
     // Configure CORS based on settings
     let cors_layer = if config.server.rest.cors_enabled {
-        if config.server.rest.cors_allowed_origins.contains(&"*".to_string()) {
+        if config
+            .server
+            .rest
+            .cors_allowed_origins
+            .contains(&"*".to_string())
+        {
             CorsLayer::permissive()
         } else {
             let origins: Vec<_> = config
@@ -115,7 +120,7 @@ async fn main() -> Result<()> {
     } else {
         CorsLayer::new()
     };
-    
+
     let rest_app = rest_app
         .layer(RequestBodyLimitLayer::new(config.server.rest.max_body_size))
         .layer(TimeoutLayer::new(Duration::from_secs(
@@ -126,11 +131,8 @@ async fn main() -> Result<()> {
         .with_state(app_state);
 
     // Start REST API server with configured address
-    let rest_addr: SocketAddr = format!(
-        "{}:{}",
-        config.server.rest.host, config.server.rest.port
-    )
-    .parse()?;
+    let rest_addr: SocketAddr =
+        format!("{}:{}", config.server.rest.host, config.server.rest.port).parse()?;
     info!("REST API listening on {}", rest_addr);
 
     let rest_server = tokio::spawn(async move {
@@ -143,13 +145,10 @@ async fn main() -> Result<()> {
     });
 
     // Start gRPC server with configured address
-    let grpc_addr: SocketAddr = format!(
-        "{}:{}",
-        config.server.grpc.host, config.server.grpc.port
-    )
-    .parse()?;
-    let grpc_service = EventBusService::new(router);
-    
+    let grpc_addr: SocketAddr =
+        format!("{}:{}", config.server.grpc.host, config.server.grpc.port).parse()?;
+    let _grpc_service = EventBusService::new(router);
+
     info!("gRPC server listening on {}", grpc_addr);
 
     // Note: For now, we'll just have the gRPC service ready but not start a separate server
@@ -166,7 +165,7 @@ async fn main() -> Result<()> {
         match config_manager.enable_hot_reload().await {
             Ok(mut config_rx) => {
                 tokio::spawn(async move {
-                    while let Some(new_config) = config_rx.recv().await {
+                    while let Some(_new_config) = config_rx.recv().await {
                         info!("Configuration reloaded, some changes may require restart");
                         // Note: Some configuration changes would require server restart
                         // This is a notification mechanism for now
@@ -178,10 +177,10 @@ async fn main() -> Result<()> {
             }
         }
     }
-    
+
     // Set up graceful shutdown
     let shutdown_timeout = Duration::from_secs(config_clone.server.shutdown_timeout_secs);
-    
+
     tokio::select! {
         res = rest_server => {
             error!("REST server stopped: {:?}", res);
@@ -195,7 +194,7 @@ async fn main() -> Result<()> {
             tokio::time::sleep(shutdown_timeout).await;
         }
     }
-    
+
     // Shutdown OpenTelemetry
     if let Some(provider) = tracer_provider {
         if let Err(e) = tracing_config::shutdown_tracing(provider) {
@@ -203,7 +202,7 @@ async fn main() -> Result<()> {
         }
     }
     info!("Event Bus shutdown complete");
-    
+
     Ok(())
 }
 
@@ -214,7 +213,7 @@ async fn shutdown_signal() {
             .await
             .expect("Failed to install Ctrl+C handler");
     };
-    
+
     #[cfg(unix)]
     let terminate = async {
         signal::unix::signal(signal::unix::SignalKind::terminate())
@@ -222,10 +221,10 @@ async fn shutdown_signal() {
             .recv()
             .await;
     };
-    
+
     #[cfg(not(unix))]
     let terminate = std::future::pending::<()>();
-    
+
     tokio::select! {
         _ = ctrl_c => {},
         _ = terminate => {},

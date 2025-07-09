@@ -95,15 +95,24 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Create gh-pages branch if it doesn't exist
-          git fetch origin gh-pages || git checkout -b gh-pages
-          git checkout gh-pages || git checkout -b gh-pages
+          # Fetch gh-pages branch
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          
+          # Stash any local changes
+          git stash --include-untracked
+          
+          # Checkout gh-pages branch
+          git checkout -B gh-pages origin/gh-pages
+          
+          # Pull latest changes
+          git pull origin gh-pages --rebase
           
           # Copy dashboard files
-          cp -r ci/dashboard/* .
+          cp -r ci/dashboard/* . 2>/dev/null || true
+          cp -r ci/monitoring . 2>/dev/null || true
           
           # Commit if there are changes
-          git add .
+          git add -A
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else

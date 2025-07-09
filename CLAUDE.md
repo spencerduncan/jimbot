@@ -188,6 +188,62 @@ pytest tests/integration/ -v --slow
 pytest tests/performance/ -v --benchmark
 ```
 
+## Local CI Testing Commands
+
+### Main CI Test Scripts
+
+**`scripts/run-ci-docker.sh`** - Docker-based CI runner that mimics the full CI environment:
+```bash
+./scripts/run-ci-docker.sh all          # Run all tests
+./scripts/run-ci-docker.sh format       # Run format checks
+./scripts/run-ci-docker.sh lint         # Run linters
+./scripts/run-ci-docker.sh unit         # Run unit tests
+./scripts/run-ci-docker.sh integration  # Run integration tests
+./scripts/run-ci-docker.sh fix          # Fix formatting issues
+./scripts/run-ci-docker.sh shell        # Interactive shell
+```
+
+**`scripts/rust-pre-commit.sh`** - Comprehensive Rust pre-commit checks:
+```bash
+./scripts/rust-pre-commit.sh
+```
+- Automatically finds all Rust components
+- Runs formatting, clippy, build, tests, and security audit
+- Installs missing tools if needed
+- Generates coverage reports
+- **Recommended before any commit**
+
+### Component-Specific Scripts
+
+**Lua Tests:**
+```bash
+ci/scripts/run-lua-tests.sh              # Docker-based Lua test runner
+ci/scripts/run-lua-tests.sh --coverage   # With coverage reporting
+ci/scripts/run-lua-tests.sh --performance # With performance testing
+scripts/test-lua-docker.sh               # Quick validation of Lua test environment
+```
+
+**Rust Tests:**
+```bash
+ci/scripts/run-rust-tests.sh             # Complete Rust test suite
+# Tests event-bus-rust and MAGE modules
+# Includes format, clippy, and security checks
+```
+
+### Quick Start for Pre-Commit
+
+For a comprehensive pre-commit check of all Rust components:
+```bash
+./scripts/rust-pre-commit.sh
+```
+
+For the full CI experience:
+```bash
+./scripts/run-ci-docker.sh all
+```
+
+The `rust-pre-commit.sh` script runs all the same checks that CI does for Rust components and will tell you if your code is ready for commit.
+
 ## Development Timeline
 
 The project follows a 10-week timeline with 5 parallel development streams:
