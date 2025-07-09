@@ -72,7 +72,7 @@ TestHelper.run_suite("Retry Integration Tests")
 TestHelper.test("Integration: Should retry and succeed after transient failures", function()
     -- Reset mock time
     mock_time = 0
-    
+
     -- Initialize components
     local config = {
         event_bus_url = "http://localhost:8080/api/v1/events",
@@ -82,7 +82,7 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     }
 
     EventBusClient:init(config)
-    
+
     -- Set up retry manager for testing (match unit test pattern)
     EventBusClient.retry_manager.active_coroutines = {}
     EventBusClient.retry_manager.is_open = false
@@ -125,7 +125,7 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     end, function(error)
         -- Should not be called
     end)
-    
+
     -- Get the coroutine (match unit test pattern)
     local co_data = EventBusClient.retry_manager.active_coroutines[1]
     TestHelper.assert_not_nil(co_data)
