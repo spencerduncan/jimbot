@@ -15,8 +15,7 @@ import websockets
 from websockets.server import WebSocketServerProtocol
 
 from jimbot.mcp.aggregator import EventAggregator
-from jimbot.mcp.utils import MetricsCollector, validate_event
-from jimbot.mcp.utils.validation import sanitize_event_data
+from jimbot.mcp.utils import MetricsCollector, validate_event, check_rate_limit, get_validation_errors
 
 logger = logging.getLogger(__name__)
 

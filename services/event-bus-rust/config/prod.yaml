@@ -1,0 +1,59 @@
+# Production environment configuration
+# Overrides default.yaml for production
+
+environment: prod
+
+server:
+  worker_threads: 8
+  shutdown_timeout_secs: 60
+  
+  rest:
+    request_timeout_secs: 60
+    max_body_size: 52428800  # 50MB
+    cors_enabled: true
+    cors_allowed_origins:
+      - "https://app.example.com"
+      - "https://admin.example.com"
+      - "https://api.example.com"
+  
+  grpc:
+    max_message_size: 10485760  # 10MB
+    connection_timeout_secs: 30
+    reflection_enabled: false
+
+routing:
+  event_buffer_size: 10000
+  max_subscribers_per_topic: 1000
+  event_ttl_secs: 3600  # 1 hour
+  dead_letter_enabled: true
+  max_retry_attempts: 5
+  retry_backoff:
+    initial_ms: 2000
+    max_ms: 60000
+    multiplier: 2.5
+
+logging:
+  level: warn
+  format: json
+  file_enabled: true
+  file_path: "/var/log/event-bus/prod.log"
+  rotation_size_mb: 500
+  rotation_keep: 10
+
+metrics:
+  enabled: true
+  export_interval_secs: 15
+  prometheus_path: "/internal/metrics"
+
+security:
+  auth_enabled: true
+  api_key_header: "X-Event-Bus-API-Key"
+  rate_limit:
+    requests_per_second: 50
+    burst_size: 200
+    per_ip_enabled: true
+  tls:
+    cert_path: "/etc/ssl/certs/prod.crt"
+    key_path: "/etc/ssl/private/prod.key"
+    ca_path: "/etc/ssl/certs/ca-bundle.crt"
+    mutual_tls: true

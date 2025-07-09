@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package jimbot.events.v1;
+
+import "jimbot/events/v1/base.proto";
+import "google/protobuf/timestamp.proto";
+
+// Extended game state event with Balatro-specific information
+message BalatroGameStateEvent {
+  // Base game state information
+  GameStateEvent base = 1;
+  
+  // Information about a joker
+  message JokerInfo {
+    string id = 1;
+    string name = 2;
+    int32 position = 3;
+    map<string, double> params = 4;  // Dynamic parameters (e.g., x_mult, chips)
+    bool is_debuffed = 5;
+    string edition = 6;  // foil, holographic, polychrome, negative
+    string seal = 7;     // if applicable
+  }
+  
+  // Information about a playing card
+  message CardInfo {
+    string id = 1;
+    string suit = 2;      // Hearts, Diamonds, Clubs, Spades
+    string rank = 3;      // A, 2-10, J, Q, K
+    string enhancement = 4;  // glass, steel, gold, lucky, mult, bonus, stone, wild
+    string seal = 5;      // gold, red, blue, purple
+    string edition = 6;   // foil, holographic, polychrome
+    bool is_debuffed = 7;
+    int32 position = 8;   // Position in hand/deck
+  }
+  
+  // Scoring information
+  message ScoreInfo {
+    int64 chips = 1;
+    double mult = 2;
+    int64 total = 3;
+    string hand_type = 4;  // pair, two_pair, flush, etc.
+    int32 hand_level = 5;
+    repeated string scoring_cards = 6;  // IDs of cards that scored
+  }
+  
+  // Current jokers in possession
+  repeated JokerInfo jokers = 2;
+  
+  // Cards currently in hand
+  repeated CardInfo hand = 3;
+  
+  // Full deck information
+  repeated CardInfo deck = 4;
+  
+  // Current scoring information
+  ScoreInfo score = 5;
+  
+  // Current round number
+  int32 round = 6;
+  
+  // Current ante
+  int32 ante = 7;
+  
+  // Game phase (SELECT_BLIND, PLAY_HAND, SHOP, etc.)
+  string phase = 8;
+  
+  // Shop information (if in shop phase)
+  ShopInfo shop = 9;
+  
+  // Consumables in possession
+  repeated ConsumableInfo consumables = 10;
+  
+  // Vouchers owned
+  repeated string vouchers = 11;
+  
+  // Current stake/difficulty
+  string stake = 12;
+  
+  // Selected deck type
+  string deck_type = 13;
+}
+
+// Shop information
+message ShopInfo {
+  message ShopItem {
+    string id = 1;
+    string type = 2;  // joker, consumable, voucher, booster
+    string name = 3;
+    int32 cost = 4;
+    map<string, string> properties = 5;
+    bool is_sold = 6;
+  }
+  
+  repeated ShopItem items = 1;
+  int32 reroll_cost = 2;
+  int32 rerolls_remaining = 3;
+}
+
+// Consumable information
+message ConsumableInfo {
+  string id = 1;
+  string type = 2;  // tarot, planet, spectral
+  string name = 3;
+  map<string, string> properties = 4;
+  bool is_debuffed = 5;
+}
+
+// Trigger event for joker/card effects
+message BalatroTriggerEvent {
+  string trigger_id = 1;
+  string source_id = 2;  // ID of joker/card that triggered
+  string source_type = 3;  // joker, card, voucher, etc.
+  string trigger_type = 4;  // played, scored, held, discarded, etc.
+  
+  // Effect of the trigger
+  message TriggerEffect {
+    string effect_type = 1;  // add_mult, x_mult, add_chips, etc.
+    double value = 2;
+    string target = 3;  // what the effect applies to
+    map<string, double> additional_params = 4;
+  }
+  
+  repeated TriggerEffect effects = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  
+  // Context about when this trigger occurred
+  TriggerContext context = 7;
+  
+  // If this trigger caused other triggers (cascade)
+  repeated string caused_triggers = 8;
+}
+
+// Context for when a trigger occurs
+message TriggerContext {
+  string phase = 1;  // play_hand, scoring, end_of_round, etc.
+  repeated string played_cards = 2;  // Card IDs that were played
+  repeated string scored_cards = 3;  // Card IDs that scored
+  string hand_type = 4;  // Type of poker hand
+  int32 repetition = 5;  // Which repetition (for retriggering)
+  bool is_boss_blind = 6;
+  map<string, string> additional_context = 7;
+}
+
+// Cascade information for complex trigger chains
+message CascadeInfo {
+  string initial_trigger = 1;
+  repeated string trigger_chain = 2;  // Ordered list of trigger IDs
+  int64 total_chips_added = 3;
+  double total_mult_factor = 4;
+  int32 cascade_depth = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+}
+
+// Round summary event
+message RoundSummaryEvent {
+  int32 round = 1;
+  int32 ante = 2;
+  bool won = 3;
+  int64 final_score = 4;
+  int64 required_score = 5;
+  int32 hands_played = 6;
+  int32 cards_discarded = 7;
+  repeated string jokers_triggered = 8;
+  int32 money_earned = 9;
+  google.protobuf.Timestamp start_time = 10;
+  google.protobuf.Timestamp end_time = 11;
+}
+
+// Game summary event
+message GameSummaryEvent {
+  string session_id = 1;
+  string deck_type = 2;
+  string stake = 3;
+  int32 final_ante = 4;
+  int32 final_round = 5;
+  int64 highest_score = 6;
+  bool won = 7;
+  string loss_reason = 8;
+  int32 total_hands_played = 9;
+  int32 total_cards_discarded = 10;
+  repeated string jokers_used = 11;
+  repeated string vouchers_purchased = 12;
+  google.protobuf.Timestamp start_time = 13;
+  google.protobuf.Timestamp end_time = 14;
+}
