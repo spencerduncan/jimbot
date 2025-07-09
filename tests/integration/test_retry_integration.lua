@@ -105,7 +105,7 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
 
     -- Process the coroutine
     local co_data = EventBusClient.retry_manager.active_coroutines[1]
-    if co_data then
+    if co_data and co_data.coroutine and type(co_data.coroutine) == "thread" then
         -- Process all attempts
         while coroutine.status(co_data.coroutine) ~= "dead" do
             coroutine.resume(co_data.coroutine)
