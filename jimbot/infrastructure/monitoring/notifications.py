@@ -14,6 +14,8 @@ from email.mime.text import MIMEText
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 
+from .rate_limiter import RateLimiter, RateLimitConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,43 +51,87 @@ class NotificationConfig:
 class NotificationManager:
     """Manages all notification channels for CI alerts"""
     
-    def __init__(self, config: Optional[NotificationConfig] = None):
+    def __init__(self, config: Optional[NotificationConfig] = None, 
+                 rate_limiter: Optional[RateLimiter] = None):
         self.config = config or NotificationConfig.from_environment()
         self.notification_history = []
+        self.rate_limiter = rate_limiter or RateLimiter()
+        self._started = False
         
+    async def start(self):
+        """Start the notification manager (including rate limiter)"""
+        if not self._started:
+            await self.rate_limiter.start_queue_processor()
+            self._started = True
+            logger.info("NotificationManager started with rate limiting")
+    
+    async def stop(self):
+        """Stop the notification manager"""
+        if self._started:
+            await self.rate_limiter.stop_queue_processor()
+            self._started = False
+            logger.info("NotificationManager stopped")
+    
     async def send_alert(self, alert: Dict[str, Any]) -> List[str]:
-        """Send alert through all configured channels"""
+        """Send alert through all configured channels with rate limiting"""
         results = []
         
+        # Ensure rate limiter is started
+        if not self._started:
+            await self.start()
+        
         try:
-            # Send through various channels in parallel
-            tasks = []
+            # Prepare channels and their send functions
+            channels = []
             
             if self.config.webhook_url:
-                tasks.append(self._send_webhook_notification(alert))
+                channels.append(('webhook', self._send_webhook_notification))
             
             if self.config.slack_webhook:
-                tasks.append(self._send_slack_notification(alert))
+                channels.append(('slack', self._send_slack_notification))
             
             if self.config.discord_webhook:
-                tasks.append(self._send_discord_notification(alert))
+                channels.append(('discord', self._send_discord_notification))
             
             if self.config.email_recipients:
-                tasks.append(self._send_email_notification(alert))
+                channels.append(('email', self._send_email_notification))
             
             if self.config.pagerduty_routing_key:
-                tasks.append(self._send_pagerduty_notification(alert))
+                channels.append(('pagerduty', self._send_pagerduty_notification))
             
-            # Execute all notifications
+            # Send notifications with rate limiting
+            tasks = []
+            for channel_name, send_func in channels:
+                # Check rate limit
+                if await self.rate_limiter.check_rate_limit(channel_name):
+                    # Can send immediately
+                    tasks.append(send_func(alert))
+                    results.append(f"{channel_name}: sending")
+                else:
+                    # Rate limited - queue it
+                    if await self.rate_limiter.queue_notification(channel_name, alert):
+                        results.append(f"{channel_name}: queued (rate limited)")
+                    else:
+                        results.append(f"{channel_name}: dropped (queue full)")
+            
+            # Execute immediate sends
             if tasks:
                 notification_results = await asyncio.gather(*tasks, return_exceptions=True)
                 
-                for i, result in enumerate(notification_results):
-                    if isinstance(result, Exception):
-                        results.append(f"Channel {i} failed: {str(result)}")
-                    else:
-                        results.append(result)
-            else:
+                # Update results with actual send results
+                task_idx = 0
+                for i, result_msg in enumerate(results):
+                    if ": sending" in result_msg:
+                        channel = result_msg.split(":")[0]
+                        if task_idx < len(notification_results):
+                            result = notification_results[task_idx]
+                            if isinstance(result, Exception):
+                                results[i] = f"{channel}: failed - {str(result)}"
+                            else:
+                                results[i] = result
+                            task_idx += 1
+            
+            if not channels:
                 results.append("No notification channels configured")
             
             # Log notification attempt
@@ -464,3 +510,55 @@ CI Health Monitoring System
             ])),
             'pagerduty': bool(self.config.pagerduty_routing_key)
         }
+    
+    def get_rate_limit_metrics(self) -> Dict[str, Any]:
+        """Get rate limiting metrics"""
+        return self.rate_limiter.get_metrics()
+    
+    def get_queued_notifications(self, channel: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
+        """Get queued notifications by channel"""
+        if channel:
+            return {channel: self.rate_limiter.get_queue_for_channel(channel)}
+        else:
+            # Get all channels
+            channels = ['webhook', 'slack', 'discord', 'email', 'pagerduty']
+            return {
+                ch: self.rate_limiter.get_queue_for_channel(ch) 
+                for ch in channels
+            }
+    
+    async def process_queued_notifications(self) -> Dict[str, int]:
+        """Manually trigger processing of queued notifications"""
+        results = {}
+        
+        # Check each channel's queue
+        for channel in ['webhook', 'slack', 'discord', 'email', 'pagerduty']:
+            queue = self.rate_limiter.queues.get(channel, [])
+            processed = 0
+            
+            while queue and await self.rate_limiter.check_rate_limit(channel):
+                notification = queue.popleft()
+                
+                # Get the appropriate send function
+                send_func = None
+                if channel == 'webhook' and self.config.webhook_url:
+                    send_func = self._send_webhook_notification
+                elif channel == 'slack' and self.config.slack_webhook:
+                    send_func = self._send_slack_notification
+                elif channel == 'discord' and self.config.discord_webhook:
+                    send_func = self._send_discord_notification
+                elif channel == 'email' and self.config.email_recipients:
+                    send_func = self._send_email_notification
+                elif channel == 'pagerduty' and self.config.pagerduty_routing_key:
+                    send_func = self._send_pagerduty_notification
+                
+                if send_func:
+                    try:
+                        await send_func(notification.alert)
+                        processed += 1
+                    except Exception as e:
+                        logger.error(f"Failed to send queued {channel} notification: {str(e)}")
+            
+            results[channel] = processed
+        
+        return results

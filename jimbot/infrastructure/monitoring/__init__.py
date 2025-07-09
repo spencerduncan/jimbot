@@ -11,6 +11,8 @@ from .ci_health import CIHealthMonitor, CIHealthStatus, CIWorkflowHealth, CISyst
 from .dashboard import CIDashboard, DashboardData
 from .notifications import NotificationManager, NotificationConfig
 from .metrics_storage import MetricsStorage, MetricPoint, WorkflowMetrics, SystemHealthSnapshot
+from .rate_limiter import RateLimiter, RateLimitConfig, TokenBucket
+from .enhanced_ci_health import EnhancedCIHealthMonitor
 
 __all__ = [
     'MetricsCollector', 
@@ -29,5 +31,9 @@ __all__ = [
     'MetricsStorage',
     'MetricPoint',
     'WorkflowMetrics',
-    'SystemHealthSnapshot'
+    'SystemHealthSnapshot',
+    'RateLimiter',
+    'RateLimitConfig',
+    'TokenBucket',
+    'EnhancedCIHealthMonitor'
 ]
