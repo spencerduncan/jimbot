@@ -80,17 +80,18 @@ impl PseudorandomState {
     pub fn pseudoseed(&mut self, key: &str) -> u64 {
         // Get current seed value for this key (or 0 if first time)
         let current_seed = self.key_seeds.get(key).copied().unwrap_or(0);
-        
+
         // Create combined seed using base seed, key, and current seed
         let mut hasher = DefaultHasher::new();
         self.base_seed.hash(&mut hasher);
         key.hash(&mut hasher);
         current_seed.hash(&mut hasher);
         let combined_seed = hasher.finish();
-        
+
         // Advance the stored seed for this key
-        self.key_seeds.insert(key.to_string(), current_seed.wrapping_add(1));
-        
+        self.key_seeds
+            .insert(key.to_string(), current_seed.wrapping_add(1));
+
         combined_seed
     }
 
@@ -156,7 +157,7 @@ impl BalatroRng {
     }
 
     /// Core RNG function - generates a value in the specified range
-    /// 
+    ///
     /// This is the equivalent of Balatro's `pseudorandom` function.
     /// - If min and max are provided, returns an integer in [min, max]
     /// - If only min is provided, returns an integer in [1, min]
@@ -213,7 +214,7 @@ impl BalatroRng {
         }
 
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        
+
         // Fisher-Yates shuffle
         for i in (1..list.len()).rev() {
             let j = rng.gen_range(0..=i);
@@ -232,16 +233,16 @@ impl BalatroRng {
     /// Generate a starting seed string (for new games)
     pub fn generate_starting_seed() -> String {
         let mut rng = thread_rng();
-        
+
         // Generate a seed similar to Balatro's format
         // Use a mix of letters and numbers
         let chars: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".chars().collect();
         let seed_length = 8;
-        
+
         let seed: String = (0..seed_length)
             .map(|_| chars[rng.gen_range(0..chars.len())])
             .collect();
-        
+
         seed
     }
 
@@ -329,15 +330,15 @@ mod tests {
     #[test]
     fn test_pseudoseed_generation() {
         let mut state = PseudorandomState::new(SeedType::Numeric(12345));
-        
+
         // First call should generate a seed
         let seed1 = state.pseudoseed("test_key");
         assert_ne!(seed1, 0);
-        
+
         // Second call should generate a different seed
         let seed2 = state.pseudoseed("test_key");
         assert_ne!(seed2, seed1);
-        
+
         // Different keys should generate different seeds
         let seed3 = state.pseudoseed("different_key");
         assert_ne!(seed3, seed1);
@@ -348,7 +349,7 @@ mod tests {
     fn test_pseudorandom_deterministic() {
         let mut rng1 = BalatroRng::new(SeedType::Numeric(12345));
         let mut rng2 = BalatroRng::new(SeedType::Numeric(12345));
-        
+
         // Same seed should produce same results
         let val1 = rng1.pseudorandom(SeedType::Numeric(999), Some(1), Some(10));
         let val2 = rng2.pseudorandom(SeedType::Numeric(999), Some(1), Some(10));
@@ -358,15 +359,15 @@ mod tests {
     #[test]
     fn test_pseudorandom_ranges() {
         let mut rng = BalatroRng::new(SeedType::Numeric(12345));
-        
+
         // Test min/max range
         let val = rng.pseudorandom(SeedType::Numeric(999), Some(5), Some(15));
         assert!(val >= 5.0 && val <= 15.0);
-        
+
         // Test single max range (should be 1 to max)
         let val = rng.pseudorandom(SeedType::Numeric(999), Some(10), None);
         assert!(val >= 1.0 && val <= 10.0);
-        
+
         // Test float range
         let val = rng.pseudorandom(SeedType::Numeric(999), None, None);
         assert!(val >= 0.0 && val < 1.0);
@@ -375,16 +376,16 @@ mod tests {
     #[test]
     fn test_pseudoshuffle_deterministic() {
         let mut rng = BalatroRng::new(SeedType::Numeric(12345));
-        
+
         let mut vec1 = vec![1, 2, 3, 4, 5];
         let mut vec2 = vec![1, 2, 3, 4, 5];
-        
+
         rng.pseudoshuffle(&mut vec1, 999);
         rng.pseudoshuffle(&mut vec2, 999);
-        
+
         // Same seed should produce same shuffle
         assert_eq!(vec1, vec2);
-        
+
         // Should be different from original
         assert_ne!(vec1, vec![1, 2, 3, 4, 5]);
     }
@@ -392,11 +393,11 @@ mod tests {
     #[test]
     fn test_pseudorandom_element() {
         let mut rng = BalatroRng::new(SeedType::Numeric(12345));
-        
+
         let collection = vec!["a", "b", "c", "d", "e"];
         let element1 = rng.pseudorandom_element(&collection, 999);
         let element2 = rng.pseudorandom_element(&collection, 999);
-        
+
         // Same seed should produce same element
         assert_eq!(element1, element2);
         assert!(element1.is_some());
@@ -406,10 +407,10 @@ mod tests {
     #[test]
     fn test_string_seeds() {
         let mut rng = BalatroRng::new(SeedType::String("TUTORIAL".to_string()));
-        
+
         let val1 = rng.pseudorandom(SeedType::String("test".to_string()), Some(1), Some(10));
         let val2 = rng.pseudorandom(SeedType::String("test".to_string()), Some(1), Some(10));
-        
+
         // Same string seed should produce same result
         assert_eq!(val1, val2);
     }
@@ -418,14 +419,14 @@ mod tests {
     fn test_starting_seed_generation() {
         let seed1 = BalatroRng::generate_starting_seed();
         let seed2 = BalatroRng::generate_starting_seed();
-        
+
         // Should generate different seeds
         assert_ne!(seed1, seed2);
-        
+
         // Should be 8 characters long
         assert_eq!(seed1.len(), 8);
         assert_eq!(seed2.len(), 8);
-        
+
         // Should only contain valid characters
         let valid_chars: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".chars().collect();
         for c in seed1.chars() {
@@ -436,12 +437,12 @@ mod tests {
     #[test]
     fn test_card_rng_patterns() {
         let mut rng = BalatroRng::new(SeedType::Numeric(12345));
-        
+
         // Test different patterns
         let rarity_seed = rng.get_card_rng("rarity", 1, Some("joker"));
         let soul_seed = rng.get_card_rng("soul_", 1, Some("tarot"));
         let front_seed = rng.get_card_rng("front", 1, Some("deck"));
-        
+
         // All should be different
         assert_ne!(rarity_seed, soul_seed);
         assert_ne!(rarity_seed, front_seed);
@@ -451,15 +452,15 @@ mod tests {
     #[test]
     fn test_state_serialization() {
         let mut rng = BalatroRng::new(SeedType::String("TEST".to_string()));
-        
+
         // Generate some seeds to populate state
         rng.pseudoseed("test1");
         rng.pseudoseed("test2");
-        
+
         let state = rng.state().clone();
         let serialized = serde_json::to_string(&state).unwrap();
         let deserialized: PseudorandomState = serde_json::from_str(&serialized).unwrap();
-        
+
         // State should be identical after serialization
         assert_eq!(state.base_seed(), deserialized.base_seed());
         assert_eq!(state.global_seed(), deserialized.global_seed());
@@ -469,11 +470,11 @@ mod tests {
     #[test]
     fn test_probability_check() {
         let mut rng = BalatroRng::new(SeedType::Numeric(12345));
-        
+
         // Test extreme probabilities
         assert!(rng.probability_check(1.0, 999)); // Always true
         assert!(!rng.probability_check(0.0, 999)); // Always false
-        
+
         // Test same seed produces same result
         let result1 = rng.probability_check(0.5, 999);
         let result2 = rng.probability_check(0.5, 999);
@@ -483,16 +484,12 @@ mod tests {
     #[test]
     fn test_weighted_choice() {
         let mut rng = BalatroRng::new(SeedType::Numeric(12345));
-        
-        let choices = vec![
-            ("rare", 1.0),
-            ("common", 10.0),
-            ("uncommon", 5.0),
-        ];
-        
+
+        let choices = vec![("rare", 1.0), ("common", 10.0), ("uncommon", 5.0)];
+
         let choice = rng.weighted_choice(&choices, 999);
         assert!(choice.is_some());
-        
+
         let choice_val = choice.unwrap();
         assert!(choices.iter().any(|(item, _)| item == choice_val));
     }
