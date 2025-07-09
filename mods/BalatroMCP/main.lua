@@ -51,7 +51,7 @@ function BalatroMCP:init()
     self.components.event_bus:init(self.config)
     self.components.aggregator:init(self.config.batch_window_ms)
     self.components.executor:init()
-    
+
     -- Connect aggregator to event bus after both are initialized
     self.components.aggregator.event_bus = self.components.event_bus
 
@@ -426,14 +426,14 @@ function BalatroMCP:hook_game_events()
         local original_play_cards = G.FUNCS.play_cards_from_highlighted
         G.FUNCS.play_cards_from_highlighted = function(e)
             self.components.logger:debug("play_cards_from_highlighted called")
-            
+
             -- Mark that we're in a scoring sequence
             self.in_scoring_sequence = true
-            
+
             if original_play_cards then
                 original_play_cards(e)
             end
-            
+
             -- Scoring sequence complete, flush aggregator
             self.in_scoring_sequence = false
             self.components.aggregator:flush()
@@ -498,7 +498,7 @@ function BalatroMCP:hook_game_events()
     else
         self.components.logger:error("Could not find end_round")
     end
-    
+
     -- Hook into joker calculations for cascade tracking
     if Card and Card.calculate_joker then
         local original_calculate_joker = Card.calculate_joker
@@ -516,7 +516,7 @@ function BalatroMCP:hook_game_events()
                     },
                 })
             end
-            
+
             -- Call original function
             if original_calculate_joker then
                 return original_calculate_joker(self, context)
