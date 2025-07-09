@@ -103,13 +103,15 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
         -- Should not be called
     end)
 
-    -- Process the coroutine
-    local co_data = EventBusClient.retry_manager.active_coroutines[1]
-    if co_data and co_data.coroutine and type(co_data.coroutine) == "thread" then
-        -- Process all attempts
-        while coroutine.status(co_data.coroutine) ~= "dead" do
-            coroutine.resume(co_data.coroutine)
-            mock_time = mock_time + 0.2 -- Advance time for delays
+    -- Process retries through update method
+    -- The retry manager needs multiple update cycles to process retries
+    for i = 1, 10 do  -- Allow enough cycles for retries
+        EventBusClient.retry_manager:update(0.1)
+        mock_time = mock_time + 0.1 -- Advance time
+        
+        -- Check if we're done
+        if #EventBusClient.retry_manager.active_coroutines == 0 then
+            break
         end
     end
 
