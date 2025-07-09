@@ -84,6 +84,42 @@ pytest tests/unit/ -v  # Unit tests only
 pytest tests/integration/ -v  # Integration tests only
 ```
 
+### Pre-commit Checks
+
+Before committing code, run these checks to ensure code quality:
+
+```bash
+# For Python code
+# Run linting
+ruff check .
+ruff format .
+
+# Run type checking
+mypy jimbot/
+
+# Run tests
+pytest
+
+# For Rust code (in services/event-bus-rust/)
+cd services/event-bus-rust/
+
+# Format code
+cargo fmt
+
+# Run linter
+cargo clippy -- -D warnings
+
+# Run tests
+cargo test
+
+# Check compilation
+cargo check
+
+# For all code
+# Run pre-commit hooks if configured
+pre-commit run --all-files
+```
+
 ## Key Development Patterns
 
 ### MCP Event Aggregation
