@@ -105,9 +105,13 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
 
     -- Process retries through update method
     -- The retry manager needs multiple update cycles to process retries
-    for i = 1, 10 do  -- Allow enough cycles for retries
+    -- We need to advance time more aggressively for retry delays
+    for i = 1, 30 do  -- Allow enough cycles for retries with delays
+        -- Advance time before update to handle delays
+        mock_time = mock_time + 0.5 -- Advance time by 500ms each cycle
+        
+        -- Update the retry manager
         EventBusClient.retry_manager:update(0.1)
-        mock_time = mock_time + 0.1 -- Advance time
 
         -- Check if we're done
         if #EventBusClient.retry_manager.active_coroutines == 0 then
