@@ -4,10 +4,16 @@
 local TestHelper = require("tests.test_helper")
 
 -- Load the module under test
-package.path = package.path .. ";../../mods/BalatroMCP/?.lua"
+package.path = package.path .. ";./?.lua;./?/init.lua"
+
+-- Create a time variable for mocking
+local mock_time = 0
 
 -- Set up environment
 TestHelper.create_mock_globals()
+
+-- Override the love.timer.getTime to use our mock_time
+_G.love.timer.getTime = function() return mock_time end
 
 -- Load the retry manager
 local RetryManager = require("mods.BalatroMCP.retry_manager")
@@ -63,14 +69,12 @@ TestHelper.test("RetryManager:can_attempt - should allow attempt after reset tim
     RetryManager.half_open = false
     RetryManager.reset_timeout = 1
 
+    -- Set initial failure time
+    mock_time = 0
+    RetryManager.last_failure_time = mock_time
+    
     -- Mock time to be past reset timeout
-    local current_time = 0
-    TestHelper.mocks["love.timer.getTime"] = function()
-        current_time = current_time + 2 -- 2 seconds later
-        return current_time
-    end
-
-    RetryManager.last_failure_time = 0
+    mock_time = 2 -- 2 seconds later
 
     TestHelper.assert_true(RetryManager:can_attempt())
     TestHelper.assert_true(RetryManager.half_open)
@@ -154,6 +158,9 @@ TestHelper.test("RetryManager:execute_with_retry - should retry on failure", fun
     local success_called = false
     local failure_called = false
 
+    -- Reset mock time for this test
+    mock_time = 0
+
     RetryManager:execute_with_retry(function()
         attempt_count = attempt_count + 1
         if attempt_count < 3 then
@@ -169,33 +176,33 @@ TestHelper.test("RetryManager:execute_with_retry - should retry on failure", fun
     -- Simulate multiple update cycles to process retries
     local co_data = RetryManager.active_coroutines[1]
 
-    -- Mock time progression
-    local time = 0
-    TestHelper.mocks["love.timer.getTime"] = function()
-        return time
+    -- Helper to advance time and resume coroutine
+    local function advance_and_resume(time_delta)
+        local start_time = mock_time
+        local end_time = start_time + time_delta
+        
+        -- Simulate multiple small time steps
+        while mock_time < end_time and coroutine.status(co_data.coroutine) ~= "dead" do
+            mock_time = mock_time + 0.01
+            coroutine.resume(co_data.coroutine)
+        end
     end
 
-    -- First attempt (fails)
+    -- First attempt should happen immediately
     coroutine.resume(co_data.coroutine)
     TestHelper.assert_equal(attempt_count, 1)
 
-    -- Wait and second attempt (fails)
-    time = time + 0.2
-    while coroutine.status(co_data.coroutine) ~= "dead" do
-        coroutine.resume(co_data.coroutine)
-        if attempt_count == 2 then
-            break
-        end
-    end
+    -- Wait for first retry delay (0.1s) and process
+    advance_and_resume(0.15)
     TestHelper.assert_equal(attempt_count, 2)
 
-    -- Wait and third attempt (succeeds)
-    time = time + 0.3
-    while coroutine.status(co_data.coroutine) ~= "dead" do
-        coroutine.resume(co_data.coroutine)
-    end
-
+    -- Wait for second retry delay (0.2s) and process
+    advance_and_resume(0.25)
     TestHelper.assert_equal(attempt_count, 3)
+    
+    -- Final resume to complete
+    coroutine.resume(co_data.coroutine)
+
     TestHelper.assert_true(success_called)
     TestHelper.assert_false(failure_called)
 end)
@@ -208,6 +215,9 @@ TestHelper.test("RetryManager:execute_with_retry - should fail after max retries
     local attempt_count = 0
     local failure_called = false
     local failure_error = nil
+
+    -- Reset mock time for this test
+    mock_time = 0
 
     RetryManager:execute_with_retry(
         function()
@@ -224,17 +234,32 @@ TestHelper.test("RetryManager:execute_with_retry - should fail after max retries
 
     -- Process all retry attempts
     local co_data = RetryManager.active_coroutines[1]
-    local time = 0
-    TestHelper.mocks["love.timer.getTime"] = function()
-        time = time + 0.3
-        return time
+    
+    -- Helper to advance time and resume coroutine
+    local function advance_and_resume(time_delta)
+        local start_time = mock_time
+        local end_time = start_time + time_delta
+        
+        -- Simulate multiple small time steps
+        while mock_time < end_time and coroutine.status(co_data.coroutine) ~= "dead" do
+            mock_time = mock_time + 0.01
+            coroutine.resume(co_data.coroutine)
+        end
     end
-
+    
+    -- First attempt
+    coroutine.resume(co_data.coroutine)
+    TestHelper.assert_equal(attempt_count, 1)
+    
+    -- Wait for retry delay and process second attempt
+    advance_and_resume(0.15)
+    TestHelper.assert_equal(attempt_count, 2)
+    
+    -- Complete any remaining processing
     while coroutine.status(co_data.coroutine) ~= "dead" do
         coroutine.resume(co_data.coroutine)
     end
 
-    TestHelper.assert_equal(attempt_count, 2)
     TestHelper.assert_true(failure_called)
     TestHelper.assert_not_nil(failure_error)
 end)

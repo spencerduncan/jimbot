@@ -9,6 +9,18 @@ package.path = package.path .. ";../../mods/BalatroMCP/?.lua"
 -- Set up environment
 TestHelper.create_mock_globals()
 
+-- Create a time variable for mocking
+local mock_time = 0
+
+-- Ensure love global exists before loading modules
+if not _G.love then
+    _G.love = {
+        timer = {
+            getTime = function() return mock_time end
+        }
+    }
+end
+
 -- Mock the retry manager
 local mock_retry_manager = {
     can_attempt = TestHelper.mock_function("retry_manager.can_attempt", true),
@@ -268,10 +280,11 @@ TestHelper.test("EventBusClient retry callbacks - should handle success callback
     EventBusClient.retry_manager = mock_retry_manager
 
     TestHelper.reset_mocks()
+    mock_retry_manager.can_attempt = TestHelper.mock_function("retry_manager.can_attempt", true)
     local success_callback = nil
     mock_retry_manager.execute_with_retry = TestHelper.mock_function(
         "retry_manager.execute_with_retry",
-        function(func, context, on_success, on_failure)
+        function(self, func, context, on_success, on_failure)
             success_callback = on_success
         end
     )
@@ -292,10 +305,11 @@ TestHelper.test("EventBusClient retry callbacks - should handle failure callback
     EventBusClient.local_buffer = {}
 
     TestHelper.reset_mocks()
+    mock_retry_manager.can_attempt = TestHelper.mock_function("retry_manager.can_attempt", true)
     local failure_callback = nil
     mock_retry_manager.execute_with_retry = TestHelper.mock_function(
         "retry_manager.execute_with_retry",
-        function(func, context, on_success, on_failure)
+        function(self, func, context, on_success, on_failure)
             failure_callback = on_failure
         end
     )
