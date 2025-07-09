@@ -78,8 +78,8 @@ async fn main() -> Result<()> {
         config.environment
     );
 
-    // Initialize event router with configuration
-    let router = Arc::new(EventRouter::new_with_config(config.clone()));
+    // Initialize event router
+    let router = Arc::new(EventRouter::new());
     let app_state = AppState {
         router: router.clone(),
         config: config.clone(),
