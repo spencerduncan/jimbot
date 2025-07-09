@@ -14,23 +14,23 @@ pub struct AppConfig {
     /// Server configuration
     #[validate(nested)]
     pub server: ServerConfig,
-    
+
     /// Event routing configuration
     #[validate(nested)]
     pub routing: RoutingConfig,
-    
+
     /// Logging configuration
     #[validate(nested)]
     pub logging: LoggingConfig,
-    
+
     /// Metrics configuration
     #[validate(nested)]
     pub metrics: MetricsConfig,
-    
+
     /// Security configuration
     #[validate(nested)]
     pub security: SecurityConfig,
-    
+
     /// Environment name (dev, staging, prod)
     #[validate(length(min = 1))]
     pub environment: String,
@@ -42,15 +42,15 @@ pub struct ServerConfig {
     /// REST API configuration
     #[validate(nested)]
     pub rest: RestConfig,
-    
+
     /// gRPC configuration
     #[validate(nested)]
     pub grpc: GrpcConfig,
-    
+
     /// General server settings
     #[validate(range(min = 1, max = 10000))]
     pub worker_threads: Option<usize>,
-    
+
     /// Graceful shutdown timeout in seconds
     #[validate(range(min = 1, max = 300))]
     pub shutdown_timeout_secs: u64,
@@ -61,22 +61,22 @@ pub struct ServerConfig {
 pub struct RestConfig {
     /// Host to bind to
     pub host: String,
-    
+
     /// Port to bind to
     #[validate(range(min = 1, max = 65535))]
     pub port: u16,
-    
+
     /// Request timeout in seconds
     #[validate(range(min = 1, max = 300))]
     pub request_timeout_secs: u64,
-    
+
     /// Maximum request body size in bytes
     #[validate(range(min = 1024, max = 104857600))] // 1KB to 100MB
     pub max_body_size: usize,
-    
+
     /// CORS configuration
     pub cors_enabled: bool,
-    
+
     /// Allowed CORS origins
     pub cors_allowed_origins: Vec<String>,
 }
@@ -86,19 +86,19 @@ pub struct RestConfig {
 pub struct GrpcConfig {
     /// Host to bind to
     pub host: String,
-    
+
     /// Port to bind to
     #[validate(range(min = 1, max = 65535))]
     pub port: u16,
-    
+
     /// Maximum message size in bytes
     #[validate(range(min = 1024, max = 104857600))] // 1KB to 100MB
     pub max_message_size: usize,
-    
+
     /// Connection timeout in seconds
     #[validate(range(min = 1, max = 300))]
     pub connection_timeout_secs: u64,
-    
+
     /// Enable reflection for debugging
     pub reflection_enabled: bool,
 }
@@ -109,22 +109,22 @@ pub struct RoutingConfig {
     /// Event queue buffer size
     #[validate(range(min = 10, max = 100000))]
     pub event_buffer_size: usize,
-    
+
     /// Maximum subscribers per topic
     #[validate(range(min = 1, max = 10000))]
     pub max_subscribers_per_topic: usize,
-    
+
     /// Event TTL in seconds (0 = no expiry)
     #[validate(range(min = 0, max = 86400))] // Max 24 hours
     pub event_ttl_secs: u64,
-    
+
     /// Dead letter queue settings
     pub dead_letter_enabled: bool,
-    
+
     /// Maximum retry attempts for failed events
     #[validate(range(min = 0, max = 10))]
     pub max_retry_attempts: u32,
-    
+
     /// Retry backoff configuration
     #[validate(nested)]
     pub retry_backoff: BackoffConfig,
@@ -136,11 +136,11 @@ pub struct BackoffConfig {
     /// Initial backoff duration in milliseconds
     #[validate(range(min = 100, max = 60000))]
     pub initial_ms: u64,
-    
+
     /// Maximum backoff duration in milliseconds
     #[validate(range(min = 1000, max = 300000))]
     pub max_ms: u64,
-    
+
     /// Backoff multiplier
     #[validate(range(min = 1.0, max = 10.0))]
     pub multiplier: f64,
@@ -152,21 +152,21 @@ pub struct LoggingConfig {
     /// Log level (trace, debug, info, warn, error)
     #[validate(length(min = 1))]
     pub level: String,
-    
+
     /// Log format (json, pretty)
     #[validate(custom(function = "validate_log_format"))]
     pub format: String,
-    
+
     /// Enable file logging
     pub file_enabled: bool,
-    
+
     /// Log file path
     pub file_path: Option<String>,
-    
+
     /// Log file rotation size in MB
     #[validate(range(min = 1, max = 1000))]
     pub rotation_size_mb: Option<u64>,
-    
+
     /// Number of log files to keep
     #[validate(range(min = 1, max = 100))]
     pub rotation_keep: Option<u32>,
@@ -177,11 +177,11 @@ pub struct LoggingConfig {
 pub struct MetricsConfig {
     /// Enable metrics collection
     pub enabled: bool,
-    
+
     /// Metrics export interval in seconds
     #[validate(range(min = 1, max = 300))]
     pub export_interval_secs: u64,
-    
+
     /// Prometheus endpoint path
     pub prometheus_path: String,
 }
@@ -191,14 +191,14 @@ pub struct MetricsConfig {
 pub struct SecurityConfig {
     /// Enable API authentication
     pub auth_enabled: bool,
-    
+
     /// API key header name
     pub api_key_header: Option<String>,
-    
+
     /// Rate limiting configuration
     #[validate(nested)]
     pub rate_limit: Option<RateLimitConfig>,
-    
+
     /// TLS configuration
     #[validate(nested)]
     pub tls: Option<TlsConfig>,
@@ -210,11 +210,11 @@ pub struct RateLimitConfig {
     /// Requests per second
     #[validate(range(min = 1, max = 10000))]
     pub requests_per_second: u32,
-    
+
     /// Burst size
     #[validate(range(min = 1, max = 100000))]
     pub burst_size: u32,
-    
+
     /// Per-IP rate limiting
     pub per_ip_enabled: bool,
 }
@@ -225,14 +225,14 @@ pub struct TlsConfig {
     /// Certificate file path
     #[validate(length(min = 1))]
     pub cert_path: String,
-    
+
     /// Private key file path
     #[validate(length(min = 1))]
     pub key_path: String,
-    
+
     /// CA certificate path for mutual TLS
     pub ca_path: Option<String>,
-    
+
     /// Enable mutual TLS
     pub mutual_tls: bool,
 }
@@ -255,7 +255,7 @@ impl ConfigManager {
     /// Load configuration from multiple sources
     pub fn load() -> Result<Self> {
         let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
-        
+
         let config = Config::builder()
             // Start with default configuration
             .add_source(File::with_name("config/default").required(false))
@@ -277,40 +277,40 @@ impl ConfigManager {
         let app_config: AppConfig = config
             .try_deserialize()
             .context("Failed to deserialize configuration")?;
-        
+
         // Validate configuration
         app_config
             .validate()
             .context("Configuration validation failed")?;
-        
+
         info!("Configuration loaded for environment: {}", environment);
-        
+
         Ok(Self {
             config: Arc::new(RwLock::new(app_config)),
             watchers: Vec::new(),
         })
     }
-    
+
     /// Get current configuration
     pub fn get(&self) -> AppConfig {
         self.config.read().unwrap().clone()
     }
-    
+
     /// Enable hot-reload for configuration files
     pub async fn enable_hot_reload(&mut self) -> Result<mpsc::Receiver<AppConfig>> {
         let (tx, rx) = mpsc::channel(10);
         let config = self.config.clone();
-        
+
         // Watch configuration directory
         let (watch_tx, watch_rx) = std::sync::mpsc::channel();
         let mut watcher = notify::recommended_watcher(watch_tx)?;
-        
+
         // Watch the config directory
         if Path::new("config").exists() {
             watcher.watch(Path::new("config"), RecursiveMode::NonRecursive)?;
             self.watchers.push(watcher);
         }
-        
+
         // Spawn task to handle file changes
         tokio::spawn(async move {
             while let Ok(event) = watch_rx.recv() {
@@ -321,27 +321,27 @@ impl ConfigManager {
                         ..
                     }) => {
                         info!("Configuration file changed: {:?}", paths);
-                        
+
                         // Reload configuration
                         match ConfigManager::load() {
                             Ok(new_manager) => {
                                 let new_config = new_manager.get();
-                                
+
                                 // Validate new configuration
                                 if let Err(e) = new_config.validate() {
                                     error!("Invalid configuration after reload: {}", e);
                                     continue;
                                 }
-                                
+
                                 // Update configuration
                                 *config.write().unwrap() = new_config.clone();
-                                
+
                                 // Notify subscribers
                                 if tx.send(new_config).await.is_err() {
                                     warn!("Failed to send configuration update");
                                     break;
                                 }
-                                
+
                                 info!("Configuration reloaded successfully");
                             }
                             Err(e) => {
@@ -356,7 +356,7 @@ impl ConfigManager {
                 }
             }
         });
-        
+
         Ok(rx)
     }
 }
@@ -471,20 +471,20 @@ impl Default for SecurityConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_default_config_validation() {
         let config = AppConfig::default();
         assert!(config.validate().is_ok());
     }
-    
+
     #[test]
     fn test_invalid_port() {
         let mut config = AppConfig::default();
         config.server.rest.port = 0;
         assert!(config.validate().is_err());
     }
-    
+
     #[test]
     fn test_invalid_log_format() {
         let mut config = AppConfig::default();

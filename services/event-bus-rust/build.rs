@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Try multiple strategies to find the proto files
     let proto_root = find_proto_root(&cargo_path);
-    
+
     // Debug output
     eprintln!("build.rs: CARGO_MANIFEST_DIR = {}", cargo_path.display());
     eprintln!("build.rs: Proto root = {}", proto_root.display());
@@ -49,7 +49,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let resource_proto = proto_root.join("resource_coordinator.proto");
 
     if !balatro_proto.exists() {
-        eprintln!("build.rs: Looking for proto file at: {}", balatro_proto.display());
+        eprintln!(
+            "build.rs: Looking for proto file at: {}",
+            balatro_proto.display()
+        );
         eprintln!("build.rs: Current directory contents:");
         if let Ok(entries) = std::fs::read_dir(&proto_root) {
             for entry in entries {
