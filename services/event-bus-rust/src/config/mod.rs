@@ -1,10 +1,9 @@
 use anyhow::{Context, Result};
-use config::{Config, ConfigError, Environment, File};
+use config::{Config, Environment, File};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::{Arc, RwLock};
-use std::time::Duration;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 use validator::{Validate, ValidationError};
@@ -155,7 +154,7 @@ pub struct LoggingConfig {
     pub level: String,
     
     /// Log format (json, pretty)
-    #[validate(custom = "validate_log_format")]
+    #[validate(custom(function = "validate_log_format"))]
     pub format: String,
     
     /// Enable file logging
