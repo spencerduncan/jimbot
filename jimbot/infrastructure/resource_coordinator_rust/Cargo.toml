@@ -1,0 +1,61 @@
+[package]
+name = "resource-coordinator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# gRPC framework
+tonic = "0.12"
+prost = "0.13"
+prost-types = "0.13"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+async-stream = "0.3"
+
+# Metrics
+prometheus = "0.13"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Data structures
+dashmap = "6.0"
+parking_lot = "0.12"
+
+# Time handling
+chrono = "0.4"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Configuration
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+config = "0.14"
+
+# UUID generation
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+[build-dependencies]
+tonic-build = "0.12"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+futures = "0.3"
+
+[[bin]]
+name = "resource-coordinator"
+path = "src/main.rs"
+
+[[bench]]
+name = "performance"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

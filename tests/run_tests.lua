@@ -4,7 +4,10 @@
 
 local test_suites = {
     "tests/unit/test_action_executor_shop_navigation.lua",
+    "tests/unit/test_retry_manager.lua",
+    "tests/unit/test_event_bus_client.lua",
     "tests/integration/test_round_eval_to_shop_flow.lua",
+    "tests/integration/test_retry_integration.lua",
 }
 
 print("========================================")

@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package jimbot.events.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Base action command
+message BalatroActionCommand {
+  // Unique identifier for this action
+  string action_id = 1;
+  
+  // Type of action
+  string action_type = 2;
+  
+  // When the action was issued
+  google.protobuf.Timestamp timestamp = 3;
+  
+  // Correlation ID to track related events
+  string correlation_id = 4;
+  
+  // Action-specific payload
+  oneof action {
+    PlayHandAction play_hand = 5;
+    DiscardAction discard = 6;
+    ShopAction shop = 7;
+    ReorderAction reorder = 8;
+    UseConsumableAction use_consumable = 9;
+    SelectBlindAction select_blind = 10;
+    SkipBlindAction skip_blind = 11;
+    EndRoundAction end_round = 12;
+  }
+  
+  // Additional parameters
+  map<string, string> params = 13;
+}
+
+// Play a hand of cards
+message PlayHandAction {
+  // Card IDs to play (in order)
+  repeated string card_ids = 1;
+  
+  // Expected hand type (for validation)
+  string expected_hand_type = 2;
+}
+
+// Discard cards
+message DiscardAction {
+  // Card IDs to discard
+  repeated string card_ids = 1;
+}
+
+// Shop actions
+message ShopAction {
+  enum ShopActionType {
+    BUY = 0;
+    SELL = 1;
+    REROLL = 2;
+    USE_VOUCHER = 3;
+    OPEN_BOOSTER = 4;
+  }
+  
+  ShopActionType type = 1;
+  
+  // For buy/sell actions
+  string item_id = 2;
+  
+  // For booster packs
+  repeated string selected_cards = 3;
+  
+  // Expected cost (for validation)
+  int32 expected_cost = 4;
+}
+
+// Reorder jokers or cards
+message ReorderAction {
+  enum ReorderTarget {
+    JOKERS = 0;
+    HAND = 1;
+    CONSUMABLES = 2;
+  }
+  
+  ReorderTarget target = 1;
+  
+  // Ordered list of IDs in new order
+  repeated string new_order = 2;
+}
+
+// Use a consumable item
+message UseConsumableAction {
+  // Consumable ID to use
+  string consumable_id = 1;
+  
+  // Target cards (if applicable)
+  repeated string target_card_ids = 2;
+  
+  // Additional parameters for the consumable
+  map<string, string> params = 3;
+}
+
+// Select a blind to play
+message SelectBlindAction {
+  enum BlindChoice {
+    SMALL = 0;
+    BIG = 1;
+    BOSS = 2;
+  }
+  
+  BlindChoice choice = 1;
+}
+
+// Skip a blind (using tag)
+message SkipBlindAction {
+  // Which blind to skip
+  string blind_type = 1;
+  
+  // Expected reward
+  int32 expected_money = 2;
+}
+
+// End the current round/continue to next
+message EndRoundAction {
+  // Any cleanup actions
+  bool auto_sell_remaining = 1;
+}
+
+// Action result/response
+message BalatroActionResult {
+  // The action that was executed
+  string action_id = 1;
+  
+  // Whether the action succeeded
+  bool success = 2;
+  
+  // Error message if failed
+  string error_message = 3;
+  
+  // New game state after action (if successful)
+  string new_state_event_id = 4;
+  
+  // Any triggers that occurred as a result
+  repeated string triggered_event_ids = 5;
+  
+  // Timing information
+  google.protobuf.Timestamp executed_at = 6;
+  int64 execution_time_ms = 7;
+}
+
+// Batch action command for multiple actions
+message BalatroBatchActionCommand {
+  // Actions to execute in order
+  repeated BalatroActionCommand actions = 1;
+  
+  // Whether to stop on first failure
+  bool stop_on_failure = 2;
+  
+  // Maximum time to wait for all actions
+  int64 timeout_ms = 3;
+}
+
+// Validation rules for actions
+message ActionValidationRules {
+  // Maximum cards that can be played
+  int32 max_play_cards = 1;
+  
+  // Maximum cards that can be discarded
+  int32 max_discard_cards = 2;
+  
+  // Whether consumables can be used in current phase
+  bool can_use_consumables = 3;
+  
+  // Available money for purchases
+  int32 available_money = 4;
+  
+  // Current game phase restrictions
+  repeated string allowed_actions = 5;
+}
