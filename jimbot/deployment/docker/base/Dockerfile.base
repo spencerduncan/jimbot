@@ -1,8 +1,10 @@
 # Base image for all Python-based JimBot services
 FROM python:3.10-slim as python-base
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
@@ -29,8 +31,10 @@ USER jimbot
 # Base CUDA image for GPU-enabled services
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 as cuda-base
 
-# Install Python and system dependencies
-RUN apt-get update && apt-get install -y \
+# Install Python and system dependencies with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     python3.10 \
     python3-pip \
     build-essential \

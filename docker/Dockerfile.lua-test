@@ -7,8 +7,10 @@ FROM ubuntu:22.04 AS base
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LUA_VERSION=5.4
 
-# Install system dependencies for Lua development
-RUN apt-get update && apt-get install -y \
+# Install system dependencies for Lua development with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     # Build essentials
     build-essential \
     gcc \
@@ -126,8 +128,10 @@ FROM base AS dev
 # Switch back to root for development tools
 USER root
 
-# Install additional development tools
-RUN apt-get update && apt-get install -y \
+# Install additional development tools with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     vim \
     nano \
     less \

@@ -1,6 +1,58 @@
-# Docker-based Lua Testing Environment
+# Docker Configuration
 
-This directory contains the Docker-based Lua testing infrastructure implemented as part of **Sprint 2.4: Migrate Lua test suite to Docker environment**.
+This directory contains Docker configurations for the JimBot project, including optimized Dockerfiles with BuildKit cache mount support and the Docker-based Lua testing infrastructure implemented as part of **Sprint 2.4: Migrate Lua test suite to Docker environment**.
+
+## BuildKit Configuration
+
+All Dockerfiles in this project are optimized to use BuildKit cache mounts for apt package caching. This significantly reduces build times by caching downloaded packages between builds.
+
+### Enabling BuildKit
+
+BuildKit must be enabled for the cache mounts to work. You can enable it in several ways:
+
+1. **Environment Variable** (Recommended):
+   ```bash
+   export DOCKER_BUILDKIT=1
+   docker build .
+   ```
+
+2. **Docker Configuration**:
+   Add to `/etc/docker/daemon.json`:
+   ```json
+   {
+     "features": {
+       "buildkit": true
+     }
+   }
+   ```
+
+3. **Docker Compose**:
+   ```bash
+   DOCKER_BUILDKIT=1 docker-compose build
+   ```
+
+### Benefits
+
+- Reduces apt package download time from 2-3 minutes to 10-30 seconds
+- Lower network bandwidth usage
+- More reliable builds (less dependent on mirror availability)
+- Faster developer feedback loops
+
+### How It Works
+
+The Dockerfiles use BuildKit cache mounts for `/var/cache/apt` and `/var/lib/apt`:
+
+```dockerfile
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
+    package1 package2 \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+The `sharing=locked` ensures safe concurrent access when building multiple images.
+
+## Docker-based Lua Testing Environment
 
 ## Overview
 
