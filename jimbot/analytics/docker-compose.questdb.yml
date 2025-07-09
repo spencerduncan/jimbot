@@ -52,7 +52,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${QUESTDB_DATA_PATH:-./data/questdb}
+      device: "${QUESTDB_DATA_PATH:-./data/questdb}"
 
 networks:
   default:

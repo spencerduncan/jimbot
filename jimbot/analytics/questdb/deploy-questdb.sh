@@ -42,9 +42,9 @@ check_docker() {
 }
 
 create_network() {
-    if ! docker network inspect ${NETWORK_NAME} &> /dev/null; then
+    if ! docker network inspect "${NETWORK_NAME}" &> /dev/null; then
         log_info "Creating Docker network: ${NETWORK_NAME}"
-        docker network create ${NETWORK_NAME}
+        docker network create "${NETWORK_NAME}"
     else
         log_info "Docker network ${NETWORK_NAME} already exists"
     fi
@@ -57,7 +57,12 @@ create_directories() {
     # Ensure proper permissions
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # QuestDB runs as user 10001
-        sudo chown -R 10001:10001 "${DATA_DIR}" 2>/dev/null || true
+        if command -v sudo &> /dev/null; then
+            sudo chown -R 10001:10001 "${DATA_DIR}" 2>/dev/null || true
+        else
+            # Try without sudo in containerized environments
+            chown -R 10001:10001 "${DATA_DIR}" 2>/dev/null || true
+        fi
     fi
 }
 
