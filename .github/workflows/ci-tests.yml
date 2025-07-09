@@ -1,4 +1,5 @@
 # CI Test Suite - Comprehensive testing across all components
+# Updated to fix Docker cache issues with stale dependencies
 name: CI Test Suite
 
 on:
