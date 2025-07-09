@@ -55,10 +55,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         eprintln!("build.rs: Current directory contents:");
         if let Ok(entries) = std::fs::read_dir(&proto_root) {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    eprintln!("  - {}", entry.path().display());
-                }
+            for entry in entries.flatten() {
+                eprintln!("  - {}", entry.path().display());
             }
         }
         panic!("Proto file not found: {balatro_proto:?}");

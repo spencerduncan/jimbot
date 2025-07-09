@@ -260,7 +260,7 @@ impl ConfigManager {
             // Start with default configuration
             .add_source(File::with_name("config/default").required(false))
             // Add environment-specific configuration
-            .add_source(File::with_name(&format!("config/{}", environment)).required(false))
+            .add_source(File::with_name(&format!("config/{environment}")).required(false))
             // Add local configuration (not in version control)
             .add_source(File::with_name("config/local").required(false))
             // Override with environment variables
