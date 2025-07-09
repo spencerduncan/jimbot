@@ -19,7 +19,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            . -> target
             jimbot/memgraph/mage_modules -> target
             services/balatro-emulator -> target
             services/event-bus-rust -> target

@@ -37,7 +37,6 @@ jobs:
         with:
           # Cache configuration for all Rust projects
           workspaces: |
-            . -> target
             jimbot/memgraph/mage_modules -> target
             services/balatro-emulator -> target
             services/event-bus-rust -> target
