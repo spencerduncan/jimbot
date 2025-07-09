@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  questdb:
+    image: questdb/questdb:latest
+    container_name: jimbot-questdb
+    restart: unless-stopped
+    ports:
+      - '9000:9000'  # Web console
+      - '8812:8812'  # InfluxDB line protocol
+      - '9009:9009'  # HTTP REST API
+    volumes:
+      - questdb_data:/var/lib/questdb
+      - ./questdb/conf:/etc/questdb
+    environment:
+      # Memory configuration
+      - QDB_CAIRO_MAX_UNCOMMITTED_ROWS=100000
+      - QDB_CAIRO_COMMIT_LAG=300000
+      - QDB_LINE_TCP_MSG_BUFFER_SIZE=4194304
+      - QDB_CAIRO_WAL_ENABLED=true
+      
+      # Performance tuning
+      - QDB_SHARED_WORKER_COUNT=2
+      - QDB_HTTP_WORKER_COUNT=2
+      - QDB_PG_WORKER_COUNT=2
+      - QDB_CAIRO_WRITER_MEMORY_LIMIT=2147483648  # 2GB
+      
+      # Security
+      - QDB_HTTP_SECURITY_READONLY_CHECK_ENABLED=false
+      - QDB_PG_SECURITY_READONLY_CHECK_ENABLED=false
+      
+      # Logging
+      - QDB_LOG_LEVEL=${LOG_LEVEL:-INFO}
+      
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+          cpus: '2'
+        reservations:
+          memory: 2g
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/exec?query=SELECT%201']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  questdb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${QUESTDB_DATA_PATH:-./data/questdb}
+
+networks:
+  default:
+    name: jimbot-network
+    external: true
