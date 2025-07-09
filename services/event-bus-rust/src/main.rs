@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
     let tracer_provider = match tracing_config::init_tracing() {
         Ok(provider) => Some(provider),
         Err(e) => {
-            eprintln!("Failed to initialize OpenTelemetry tracing: {}", e);
+            eprintln!("Failed to initialize OpenTelemetry tracing: {e}");
             // Fall back to basic tracing based on config
             let subscriber = tracing_subscriber::registry().with(filter);
 
