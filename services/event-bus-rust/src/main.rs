@@ -42,9 +42,9 @@ async fn main() -> Result<()> {
     metrics::init_metrics();
 
     // Initialize tracing based on configuration
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(&config.logging.level));
-    
+    let filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&config.logging.level));
+
     // Initialize OpenTelemetry tracing (this also sets up the tracing subscriber)
     let tracer_provider = match tracing_config::init_tracing() {
         Ok(provider) => Some(provider),
@@ -52,14 +52,18 @@ async fn main() -> Result<()> {
             eprintln!("Failed to initialize OpenTelemetry tracing: {}", e);
             // Fall back to basic tracing based on config
             let subscriber = tracing_subscriber::registry().with(filter);
-            
+
             // Configure logging format based on config
             match config.logging.format.as_str() {
                 "json" => {
-                    subscriber.with(tracing_subscriber::fmt::layer().json()).init();
+                    subscriber
+                        .with(tracing_subscriber::fmt::layer().json())
+                        .init();
                 }
                 "pretty" => {
-                    subscriber.with(tracing_subscriber::fmt::layer().pretty()).init();
+                    subscriber
+                        .with(tracing_subscriber::fmt::layer().pretty())
+                        .init();
                 }
                 _ => {
                     subscriber.with(tracing_subscriber::fmt::layer()).init();
@@ -68,7 +72,7 @@ async fn main() -> Result<()> {
             None
         }
     };
-    
+
     info!(
         "Starting Rust Event Bus in {} environment with enhanced observability",
         config.environment

@@ -1,5 +1,5 @@
-use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry::global;
+use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{trace as sdktrace, Resource};
@@ -111,7 +111,9 @@ impl<'a> opentelemetry::propagation::Injector for HeaderInjector<'a> {
 }
 
 /// Shutdown OpenTelemetry providers
-pub fn shutdown_tracing(tracer_provider: sdktrace::SdkTracerProvider) -> Result<(), Box<dyn std::error::Error>> {
+pub fn shutdown_tracing(
+    tracer_provider: sdktrace::SdkTracerProvider,
+) -> Result<(), Box<dyn std::error::Error>> {
     tracer_provider.shutdown()?;
     Ok(())
 }
