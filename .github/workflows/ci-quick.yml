@@ -20,6 +20,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         
+      - name: Generate cache key from dependency files
+        id: cache-key
+        run: |
+          # Create a hash of all dependency files to use as cache key
+          # This ensures cache is invalidated when dependencies change
+          DEPS_HASH=$(find . -name "Cargo.toml" -o -name "Cargo.lock" -o -name "requirements*.txt" -o -name "pyproject.toml" -o -name "package*.json" | sort | xargs cat 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "no-deps")
+          echo "deps-hash=${DEPS_HASH}" >> $GITHUB_OUTPUT
+          echo "Cache key: ${DEPS_HASH}"
+          
       - name: Build CI Image
         uses: docker/build-push-action@v5
         with:
@@ -27,9 +36,11 @@ jobs:
           file: ./docker/Dockerfile.ci-unified
           target: ci
           tags: jimbot-ci:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=buildkit-quick-${{ steps.cache-key.outputs.deps-hash }}
+          cache-to: type=gha,mode=max,scope=buildkit-quick-${{ steps.cache-key.outputs.deps-hash }}
           load: true
+          build-args: |
+            CACHEBUST=${{ steps.cache-key.outputs.deps-hash }}
           
       - name: Run Quick Checks
         run: |
