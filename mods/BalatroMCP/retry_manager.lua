@@ -200,7 +200,7 @@ function RetryManager:update(dt)
             -- Invalid coroutine, remove it
             self.logger:error("Invalid coroutine in active_coroutines", {
                 co_data = co_data,
-                type = type(co_data.coroutine)
+                type = type(co_data.coroutine),
             })
             table.insert(completed, i)
         end

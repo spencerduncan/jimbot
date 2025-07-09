@@ -108,7 +108,7 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     for i = 1, 10 do  -- Allow enough cycles for retries
         EventBusClient.retry_manager:update(0.1)
         mock_time = mock_time + 0.1 -- Advance time
-        
+
         -- Check if we're done
         if #EventBusClient.retry_manager.active_coroutines == 0 then
             break
