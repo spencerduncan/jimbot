@@ -63,8 +63,24 @@ You can monitor cache hit rates in the GitHub Actions UI:
 3. Look for "Cache Rust dependencies" step
 4. Check for "Cache restored successfully" or "Cache not found"
 
+## Additional Files
+
+### Dockerfile.rust-builder
+
+The repository includes a `docker/Dockerfile.rust-builder` that provides an optimized Rust build environment with Docker BuildKit caching support. This file is not currently used in the CI workflows but is available for:
+
+- Local development with consistent build environment
+- Future Docker-based CI workflows that need BuildKit caching
+- Building release artifacts with layer caching
+
+To use it locally:
+```bash
+DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile.rust-builder --target export .
+```
+
 ## Future Improvements
 
 1. Consider using `sccache` for distributed caching across multiple runners
 2. Implement cache warming jobs that run on schedule
 3. Add metrics collection for build time improvements
+4. Integrate `Dockerfile.rust-builder` into CI for container-based builds
