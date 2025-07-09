@@ -21,23 +21,36 @@ if not _G.love then
             end,
         },
     }
+else
+    -- Override existing getTime to use our mock time
+    _G.love.timer.getTime = function()
+        return mock_time
+    end
 end
 
 -- Create a mock https module with controllable failures
 local mock_https = {
+    total_calls = 0,
     failure_count = 0,
     max_failures = 2,
-    request = function(url, options)
-        mock_https.failure_count = mock_https.failure_count + 1
-        if mock_https.failure_count <= mock_https.max_failures then
-            -- Simulate failure
-            return 500, "Internal Server Error"
-        else
-            -- Simulate success
-            return 200, '{"status":"ok"}'
-        end
-    end,
 }
+
+mock_https.request = function(url, options)
+    mock_https.total_calls = mock_https.total_calls + 1
+    mock_https.failure_count = mock_https.failure_count + 1
+    if mock_https.failure_count <= mock_https.max_failures then
+        -- Simulate failure
+        return 500, "Internal Server Error"
+    else
+        -- Simulate success
+        return 200, '{"status":"ok"}'
+    end
+end
+
+mock_https.reset = function()
+    mock_https.total_calls = 0
+    mock_https.failure_count = 0
+end
 
 -- Override require to provide our mock https
 local original_require = require
@@ -57,6 +70,9 @@ TestHelper.run_suite("Retry Integration Tests")
 
 -- Test successful retry after transient failures
 TestHelper.test("Integration: Should retry and succeed after transient failures", function()
+    -- Reset mock time
+    mock_time = 0
+    
     -- Initialize components
     local config = {
         event_bus_url = "http://localhost:8080/api/v1/events",
@@ -66,12 +82,18 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     }
 
     EventBusClient:init(config)
+    
+    -- Set up retry manager for testing (match unit test pattern)
+    EventBusClient.retry_manager.active_coroutines = {}
+    EventBusClient.retry_manager.is_open = false
+    EventBusClient.retry_manager.max_retries = 3
+    EventBusClient.retry_manager.retry_delays = {0, 0, 0}  -- No delays for instant testing
 
     -- Mark connection as tested to skip initial test
     EventBusClient.connection_tested = true
 
     -- Configure mock to succeed after 2 failures
-    mock_https.failure_count = 0
+    mock_https.reset()
     mock_https.max_failures = 2
 
     -- Track what happens
@@ -93,7 +115,8 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     local function test_func()
         attempts = attempts + 1
         local code, response = mock_https.request("test", {})
-        return code == 200, response
+        -- Return just boolean for retry manager
+        return code == 200
     end
 
     -- Execute with retry manager directly
@@ -102,20 +125,23 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     end, function(error)
         -- Should not be called
     end)
-
-    -- Process the coroutine
+    
+    -- Get the coroutine (match unit test pattern)
     local co_data = EventBusClient.retry_manager.active_coroutines[1]
-    if co_data then
-        -- Process all attempts
-        while coroutine.status(co_data.coroutine) ~= "dead" do
-            coroutine.resume(co_data.coroutine)
-            mock_time = mock_time + 0.2 -- Advance time for delays
-        end
+    TestHelper.assert_not_nil(co_data)
+
+    -- Process coroutine - with 0 delays it should complete quickly
+    local max_iterations = 10
+    local iterations = 0
+
+    while coroutine.status(co_data.coroutine) ~= "dead" and iterations < max_iterations do
+        iterations = iterations + 1
+        coroutine.resume(co_data.coroutine)
     end
 
     -- Verify results
     TestHelper.assert_equal(attempts, 3) -- 2 failures + 1 success
-    TestHelper.assert_equal(mock_https.failure_count, 3)
+    TestHelper.assert_equal(mock_https.total_calls, 3)
     TestHelper.assert_true(success_called)
 end)
 
@@ -126,7 +152,7 @@ TestHelper.test("Integration: Circuit breaker should open after persistent failu
     RetryManager.failure_threshold = 3
 
     -- Configure mock to always fail
-    mock_https.failure_count = 0
+    mock_https.reset()
     mock_https.max_failures = 999
 
     -- Track circuit breaker state
@@ -158,9 +184,9 @@ TestHelper.test("Integration: Events should be buffered when circuit breaker is 
     -- All events should be buffered
     TestHelper.assert_equal(#EventBusClient.local_buffer, 5)
 
-    -- No network calls should have been made
-    local calls_before = mock_https.failure_count
-    TestHelper.assert_equal(calls_before, mock_https.failure_count)
+    -- No network calls should have been made (circuit breaker is open)
+    local calls_before = mock_https.total_calls
+    TestHelper.assert_equal(calls_before, mock_https.total_calls)
 end)
 
 -- Test buffer flushing after circuit breaker recovery
@@ -174,7 +200,7 @@ TestHelper.test("Integration: Buffered events should be sent after recovery", fu
 
     -- Reset circuit breaker and mock
     EventBusClient.retry_manager:reset()
-    mock_https.failure_count = 0
+    mock_https.reset()
     mock_https.max_failures = 0 -- All requests succeed
 
     -- Track batch sending
@@ -208,7 +234,7 @@ TestHelper.test(
         EventBusClient.local_buffer = {}
 
         -- Mock complete failure
-        mock_https.failure_count = 0
+        mock_https.reset()
         mock_https.max_failures = 999
 
         -- Mock http_post to always fail
