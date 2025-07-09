@@ -29,7 +29,6 @@ jobs:
           - jimbot/memgraph/mage_modules
           - services/balatro-emulator
           - services/event-bus-rust
-          - jimbot/infrastructure/resource_coordinator_rust
     steps:
       - uses: actions/checkout@v4
       
@@ -45,7 +44,6 @@ jobs:
             jimbot/memgraph/mage_modules -> target
             services/balatro-emulator -> target
             services/event-bus-rust -> target
-            jimbot/infrastructure/resource_coordinator_rust -> target
           cache-on-failure: true
           shared-key: "rust-check-${{ matrix.project }}"
           save-if: ${{ github.ref == 'refs/heads/main' }}
@@ -72,7 +70,6 @@ jobs:
           - jimbot/memgraph/mage_modules
           - services/balatro-emulator
           - services/event-bus-rust
-          - jimbot/infrastructure/resource_coordinator_rust
     steps:
       - uses: actions/checkout@v4
       
@@ -86,7 +83,6 @@ jobs:
             jimbot/memgraph/mage_modules -> target
             services/balatro-emulator -> target
             services/event-bus-rust -> target
-            jimbot/infrastructure/resource_coordinator_rust -> target
           cache-on-failure: true
           shared-key: "rust-test-${{ matrix.project }}"
           save-if: ${{ github.ref == 'refs/heads/main' }}
@@ -132,7 +128,6 @@ jobs:
           - jimbot/memgraph/mage_modules
           - services/balatro-emulator
           - services/event-bus-rust
-          - jimbot/infrastructure/resource_coordinator_rust
     steps:
       - uses: actions/checkout@v4
       
@@ -146,7 +141,6 @@ jobs:
             jimbot/memgraph/mage_modules -> target
             services/balatro-emulator -> target
             services/event-bus-rust -> target
-            jimbot/infrastructure/resource_coordinator_rust -> target
           cache-on-failure: true
           shared-key: "rust-audit-${{ matrix.project }}"
           save-if: ${{ github.ref == 'refs/heads/main' }}
