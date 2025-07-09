@@ -87,7 +87,7 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
     EventBusClient.retry_manager.active_coroutines = {}
     EventBusClient.retry_manager.is_open = false
     EventBusClient.retry_manager.max_retries = 3
-    EventBusClient.retry_manager.retry_delays = {0, 0, 0}  -- No delays for instant testing
+    EventBusClient.retry_manager.retry_delays = { 0, 0, 0 } -- No delays for instant testing
 
     -- Mark connection as tested to skip initial test
     EventBusClient.connection_tested = true
