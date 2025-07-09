@@ -86,7 +86,7 @@ function EventBusClient:send_event(event)
         BalatroMCP.components.aggregator:add_event(event)
         return true
     end
-    
+
     -- Test connection on first use if not already tested
     if not self.connection_tested then
         self:test_connection()
