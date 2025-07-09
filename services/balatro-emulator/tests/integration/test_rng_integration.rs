@@ -24,7 +24,8 @@ fn test_full_game_sequence_deterministic() {
 
         assert_eq!(
             deck1, deck2,
-            "Deck shuffles should be identical for ante {ante}"
+            "Deck shuffles should be identical for ante {}",
+            ante
         );
     }
 }
@@ -42,7 +43,7 @@ fn test_shop_generation_sequence() {
             let shop_seed = rng.get_shop_rng(ante, reroll);
             let selected_item = rng.pseudorandom_element(&shop_items, shop_seed);
 
-            let key = format!("ante_{ante}_reroll_{reroll}");
+            let key = format!("ante_{}_reroll_{}", ante, reroll);
             shop_history.insert(key, selected_item.unwrap().to_string());
         }
     }
@@ -63,7 +64,7 @@ fn test_shop_generation_sequence() {
             let shop_seed = rng2.get_shop_rng(ante, reroll);
             let selected_item = rng2.pseudorandom_element(&shop_items, shop_seed);
 
-            let key = format!("ante_{ante}_reroll_{reroll}");
+            let key = format!("ante_{}_reroll_{}", ante, reroll);
             shop_history2.insert(key, selected_item.unwrap().to_string());
         }
     }
@@ -135,10 +136,10 @@ fn test_card_enhancement_generation() {
     for ante in 1..=8 {
         for card_index in 0..52 {
             let enhancement_seed =
-                rng.get_card_rng("enhancement", ante, Some(&format!("card_{card_index}")));
+                rng.get_card_rng("enhancement", ante, Some(&format!("card_{}", card_index)));
             let enhancement = rng.pseudorandom_element(&enhancements, enhancement_seed);
 
-            let key = format!("ante_{ante}_card_{card_index}");
+            let key = format!("ante_{}_card_{}", ante, card_index);
             enhancement_distribution.insert(key, enhancement.unwrap().to_string());
         }
     }
@@ -157,10 +158,10 @@ fn test_card_enhancement_generation() {
     for ante in 1..=8 {
         for card_index in 0..52 {
             let enhancement_seed =
-                rng2.get_card_rng("enhancement", ante, Some(&format!("card_{card_index}")));
+                rng2.get_card_rng("enhancement", ante, Some(&format!("card_{}", card_index)));
             let enhancement = rng2.pseudorandom_element(&enhancements, enhancement_seed);
 
-            let key = format!("ante_{ante}_card_{card_index}");
+            let key = format!("ante_{}_card_{}", ante, card_index);
             enhancement_distribution2.insert(key, enhancement.unwrap().to_string());
         }
     }
@@ -235,7 +236,7 @@ fn test_state_save_load_mid_game() {
 
     // Generate some initial events
     for i in 0..10 {
-        let seed = rng.pseudoseed(&format!("event_{i}"));
+        let seed = rng.pseudoseed(&format!("event_{}", i));
         let value = rng.pseudorandom(SeedType::Numeric(seed), Some(1), Some(100));
         game_events.push((i, value));
     }
@@ -245,7 +246,7 @@ fn test_state_save_load_mid_game() {
 
     // Continue the game
     for i in 10..20 {
-        let seed = rng.pseudoseed(&format!("event_{i}"));
+        let seed = rng.pseudoseed(&format!("event_{}", i));
         let value = rng.pseudorandom(SeedType::Numeric(seed), Some(1), Some(100));
         game_events.push((i, value));
     }
@@ -256,7 +257,7 @@ fn test_state_save_load_mid_game() {
 
     // Continue from where we saved
     for i in 10..20 {
-        let seed = loaded_rng.pseudoseed(&format!("event_{i}"));
+        let seed = loaded_rng.pseudoseed(&format!("event_{}", i));
         let value = loaded_rng.pseudorandom(SeedType::Numeric(seed), Some(1), Some(100));
         loaded_events.push((i, value));
     }
@@ -280,7 +281,7 @@ fn test_large_scale_performance() {
 
     // Simulate 10,000 operations
     for i in 0..10000 {
-        let seed = rng.pseudoseed(&format!("perf_{i}"));
+        let seed = rng.pseudoseed(&format!("perf_{}", i));
         let _value = rng.pseudorandom(SeedType::Numeric(seed), Some(1), Some(1000));
     }
 
@@ -313,7 +314,7 @@ fn test_seed_collision_resistance() {
 
     for joker_id in 0..100 {
         for trigger in 0..10 {
-            let seed = rng.get_joker_rng(&format!("joker_{joker_id}"), trigger);
+            let seed = rng.get_joker_rng(&format!("joker_{}", joker_id), trigger);
             if !seed_set.insert(seed) {
                 collisions += 1;
             }

@@ -42,6 +42,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: |
+            **/requirements*.txt
+            **/pyproject.toml
+            setup.py
           
       - name: Install dependencies
         run: |
@@ -90,26 +95,55 @@ jobs:
           mv ci/monitoring/metrics_history.jsonl.tmp ci/monitoring/metrics_history.jsonl
           
       - name: Commit dashboard updates
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
+          # Save the generated dashboard files before switching branches
+          mkdir -p /tmp/dashboard-deploy
+          cp -r ci/dashboard/* /tmp/dashboard-deploy/ 2>/dev/null || true
+          cp -r ci/monitoring /tmp/dashboard-deploy/ 2>/dev/null || true
+          
           # Fetch gh-pages branch
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
           
-          # Stash any local changes
-          git stash --include-untracked
+          # Create a new worktree for gh-pages to avoid losing generated files
+          git worktree add -f ../gh-pages-worktree gh-pages || {
+            # If worktree already exists, remove and recreate
+            git worktree remove ../gh-pages-worktree --force 2>/dev/null || true
+            git worktree add ../gh-pages-worktree gh-pages
+          }
           
-          # Checkout gh-pages branch
-          git checkout -B gh-pages origin/gh-pages
+          cd ../gh-pages-worktree
           
-          # Pull latest changes
-          git pull origin gh-pages --rebase
+          # Copy the saved dashboard files
+          cp -r /tmp/dashboard-deploy/* . 2>/dev/null || {
+            echo "Warning: No dashboard files to copy"
+          }
           
-          # Copy dashboard files
-          cp -r ci/dashboard/* . 2>/dev/null || true
-          cp -r ci/monitoring . 2>/dev/null || true
+          # Ensure the dashboard index.html is at the root for GitHub Pages
+          if [ -f "index.html" ]; then
+            echo "Root index.html already exists"
+          else
+            echo "Creating root index.html redirect"
+            cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=ci/dashboard/">
+    <title>JimBot CI Dashboard</title>
+</head>
+<body>
+    <p>Redirecting to <a href="ci/dashboard/">CI Dashboard</a>...</p>
+</body>
+</html>
+EOF
+          fi
+          
+          # Ensure ci/dashboard directory exists
+          mkdir -p ci/dashboard
           
           # Commit if there are changes
           git add -A
@@ -119,6 +153,10 @@ jobs:
             git commit -m "Update CI health dashboard - $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             git push origin gh-pages
           fi
+          
+          # Clean up
+          cd -
+          git worktree remove ../gh-pages-worktree --force
           
       - name: Send alerts if needed
         if: steps.analyze.outputs.alert_needed == 'true' || inputs.force_alert == true

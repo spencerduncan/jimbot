@@ -9,7 +9,7 @@ fn benchmark_pseudoseed_generation(c: &mut Criterion) {
     c.bench_function("pseudoseed_generation", |b| {
         let mut counter = 0;
         b.iter(|| {
-            let key = format!("key_{counter}");
+            let key = format!("key_{}", counter);
             let seed = rng.pseudoseed(black_box(&key));
             counter += 1;
             black_box(seed)
@@ -37,7 +37,7 @@ fn benchmark_pseudorandom_string(c: &mut Criterion) {
     c.bench_function("pseudorandom_string", |b| {
         let mut counter = 0;
         b.iter(|| {
-            let seed = SeedType::String(format!("seed_{counter}"));
+            let seed = SeedType::String(format!("seed_{}", counter));
             let value = rng.pseudorandom(black_box(seed), Some(1), Some(100));
             counter += 1;
             black_box(value)
@@ -157,7 +157,7 @@ fn benchmark_state_serialization(c: &mut Criterion) {
 
     // Populate the state with some data
     for i in 0..100 {
-        rng.pseudoseed(&format!("key_{i}"));
+        rng.pseudoseed(&format!("key_{}", i));
     }
 
     c.bench_function("state_serialization", |b| {
@@ -174,7 +174,7 @@ fn benchmark_state_deserialization(c: &mut Criterion) {
 
     // Populate the state with some data
     for i in 0..100 {
-        rng.pseudoseed(&format!("key_{i}"));
+        rng.pseudoseed(&format!("key_{}", i));
     }
 
     let state = rng.state();

@@ -208,7 +208,7 @@ impl BalatroRng {
     }
 
     /// Deterministic shuffle using Fisher-Yates algorithm
-    pub fn pseudoshuffle<T>(&mut self, list: &mut [T], seed: u64) {
+    pub fn pseudoshuffle<T>(&mut self, list: &mut Vec<T>, seed: u64) {
         if list.len() <= 1 {
             return;
         }
@@ -255,21 +255,21 @@ impl BalatroRng {
     /// - "shuffle" + optional_seed
     pub fn get_card_rng(&mut self, pattern: &str, ante: u8, append: Option<&str>) -> u64 {
         let key = match append {
-            Some(suffix) => format!("{pattern}{ante}{suffix}"),
-            None => format!("{pattern}{ante}"),
+            Some(suffix) => format!("{}{}{}", pattern, ante, suffix),
+            None => format!("{}{}", pattern, ante),
         };
         self.pseudoseed(&key)
     }
 
     /// Get RNG for shop generation
     pub fn get_shop_rng(&mut self, ante: u8, reroll_count: u32) -> u64 {
-        let key = format!("shop_{ante}_{reroll_count}");
+        let key = format!("shop_{}_{}", ante, reroll_count);
         self.pseudoseed(&key)
     }
 
     /// Get RNG for joker effects
     pub fn get_joker_rng(&mut self, joker_id: &str, trigger_count: u32) -> u64 {
-        let key = format!("joker_{joker_id}_{trigger_count}");
+        let key = format!("joker_{}_{}", joker_id, trigger_count);
         self.pseudoseed(&key)
     }
 }
@@ -362,15 +362,15 @@ mod tests {
 
         // Test min/max range
         let val = rng.pseudorandom(SeedType::Numeric(999), Some(5), Some(15));
-        assert!((5.0..=15.0).contains(&val));
+        assert!(val >= 5.0 && val <= 15.0);
 
         // Test single max range (should be 1 to max)
         let val = rng.pseudorandom(SeedType::Numeric(999), Some(10), None);
-        assert!((1.0..=10.0).contains(&val));
+        assert!(val >= 1.0 && val <= 10.0);
 
         // Test float range
         let val = rng.pseudorandom(SeedType::Numeric(999), None, None);
-        assert!((0.0..1.0).contains(&val));
+        assert!(val >= 0.0 && val < 1.0);
     }
 
     #[test]
