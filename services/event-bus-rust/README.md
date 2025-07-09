@@ -1,6 +1,6 @@
 # Rust Event Bus
 
-Production-ready Event Bus implementation in Rust for JimBot, serving as the central message router for all components.
+Production-ready Event Bus implementation in Rust for JimBot, serving as the central message router for all components. This service provides the core communication infrastructure for the entire system.
 
 ## Features
 
