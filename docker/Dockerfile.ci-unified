@@ -2,6 +2,9 @@
 # Multi-stage Docker image for unified CI with all language toolchains
 FROM ubuntu:22.04 AS base
 
+# Cache bust argument to force rebuild when dependencies change
+ARG CACHEBUST=1
+
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
