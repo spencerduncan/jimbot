@@ -103,14 +103,17 @@ TestHelper.test("Integration: Should retry and succeed after transient failures"
         -- Should not be called
     end)
 
-    -- Process the coroutine
+    -- Get the coroutine (match unit test pattern)
     local co_data = EventBusClient.retry_manager.active_coroutines[1]
-    if co_data then
-        -- Process all attempts
-        while coroutine.status(co_data.coroutine) ~= "dead" do
-            coroutine.resume(co_data.coroutine)
-            mock_time = mock_time + 0.2 -- Advance time for delays
-        end
+    TestHelper.assert_not_nil(co_data)
+
+    -- Process coroutine - with 0 delays it should complete quickly
+    local max_iterations = 10
+    local iterations = 0
+
+    while coroutine.status(co_data.coroutine) ~= "dead" and iterations < max_iterations do
+        iterations = iterations + 1
+        coroutine.resume(co_data.coroutine)
     end
 
     -- Verify results
