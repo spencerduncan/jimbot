@@ -452,7 +452,6 @@ function BalatroMCP:hook_game_events()
 
             -- Complete scoring tracking
             self.components.scoring:complete_hand_evaluation()
-
             -- Scoring sequence complete, flush aggregator
             self.in_scoring_sequence = false
             self.components.aggregator:flush()
