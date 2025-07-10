@@ -1,5 +1,5 @@
+use opentelemetry::global;
 use opentelemetry::propagation::TextMapPropagator;
-use opentelemetry::{global, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{trace as sdktrace, Resource};
@@ -7,29 +7,27 @@ use std::time::Duration;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 /// Initialize OpenTelemetry tracing
-pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_tracing() -> Result<sdktrace::SdkTracerProvider, Box<dyn std::error::Error>> {
     // Create OTLP exporter
     let otlp_endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
 
-    let exporter = opentelemetry_otlp::new_exporter()
-        .tonic()
+    let exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_tonic()
         .with_endpoint(otlp_endpoint)
-        .with_timeout(Duration::from_secs(3));
+        .with_timeout(Duration::from_secs(3))
+        .build()?;
+
+    // Create resource with service information
+    let resource = Resource::builder()
+        .with_service_name("event-bus-rust")
+        .build();
 
     // Create trace provider with service information
-    let trace_config = sdktrace::Config::default()
-        .with_sampler(sdktrace::Sampler::AlwaysOn)
-        .with_resource(Resource::new(vec![
-            KeyValue::new("service.name", "event-bus-rust"),
-            KeyValue::new("service.version", env!("CARGO_PKG_VERSION")),
-        ]));
-
-    let tracer_provider = opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(exporter)
-        .with_trace_config(trace_config)
-        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+    let tracer_provider = sdktrace::SdkTracerProvider::builder()
+        .with_batch_exporter(exporter)
+        .with_resource(resource)
+        .build();
 
     // Set global tracer provider
     global::set_tracer_provider(tracer_provider.clone());
@@ -53,7 +51,7 @@ pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
         // .with(telemetry_layer)
         .init();
 
-    Ok(())
+    Ok(tracer_provider)
 }
 
 /// Extract trace context from incoming event headers
@@ -113,6 +111,9 @@ impl<'a> opentelemetry::propagation::Injector for HeaderInjector<'a> {
 }
 
 /// Shutdown OpenTelemetry providers
-pub fn shutdown_tracing() {
-    global::shutdown_tracer_provider();
+pub fn shutdown_tracing(
+    tracer_provider: sdktrace::SdkTracerProvider,
+) -> Result<(), Box<dyn std::error::Error>> {
+    tracer_provider.shutdown()?;
+    Ok(())
 }
