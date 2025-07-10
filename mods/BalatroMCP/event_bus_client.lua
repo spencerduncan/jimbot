@@ -80,6 +80,13 @@ end
 
 -- Send event to the event bus (now non-blocking)
 function EventBusClient:send_event(event)
+    -- For backward compatibility, redirect to aggregator if available
+    if BalatroMCP and BalatroMCP.components and BalatroMCP.components.aggregator then
+        self.logger:debug("Redirecting event to aggregator for batching")
+        BalatroMCP.components.aggregator:add_event(event)
+        return true
+    end
+
     -- Test connection on first use if not already tested
     if not self.connection_tested then
         self:test_connection()
