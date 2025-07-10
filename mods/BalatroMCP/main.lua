@@ -521,12 +521,12 @@ function BalatroMCP:hook_game_events()
     -- Hook into joker calculations for cascade tracking
     if Card and Card.calculate_joker then
         local original_calculate_joker = Card.calculate_joker
-        Card.calculate_joker = function(self, context)
+        Card.calculate_joker = function(card, context)
             local result = nil
 
             -- Call original function first to get the result
             if original_calculate_joker then
-                result = original_calculate_joker(self, context)
+                result = original_calculate_joker(card, context)
             end
 
             -- Track joker trigger if we're in a scoring sequence and got a result
@@ -541,9 +541,9 @@ function BalatroMCP:hook_game_events()
 
                 -- Track the joker trigger
                 BalatroMCP.components.scoring:track_joker_trigger({
-                    name = self.ability and self.ability.name or "unknown",
-                    id = self.unique_val or "unknown",
-                    position = self.area and self.area.cards and self:get_index() or 0,
+                    name = card.ability and card.ability.name or "unknown",
+                    id = card.unique_val or "unknown",
+                    position = card.area and card.area.cards and card:get_index() or 0,
                 }, score_contribution)
 
                 -- Also send the event through aggregator for backward compatibility
@@ -552,7 +552,7 @@ function BalatroMCP:hook_game_events()
                     source = "BalatroMCP",
                     priority = "low", -- Low priority to batch these
                     payload = {
-                        joker_name = self.ability and self.ability.name or "unknown",
+                        joker_name = card.ability and card.ability.name or "unknown",
                         context_type = context and context.joker_main or "unknown",
                         timestamp = love.timer.getTime() * 1000,
                     },
