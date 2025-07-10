@@ -61,6 +61,8 @@ class NotificationManager:
     async def start(self):
         """Start the notification manager (including rate limiter)"""
         if not self._started:
+            # Register callback for rate limiter to send notifications
+            self.rate_limiter.set_send_callback(self._send_notification)
             await self.rate_limiter.start_queue_processor()
             self._started = True
             logger.info("NotificationManager started with rate limiting")
@@ -142,6 +144,62 @@ class NotificationManager:
         except Exception as e:
             logger.error(f"Failed to send alert notifications: {str(e)}")
             return [f"Notification system error: {str(e)}"]
+    
+    async def _send_notification(self, channel: str, alert: Dict[str, Any]) -> bool:
+        """Send a single notification to a specific channel
+        
+        This method is called by the rate limiter when processing queued notifications.
+        
+        Args:
+            channel: The notification channel ('webhook', 'slack', etc.)
+            alert: The alert data to send
+            
+        Returns:
+            bool: True if notification was sent successfully
+        """
+        try:
+            # Get the appropriate send method for the channel
+            send_methods = {
+                'webhook': self._send_webhook_notification,
+                'slack': self._send_slack_notification,
+                'discord': self._send_discord_notification,
+                'email': self._send_email_notification,
+                'pagerduty': self._send_pagerduty_notification
+            }
+            
+            send_method = send_methods.get(channel)
+            if not send_method:
+                logger.error(f"Unknown notification channel: {channel}")
+                return False
+                
+            # Check if channel is configured
+            if channel == 'webhook' and not self.config.webhook_url:
+                return False
+            elif channel == 'slack' and not self.config.slack_webhook:
+                return False
+            elif channel == 'discord' and not self.config.discord_webhook:
+                return False
+            elif channel == 'email' and not self.config.smtp_host:
+                return False
+            elif channel == 'pagerduty' and not self.config.pagerduty_key:
+                return False
+                
+            # Send the notification
+            result = await send_method(alert)
+            
+            # Check if successful (result should contain "success" or not contain "error"/"failed")
+            success = "success" in result.lower() or ("error" not in result.lower() and "failed" not in result.lower())
+            
+            if success:
+                logger.info(f"Successfully sent {channel} notification: {result}")
+            else:
+                logger.warning(f"Failed to send {channel} notification: {result}")
+                
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error sending {channel} notification: {str(e)}")
+            return False
     
     async def _send_webhook_notification(self, alert: Dict[str, Any]) -> str:
         """Send generic webhook notification"""

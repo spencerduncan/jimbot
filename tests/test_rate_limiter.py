@@ -156,6 +156,16 @@ class TestRateLimiter:
         )
         limiter = RateLimiter(config)
         
+        # Track sent notifications
+        sent_notifications = []
+        
+        # Set up callback
+        async def mock_send_callback(channel, alert):
+            sent_notifications.append((channel, alert))
+            return True
+        
+        limiter.set_send_callback(mock_send_callback)
+        
         # Start queue processor
         await limiter.start_queue_processor()
         
@@ -170,10 +180,13 @@ class TestRateLimiter:
             # Wait for processing
             await asyncio.sleep(1.1)
             
+            # Notification should have been sent
+            assert len(sent_notifications) == 1
+            assert sent_notifications[0] == ('webhook', alert)
+            
             # Queue should be empty (processed)
             queue_contents = limiter.get_queue_for_channel('webhook')
-            # Note: In real implementation, the queue processor would need
-            # to actually send the notification, not just check rate limit
+            assert len(queue_contents) == 0
             
         finally:
             await limiter.stop_queue_processor()
@@ -229,6 +242,49 @@ class TestRateLimiter:
         
         # But should log a warning
         # (Would need to check logs in real test)
+    
+    @pytest.mark.asyncio
+    async def test_notification_retry_on_failure(self):
+        """Test that failed notifications are retried"""
+        config = RateLimitConfig(
+            webhook_rpm=60,
+            queue_timeout_seconds=10
+        )
+        limiter = RateLimiter(config)
+        
+        # Track send attempts
+        send_attempts = []
+        
+        # Callback that fails first 2 times
+        async def mock_send_callback(channel, alert):
+            send_attempts.append((channel, alert))
+            if len(send_attempts) < 3:
+                return False  # Fail
+            return True  # Success on 3rd attempt
+        
+        limiter.set_send_callback(mock_send_callback)
+        
+        # Start queue processor
+        await limiter.start_queue_processor()
+        
+        try:
+            # Queue a notification
+            alert = {'type': 'test', 'message': 'Will retry'}
+            await limiter.queue_notification('webhook', alert)
+            
+            # Wait for retries (need multiple cycles)
+            for _ in range(5):
+                await asyncio.sleep(0.2)
+            
+            # Should have made 3 attempts
+            assert len(send_attempts) == 3
+            
+            # Queue should be empty (eventually succeeded)
+            queue_contents = limiter.get_queue_for_channel('webhook')
+            assert len(queue_contents) == 0
+            
+        finally:
+            await limiter.stop_queue_processor()
 
 
 @pytest.mark.asyncio

@@ -167,6 +167,9 @@ class RateLimiter:
         # Background task for processing queues
         self.queue_processor_task = None
         
+        # Callback for sending notifications (set by NotificationManager)
+        self.send_callback = None
+        
     async def check_rate_limit(self, channel: str) -> bool:
         """
         Check if a notification can be sent for a channel
@@ -221,6 +224,15 @@ class RateLimiter:
         logger.info(f"Queued notification for {channel}: {alert.get('type', 'unknown')}")
         return True
     
+    def set_send_callback(self, callback):
+        """Set the callback function for sending notifications
+        
+        Args:
+            callback: Async function with signature (channel: str, alert: Dict[str, Any]) -> bool
+        """
+        self.send_callback = callback
+        logger.info("Send callback registered with rate limiter")
+    
     async def start_queue_processor(self):
         """Start background task to process queued notifications"""
         if self.queue_processor_task is None:
@@ -259,9 +271,29 @@ class RateLimiter:
                             self.metrics['dropped_count'][channel] += 1
                             continue
                             
-                        # Yield to allow actual sending
-                        # The caller will handle the actual notification
-                        logger.info(f"Processing queued notification for {channel}")
+                        # Send the notification using callback
+                        if self.send_callback:
+                            try:
+                                logger.info(f"Sending queued notification for {channel}")
+                                success = await self.send_callback(channel, notification.alert)
+                                if not success:
+                                    # Put it back in the queue if send failed
+                                    notification.attempts += 1
+                                    if notification.attempts < 3:  # Max 3 attempts
+                                        queue.appendleft(notification)
+                                        logger.warning(f"Failed to send notification, requeuing (attempt {notification.attempts})")
+                                    else:
+                                        logger.error(f"Failed to send notification after 3 attempts, dropping")
+                                        self.metrics['dropped_count'][channel] += 1
+                            except Exception as e:
+                                logger.error(f"Error sending notification: {str(e)}")
+                                # Put it back in the queue
+                                notification.attempts += 1
+                                if notification.attempts < 3:
+                                    queue.appendleft(notification)
+                        else:
+                            logger.warning("No send callback registered, dropping notification")
+                            self.metrics['dropped_count'][channel] += 1
                 
                 # Small delay to prevent busy waiting
                 await asyncio.sleep(0.1)
