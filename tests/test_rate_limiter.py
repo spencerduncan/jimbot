@@ -28,18 +28,22 @@ class TestTokenBucket:
     @pytest.mark.asyncio
     async def test_token_refill(self):
         """Test token refill over time"""
-        bucket = TokenBucket(capacity=5, refill_rate=10.0)  # 10 tokens/second
-        
-        # Consume all tokens
-        for _ in range(5):
-            await bucket.consume()
-        
-        # Wait 0.1 seconds (should refill 1 token)
-        await asyncio.sleep(0.1)
-        
-        # Should be able to consume 1 token
-        assert await bucket.consume() is True
-        assert await bucket.consume() is False
+        with patch('time.time') as mock_time:
+            # Start at time 0
+            mock_time.return_value = 0.0
+            
+            bucket = TokenBucket(capacity=5, refill_rate=10.0)  # 10 tokens/second
+            
+            # Consume all tokens
+            for _ in range(5):
+                await bucket.consume()
+            
+            # Advance time by 0.1 seconds (should refill 1 token)
+            mock_time.return_value = 0.1
+            
+            # Should be able to consume 1 token
+            assert await bucket.consume() is True
+            assert await bucket.consume() is False
     
     @pytest.mark.asyncio
     async def test_wait_for_token(self):
@@ -177,8 +181,11 @@ class TestRateLimiter:
             alert = {'type': 'test', 'message': 'Queued alert'}
             await limiter.queue_notification('webhook', alert)
             
-            # Wait for processing
-            await asyncio.sleep(1.1)
+            # Give the queue processor a chance to run
+            # Since it processes immediately when tokens are available,
+            # we just need to yield control briefly
+            for _ in range(5):
+                await asyncio.sleep(0)  # Yield to event loop
             
             # Notification should have been sent
             assert len(sent_notifications) == 1
@@ -272,9 +279,10 @@ class TestRateLimiter:
             alert = {'type': 'test', 'message': 'Will retry'}
             await limiter.queue_notification('webhook', alert)
             
-            # Wait for retries (need multiple cycles)
-            for _ in range(5):
-                await asyncio.sleep(0.2)
+            # Give the queue processor multiple chances to run
+            # It needs to process the initial attempt plus retries
+            for _ in range(30):
+                await asyncio.sleep(0)  # Yield to event loop
             
             # Should have made 3 attempts
             assert len(send_attempts) == 3
