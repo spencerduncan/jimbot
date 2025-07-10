@@ -13,6 +13,7 @@ from gym import spaces
 
 from jimbot.mcp.client import MCPClient
 from jimbot.memgraph.client import MemgraphClient
+from jimbot.training.spaces.observation_space import DynamicObservationSpace
 
 
 class BalatroEnv(gym.Env):
@@ -45,18 +46,44 @@ class BalatroEnv(gym.Env):
         self.max_steps = self.game_config.get("max_steps", 1000)
         self.current_step = 0
 
+        # Initialize dynamic observation space
+        self.dynamic_obs_space = DynamicObservationSpace()
+        obs_shapes = self.dynamic_obs_space.get_observation_shape()
+
         # Define action and observation spaces
         self.action_space = spaces.Discrete(1000)  # All possible game actions
 
         self.observation_space = spaces.Dict(
             {
-                # Card information: 52 cards with suit, rank, enhancement, selected
-                "cards": spaces.Box(low=0, high=1, shape=(52, 4), dtype=np.float32),
-                # Joker information: up to 150 jokers with 8 features each
-                "jokers": spaces.Box(low=0, high=1, shape=(150, 8), dtype=np.float32),
-                # Game state: score, money, round, ante, hands, discards, etc.
-                "game_state": spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(50,), dtype=np.float32
+                # Dynamic card sequences with attention masks
+                "hand_features": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["hand_features"], dtype=np.float32
+                ),
+                "hand_mask": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["hand_mask"], dtype=np.float32
+                ),
+                "deck_features": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["deck_features"], dtype=np.float32
+                ),
+                "deck_mask": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["deck_mask"], dtype=np.float32
+                ),
+                "discard_features": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["discard_features"], dtype=np.float32
+                ),
+                "discard_mask": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["discard_mask"], dtype=np.float32
+                ),
+                # Joker sequences with attention masks
+                "joker_features": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["joker_features"], dtype=np.float32
+                ),
+                "joker_mask": spaces.Box(
+                    low=0, high=1, shape=obs_shapes["joker_mask"], dtype=np.float32
+                ),
+                # Global game state
+                "global_features": spaces.Box(
+                    low=-np.inf, high=np.inf, shape=obs_shapes["global_features"], dtype=np.float32
                 ),
                 # Knowledge graph embedding from Memgraph
                 "memgraph_embedding": spaces.Box(
@@ -140,28 +167,31 @@ class BalatroEnv(gym.Env):
         Returns:
             Observation dictionary with all components
         """
-        # Extract card information
-        cards = self._encode_cards(self._game_state.get("cards", []))
-
-        # Extract joker information
-        jokers = self._encode_jokers(self._game_state.get("jokers", []))
-
-        # Extract game state features
-        game_state = self._encode_game_state(self._game_state)
-
+        # Use dynamic observation space to encode the game state
+        dynamic_obs = self.dynamic_obs_space.encode(self._game_state)
+        
         # Get Memgraph embedding for current state
         memgraph_embedding = self._get_memgraph_embedding()
 
         # Get valid actions mask
         action_mask = self._get_action_mask()
 
-        return {
-            "cards": cards,
-            "jokers": jokers,
-            "game_state": game_state,
+        # Combine dynamic observation with memgraph and action mask
+        observation = {
+            "hand_features": dynamic_obs["hand_features"],
+            "hand_mask": dynamic_obs["hand_mask"],
+            "deck_features": dynamic_obs["deck_features"],
+            "deck_mask": dynamic_obs["deck_mask"],
+            "discard_features": dynamic_obs["discard_features"],
+            "discard_mask": dynamic_obs["discard_mask"],
+            "joker_features": dynamic_obs["joker_features"],
+            "joker_mask": dynamic_obs["joker_mask"],
+            "global_features": dynamic_obs["global_features"],
             "memgraph_embedding": memgraph_embedding,
             "action_mask": action_mask,
         }
+        
+        return observation
 
     def _encode_cards(self, cards: list) -> np.ndarray:
         """Encode card information into fixed-size array"""

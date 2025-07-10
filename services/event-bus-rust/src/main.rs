@@ -45,29 +45,33 @@ async fn main() -> Result<()> {
     let filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&config.logging.level));
 
-    // Try to initialize OpenTelemetry tracing if available
-    if let Err(e) = tracing_config::init_tracing() {
-        eprintln!("Failed to initialize OpenTelemetry tracing: {e}");
-        // Fall back to basic tracing based on config
-        let subscriber = tracing_subscriber::registry().with(filter);
+    // Initialize OpenTelemetry tracing (this also sets up the tracing subscriber)
+    let tracer_provider = match tracing_config::init_tracing() {
+        Ok(provider) => Some(provider),
+        Err(e) => {
+            eprintln!("Failed to initialize OpenTelemetry tracing: {e}");
+            // Fall back to basic tracing based on config
+            let subscriber = tracing_subscriber::registry().with(filter);
 
-        // Configure logging format based on config
-        match config.logging.format.as_str() {
-            "json" => {
-                subscriber
-                    .with(tracing_subscriber::fmt::layer().json())
-                    .init();
+            // Configure logging format based on config
+            match config.logging.format.as_str() {
+                "json" => {
+                    subscriber
+                        .with(tracing_subscriber::fmt::layer().json())
+                        .init();
+                }
+                "pretty" => {
+                    subscriber
+                        .with(tracing_subscriber::fmt::layer().pretty())
+                        .init();
+                }
+                _ => {
+                    subscriber.with(tracing_subscriber::fmt::layer()).init();
+                }
             }
-            "pretty" => {
-                subscriber
-                    .with(tracing_subscriber::fmt::layer().pretty())
-                    .init();
-            }
-            _ => {
-                subscriber.with(tracing_subscriber::fmt::layer()).init();
-            }
+            None
         }
-    }
+    };
 
     info!(
         "Starting Rust Event Bus in {} environment with enhanced observability",
@@ -196,7 +200,11 @@ async fn main() -> Result<()> {
     }
 
     // Shutdown OpenTelemetry
-    tracing_config::shutdown_tracing();
+    if let Some(provider) = tracer_provider {
+        if let Err(e) = tracing_config::shutdown_tracing(provider) {
+            error!("Failed to shutdown tracer provider: {}", e);
+        }
+    }
     info!("Event Bus shutdown complete");
 
     Ok(())

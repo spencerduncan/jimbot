@@ -5,11 +5,11 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn benchmark_pseudoseed_generation(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("pseudoseed_generation", |b| {
         let mut counter = 0;
         b.iter(|| {
-            let key = format!("key_{}", counter);
+            let key = format!("key_{counter}");
             let seed = rng.pseudoseed(black_box(&key));
             counter += 1;
             black_box(seed)
@@ -19,7 +19,7 @@ fn benchmark_pseudoseed_generation(c: &mut Criterion) {
 
 fn benchmark_pseudorandom_numeric(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("pseudorandom_numeric", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -33,11 +33,11 @@ fn benchmark_pseudorandom_numeric(c: &mut Criterion) {
 
 fn benchmark_pseudorandom_string(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("pseudorandom_string", |b| {
         let mut counter = 0;
         b.iter(|| {
-            let seed = SeedType::String(format!("seed_{}", counter));
+            let seed = SeedType::String(format!("seed_{counter}"));
             let value = rng.pseudorandom(black_box(seed), Some(1), Some(100));
             counter += 1;
             black_box(value)
@@ -47,7 +47,7 @@ fn benchmark_pseudorandom_string(c: &mut Criterion) {
 
 fn benchmark_pseudoshuffle(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("pseudoshuffle_deck", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -61,8 +61,10 @@ fn benchmark_pseudoshuffle(c: &mut Criterion) {
 
 fn benchmark_pseudorandom_element(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    let collection = vec!["item1", "item2", "item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10"];
-    
+    let collection = vec![
+        "item1", "item2", "item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10",
+    ];
+
     c.bench_function("pseudorandom_element", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -82,7 +84,7 @@ fn benchmark_weighted_choice(c: &mut Criterion) {
         ("epic", 1.8),
         ("legendary", 0.2),
     ];
-    
+
     c.bench_function("weighted_choice", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -95,7 +97,7 @@ fn benchmark_weighted_choice(c: &mut Criterion) {
 
 fn benchmark_probability_check(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("probability_check", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -108,7 +110,7 @@ fn benchmark_probability_check(c: &mut Criterion) {
 
 fn benchmark_card_rng_generation(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("card_rng_generation", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -122,7 +124,7 @@ fn benchmark_card_rng_generation(c: &mut Criterion) {
 
 fn benchmark_shop_rng_generation(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("shop_rng_generation", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -137,7 +139,7 @@ fn benchmark_shop_rng_generation(c: &mut Criterion) {
 
 fn benchmark_joker_rng_generation(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     c.bench_function("joker_rng_generation", |b| {
         let mut counter = 0;
         b.iter(|| {
@@ -152,12 +154,12 @@ fn benchmark_joker_rng_generation(c: &mut Criterion) {
 
 fn benchmark_state_serialization(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     // Populate the state with some data
     for i in 0..100 {
-        rng.pseudoseed(&format!("key_{}", i));
+        rng.pseudoseed(&format!("key_{i}"));
     }
-    
+
     c.bench_function("state_serialization", |b| {
         b.iter(|| {
             let state = rng.state();
@@ -169,18 +171,19 @@ fn benchmark_state_serialization(c: &mut Criterion) {
 
 fn benchmark_state_deserialization(c: &mut Criterion) {
     let mut rng = BalatroRng::new(SeedType::String("BENCHMARK".to_string()));
-    
+
     // Populate the state with some data
     for i in 0..100 {
-        rng.pseudoseed(&format!("key_{}", i));
+        rng.pseudoseed(&format!("key_{i}"));
     }
-    
+
     let state = rng.state();
     let serialized = serde_json::to_string(state).unwrap();
-    
+
     c.bench_function("state_deserialization", |b| {
         b.iter(|| {
-            let deserialized: PseudorandomState = serde_json::from_str(black_box(&serialized)).unwrap();
+            let deserialized: PseudorandomState =
+                serde_json::from_str(black_box(&serialized)).unwrap();
             black_box(deserialized)
         })
     });
@@ -190,22 +193,24 @@ fn benchmark_game_simulation(c: &mut Criterion) {
     c.bench_function("game_simulation_1000_operations", |b| {
         b.iter(|| {
             let mut rng = BalatroRng::new(SeedType::String("GAME_SIM".to_string()));
-            
+
             // Simulate 1000 game operations
             for i in 0..1000 {
                 // Card operations
                 let card_seed = rng.get_card_rng("rarity", ((i % 8) + 1) as u8, Some("joker"));
-                let _card_value = rng.pseudorandom(SeedType::Numeric(card_seed), Some(1), Some(100));
-                
+                let _card_value =
+                    rng.pseudorandom(SeedType::Numeric(card_seed), Some(1), Some(100));
+
                 // Shop operations
                 let shop_seed = rng.get_shop_rng(((i % 8) + 1) as u8, (i % 5) as u32);
                 let _shop_check = rng.probability_check(0.3, shop_seed);
-                
+
                 // Joker operations
                 let joker_seed = rng.get_joker_rng(&format!("joker_{}", i % 20), (i % 10) as u32);
-                let _joker_effect = rng.pseudorandom(SeedType::Numeric(joker_seed), Some(1), Some(50));
+                let _joker_effect =
+                    rng.pseudorandom(SeedType::Numeric(joker_seed), Some(1), Some(50));
             }
-            
+
             black_box(rng)
         })
     });
