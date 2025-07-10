@@ -9,8 +9,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     # Build essentials
     build-essential \
     cmake \
@@ -176,8 +178,10 @@ CMD ["/run_all_tests.sh"]
 # Development stage for interactive debugging
 FROM ci AS dev
 
-# Install additional development tools
-RUN apt-get update && apt-get install -y \
+# Install additional development tools with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     vim \
     less \
     htop \
