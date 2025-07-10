@@ -10,10 +10,12 @@ Fixed the BalatroMCP event aggregation bugs by properly integrating the existing
 - Added `in_scoring_sequence` flag to track when we're in a scoring cascade
 - Added explicit flush after scoring sequences complete
 - Added hook for `Card.calculate_joker` to track joker triggers during cascades
+- Added update loop hook installation check
 
 ### 2. Event Bus Client Enhancement
 - Added backward compatibility redirect in `send_event()` method
 - Any direct calls to `event_bus:send_event()` now automatically route through the aggregator
+- Maintains full backward compatibility with existing code
 
 ### 3. Event Aggregator Improvements
 - Fixed initialization to properly receive event bus reference after init
@@ -35,11 +37,10 @@ Fixed the BalatroMCP event aggregation bugs by properly integrating the existing
 - Backward compatible with any existing code
 
 ## Testing
-Created `test_event_aggregation.lua` with comprehensive tests for:
-- Single event batching behavior
-- Complex joker cascade simulation (100 triggers)
-- High priority event immediate flush
-- Game state aggregation
+Created comprehensive test suite including:
+- `test_event_aggregation.lua` - Unit tests for aggregation logic
+- `test_joker_cascade.lua` - Performance tests simulating complex cascades
+- Tests verify batching behavior, priority handling, and game state aggregation
 
 ## Definition of Done
 - [x] Event aggregation working in BalatroMCP
