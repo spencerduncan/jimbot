@@ -23,7 +23,7 @@ function EventAggregator:init(batch_window_ms)
     self.batch_window_ms = batch_window_ms or 100
     self.last_flush_time = love.timer.getTime() * 1000
     self.logger = BalatroMCP.components.logger
-    -- event_bus will be set after initialization in main.lua
+    self.event_bus = BalatroMCP.components.event_bus
 
     self.logger:info("Event aggregator initialized", {
         batch_window_ms = self.batch_window_ms,
