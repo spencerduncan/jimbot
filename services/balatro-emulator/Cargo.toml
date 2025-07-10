@@ -33,7 +33,7 @@ tonic = { version = "0.11", optional = true }
 prost = { version = "0.12", optional = true }
 
 # Python bindings (for future RL integration)
-pyo3 = { version = "0.20", optional = true }
+pyo3 = { version = "0.24.1", optional = true }
 
 [features]
 default = ["api", "python"]

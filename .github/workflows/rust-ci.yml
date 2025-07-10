@@ -1,0 +1,156 @@
+# Rust CI - Fast Rust-specific checks without Docker
+name: Rust CI
+
+on:
+  push:
+    paths:
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/rust-ci.yml'
+  pull_request:
+    paths:
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/rust-ci.yml'
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Rust Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - jimbot/memgraph/mage_modules
+          - services/balatro-emulator
+          - services/event-bus-rust
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            jimbot/memgraph/mage_modules -> target
+            services/balatro-emulator -> target
+            services/event-bus-rust -> target
+          cache-on-failure: true
+          shared-key: "rust-check-${{ matrix.project }}"
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Check formatting
+        working-directory: ${{ matrix.project }}
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        working-directory: ${{ matrix.project }}
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Check compilation
+        working-directory: ${{ matrix.project }}
+        run: cargo check --all-targets --all-features
+
+  test:
+    name: Rust Tests
+    runs-on: ubuntu-latest
+    needs: check
+    strategy:
+      matrix:
+        project:
+          - jimbot/memgraph/mage_modules
+          - services/balatro-emulator
+          - services/event-bus-rust
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            jimbot/memgraph/mage_modules -> target
+            services/balatro-emulator -> target
+            services/event-bus-rust -> target
+          cache-on-failure: true
+          shared-key: "rust-test-${{ matrix.project }}"
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Install test dependencies
+        run: |
+          if ! command -v cargo-nextest &> /dev/null; then
+            cargo install cargo-nextest --locked
+          fi
+          if ! command -v cargo-tarpaulin &> /dev/null; then
+            cargo install cargo-tarpaulin --locked
+          fi
+
+      - name: Run tests with nextest
+        working-directory: ${{ matrix.project }}
+        run: |
+          if command -v cargo-nextest &> /dev/null; then
+            cargo nextest run --all-features
+          else
+            cargo test --all-features --verbose
+          fi
+
+      - name: Generate coverage report
+        working-directory: ${{ matrix.project }}
+        run: |
+          if command -v cargo-tarpaulin &> /dev/null; then
+            cargo tarpaulin --out Xml --output-dir coverage --all-features
+          fi
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./${{ matrix.project }}/coverage/cobertura.xml
+          flags: rust-${{ matrix.project }}
+          fail_ci_if_error: false
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - jimbot/memgraph/mage_modules
+          - services/balatro-emulator
+          - services/event-bus-rust
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            jimbot/memgraph/mage_modules -> target
+            services/balatro-emulator -> target
+            services/event-bus-rust -> target
+          cache-on-failure: true
+          shared-key: "rust-audit-${{ matrix.project }}"
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Install cargo-audit
+        run: |
+          if ! command -v cargo-audit &> /dev/null; then
+            cargo install cargo-audit --locked
+          fi
+
+      - name: Run security audit
+        working-directory: ${{ matrix.project }}
+        run: cargo audit
