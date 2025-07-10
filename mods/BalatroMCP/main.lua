@@ -37,6 +37,7 @@ function BalatroMCP:init()
     self.components.event_bus = require("mods.BalatroMCP.event_bus_client")
     self.components.aggregator = require("mods.BalatroMCP.event_aggregator")
     self.components.executor = require("mods.BalatroMCP.action_executor")
+    self.components.scoring = require("mods.BalatroMCP.modules.scoring")
 
     -- Override configuration from file if exists
     local user_config = self.components.config:load()
@@ -51,6 +52,10 @@ function BalatroMCP:init()
     self.components.event_bus:init(self.config)
     self.components.aggregator:init(self.config.batch_window_ms)
     self.components.executor:init()
+    self.components.scoring:init()
+
+    -- Connect aggregator to event bus after both are initialized
+    self.components.aggregator.event_bus = self.components.event_bus
 
     -- Enable headless mode based on config
     self.headless = self.config.headless or false
@@ -77,6 +82,11 @@ end
 
 -- Update function called from love.update
 function BalatroMCP:update(dt)
+    -- Try to install hooks if not yet installed
+    if not self.hooks_installed then
+        self:try_install_hooks()
+    end
+
     -- Send heartbeat periodically
     local current_time = love.timer.getTime() * 1000 -- Convert to ms
     if current_time - self.last_heartbeat > self.config.heartbeat_interval_ms then
@@ -195,6 +205,11 @@ function BalatroMCP:detect_state_changes(old_state, new_state)
 
     -- Check for chip/mult changes (indicates scoring)
     if old_state.chips ~= new_state.chips or old_state.mult ~= new_state.mult then
+        -- Update scoring tracker with the new score
+        if self.components.scoring then
+            self.components.scoring:update_score(new_state.chips)
+        end
+
         table.insert(changes, {
             type = "SCORE_CHANGED",
             source = "BalatroMCP",
@@ -287,6 +302,8 @@ function BalatroMCP:try_install_hooks()
         },
         { name = "buy_from_shop", exists = G.FUNCS.buy_from_shop ~= nil },
         { name = "end_round", exists = G.FUNCS.end_round ~= nil },
+        { name = "calculate_joker", exists = Card and Card.calculate_joker ~= nil },
+        { name = "scoring", exists = G.GAME ~= nil },
     }
 
     -- Log what we find
@@ -422,9 +439,22 @@ function BalatroMCP:hook_game_events()
         local original_play_cards = G.FUNCS.play_cards_from_highlighted
         G.FUNCS.play_cards_from_highlighted = function(e)
             self.components.logger:debug("play_cards_from_highlighted called")
+
+            -- Start scoring tracker
+            self.components.scoring:start_hand_evaluation()
+
+            -- Mark that we're in a scoring sequence
+            self.in_scoring_sequence = true
+
             if original_play_cards then
                 original_play_cards(e)
             end
+
+            -- Complete scoring tracking
+            self.components.scoring:complete_hand_evaluation()
+            -- Scoring sequence complete, flush aggregator
+            self.in_scoring_sequence = false
+            self.components.aggregator:flush()
 
             -- Extract and send game state
             local game_state = self.components.extractor:get_current_state()
@@ -485,6 +515,54 @@ function BalatroMCP:hook_game_events()
         self.components.logger:info("Hooked end_round")
     else
         self.components.logger:error("Could not find end_round")
+    end
+
+    -- Hook into joker calculations for cascade tracking
+    if Card and Card.calculate_joker then
+        local original_calculate_joker = Card.calculate_joker
+        Card.calculate_joker = function(card, context)
+            local result = nil
+
+            -- Call original function first to get the result
+            if original_calculate_joker then
+                result = original_calculate_joker(card, context)
+            end
+
+            -- Track joker trigger if we're in a scoring sequence and got a result
+            if BalatroMCP.in_scoring_sequence and result then
+                -- Calculate score contribution if available
+                local score_contribution = 0
+                if result.mult then
+                    score_contribution = result.mult
+                elseif result.chips then
+                    score_contribution = result.chips
+                end
+
+                -- Track the joker trigger
+                BalatroMCP.components.scoring:track_joker_trigger({
+                    name = card.ability and card.ability.name or "unknown",
+                    id = card.unique_val or "unknown",
+                    position = card.area and card.area.cards and card:get_index() or 0,
+                }, score_contribution)
+
+                -- Also send the event through aggregator for backward compatibility
+                BalatroMCP.components.aggregator:add_event({
+                    type = "JOKER_TRIGGER",
+                    source = "BalatroMCP",
+                    priority = "low", -- Low priority to batch these
+                    payload = {
+                        joker_name = card.ability and card.ability.name or "unknown",
+                        context_type = context and context.joker_main or "unknown",
+                        timestamp = love.timer.getTime() * 1000,
+                    },
+                })
+            end
+
+            return result
+        end
+        self.components.logger:info("Hooked Card.calculate_joker")
+    else
+        self.components.logger:debug("Card.calculate_joker not found yet")
     end
 end
 
