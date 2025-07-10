@@ -1,0 +1,62 @@
+# Reusable workflow for Rust builds with caching
+name: Rust Build with Cache
+
+on:
+  workflow_call:
+    inputs:
+      command:
+        description: 'Rust command to run (e.g., test, check, clippy)'
+        required: true
+        type: string
+      working-directory:
+        description: 'Working directory for the command'
+        required: false
+        type: string
+        default: '.'
+      cache-key-prefix:
+        description: 'Prefix for cache key'
+        required: false
+        type: string
+        default: 'rust'
+
+jobs:
+  rust-build:
+    name: Rust ${{ inputs.command }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          # Cache configuration for all Rust projects
+          workspaces: |
+            jimbot/memgraph/mage_modules -> target
+            services/balatro-emulator -> target
+            services/event-bus-rust -> target
+            jimbot/infrastructure/resource_coordinator_rust -> target
+          cache-on-failure: true
+          shared-key: "${{ inputs.cache-key-prefix }}-${{ runner.os }}"
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Install cargo tools if needed
+        run: |
+          if [[ "${{ inputs.command }}" == *"tarpaulin"* ]]; then
+            cargo install cargo-tarpaulin || true
+          fi
+          if [[ "${{ inputs.command }}" == *"nextest"* ]]; then
+            cargo install cargo-nextest || true
+          fi
+          if [[ "${{ inputs.command }}" == *"audit"* ]]; then
+            cargo install cargo-audit || true
+          fi
+
+      - name: Run Rust command
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo ${{ inputs.command }}

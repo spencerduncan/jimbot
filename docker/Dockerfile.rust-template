@@ -4,8 +4,10 @@
 # Build stage
 FROM rust:1.88-slim as builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Install build dependencies with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     libpq-dev \
@@ -34,8 +36,10 @@ RUN cargo build --release
 # Runtime stage
 FROM debian:bullseye-slim
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+# Install runtime dependencies with BuildKit cache mount for apt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     ca-certificates \
     libssl1.1 \
     libpq5 \
