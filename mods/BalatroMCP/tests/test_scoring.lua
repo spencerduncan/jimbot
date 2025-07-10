@@ -141,4 +141,3 @@ print("    Max hand score: " .. stats.max_hand_score)
 print("    Average hand score: " .. stats.avg_hand_score)
 
 print("\n=== All tests passed! ===")
-

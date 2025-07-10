@@ -164,4 +164,3 @@ if arg and arg[0]:match("test_event_aggregation.lua$") then
 end
 
 return TestEventAggregator
-
