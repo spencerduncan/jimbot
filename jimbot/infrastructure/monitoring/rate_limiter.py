@@ -86,6 +86,16 @@ class TokenBucket:
                 return True
             return False
     
+    async def return_tokens(self, tokens: int = 1) -> None:
+        """
+        Return tokens to the bucket (thread-safe)
+        
+        Args:
+            tokens: Number of tokens to return
+        """
+        async with self.lock:
+            self.tokens = min(self.capacity, self.tokens + tokens)
+    
     async def wait_for_token(self, tokens: int = 1) -> float:
         """
         Calculate wait time for tokens to become available
@@ -190,7 +200,7 @@ class RateLimiter:
         # Check global limit
         if not await self.global_bucket.consume():
             # Return the channel token since we can't use it
-            channel_bucket.tokens += 1
+            await channel_bucket.return_tokens(1)
             self.metrics['rate_limited_count']['global'] += 1
             return False
             

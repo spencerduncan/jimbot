@@ -179,9 +179,9 @@ class NotificationManager:
                 return False
             elif channel == 'discord' and not self.config.discord_webhook:
                 return False
-            elif channel == 'email' and not self.config.smtp_host:
+            elif channel == 'email' and not self.config.email_smtp_server:
                 return False
-            elif channel == 'pagerduty' and not self.config.pagerduty_key:
+            elif channel == 'pagerduty' and not self.config.pagerduty_routing_key:
                 return False
                 
             # Send the notification
