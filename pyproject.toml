@@ -97,7 +97,7 @@ dev = [
     
     # Security
     "bandit==1.8.6",
-    "safety==3.0.1",
+    "safety==3.6.0",
     "pip-audit==2.9.0",
     
     # Documentation
