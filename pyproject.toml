@@ -102,7 +102,7 @@ dev = [
     
     # Documentation
     "sphinx==7.2.6",
-    "sphinx-autodoc-typehints==1.25.2",
+    "sphinx-autodoc-typehints==2.3.0",
     "sphinx-rtd-theme==2.0.0",
     
     # Development tools
