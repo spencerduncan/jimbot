@@ -1,6 +1,6 @@
 # Dockerfile.rust-builder
 # Optimized Rust builder with cargo caching support
-FROM rust:1.75 AS rust-builder
+FROM rust:1.88 AS rust-builder
 
 # Install additional tools
 RUN cargo install cargo-audit cargo-tarpaulin cargo-nextest
