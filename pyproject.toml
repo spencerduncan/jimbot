@@ -118,7 +118,7 @@ dev = [
     
     # ML/Notebook tools
     "nbqa==1.7.1",
-    "nbstripout==0.6.1",
+    "nbstripout==0.8.1",
     "tensorboard>=2.14.0",
 ]
 
