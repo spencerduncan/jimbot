@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 # gRPC framework
 tonic = "0.12"
-prost = "0.13"
+prost = "0.14"
 prost-types = "0.13"
 
 # Async runtime
