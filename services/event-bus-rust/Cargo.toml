@@ -55,7 +55,7 @@ notify = "8.1"
 validator = { version = "0.19", features = ["derive"] }
 
 [build-dependencies]
-tonic-build = "0.11"
+tonic-build = "0.13"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"] }
