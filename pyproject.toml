@@ -65,7 +65,7 @@ dev = [
     # Formatting
     "black==25.1.0",
     "isort==6.0.1",
-    "ruff==0.12.2",
+    "ruff==0.12.3",
     
     # Linting
     "flake8==7.3.0",
