@@ -117,7 +117,7 @@ dev = [
     "scalene==1.5.38",
     
     # ML/Notebook tools
-    "nbqa==1.7.1",
+    "nbqa==1.9.1",
     "nbstripout==0.6.1",
     "tensorboard>=2.14.0",
 ]
