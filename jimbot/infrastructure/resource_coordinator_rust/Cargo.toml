@@ -15,7 +15,7 @@ tokio-stream = "0.1"
 async-stream = "0.3"
 
 # Metrics
-prometheus = "0.13"
+prometheus = "0.14"
 
 # Logging
 tracing = "0.1"
