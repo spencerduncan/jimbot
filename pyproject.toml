@@ -92,7 +92,7 @@ dev = [
     # Type stubs
     "types-redis==4.6.0.20241004",
     "types-requests==2.31.0.20240106",
-    "types-PyYAML==6.0.12.12",
+    "types-PyYAML==6.0.12.20250516",
     "types-protobuf==4.24.0.4",
     
     # Security
