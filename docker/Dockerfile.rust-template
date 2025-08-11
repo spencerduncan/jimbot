@@ -2,7 +2,7 @@
 # This is a template file. Copy this to your Rust component directory and customize as needed.
 
 # Build stage
-FROM rust:1.88-slim as builder
+FROM rust:1.89-slim as builder
 
 # Install build dependencies with BuildKit cache mount for apt
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
