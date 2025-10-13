@@ -2,7 +2,7 @@
 # This provides a consistent environment that bypasses local dependency issues
 
 # Base stage with common dependencies
-FROM python:3.13-slim AS base
+FROM python:3.14-slim AS base
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
